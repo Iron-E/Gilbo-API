@@ -15,7 +15,8 @@ def type(phrase, waTime=.045, enTime=.5):
 # Abstract class from which all enemies, NPCs, and players are derived.
 class entity(ABC):
     def __init__(self, name):
-        self.name = name
+        self.entity_dict = {}
+        self.entity_dict['name'] = name
 
 
 class vendor(entity):
@@ -24,13 +25,10 @@ class vendor(entity):
 
 class battler(entity):
     def __init__(self, name, inv, stats, attack_list):
-        super()
-        self.inv = inv
-        self.stats = stats
-        self.attack_list = attack_list
-
-    def listInv(self):
-        pass
+        super().__init__(name)
+        self.entity_dict['inventory'] = inv
+        self.entity_dict['stats'] = stats
+        self.entity_dict['attack_list'] = attack_list
 
 
 class player(entity):
@@ -39,59 +37,23 @@ class player(entity):
 
 # Items/Weapons in the game
 class item:
-    def __init__(self, value, name, discript):
-        self.value = value
-        self.name = name
-        self.discript = discript
-#sell and buy price
-    def get_value(self):
-        return self.value
-#name of item
-    def get_name(self):
-        return self.name
-#discription of item
-    def get_discript(self):
-        return self.discript
+    pass
 
 
 class weapon(item):
-    def __init__(self, damg):
-        super()
-        self.damg = damg
-#how much damage the weapon does
-    def get_damg(self):
-        return self.damg
+    pass
 
 
 class armor(item):
-    def __init__(self, shield):
-        super()
-        self.shield = shield
-#how much damage is reduces
-    def get_shield(self):
-        return self.shield
+    pass
 
 
 class heal_item(item):
-    def __init__(self, heal):
-        super()
-        self.heal = heal
-#How much health it returns
-    def get_heal(self):
-        return self.heal
+    pass
 
 
 class ranged_weapon(weapon):
-    def __init__(self, dist, ammo_type):
-        super()
-        self.dist = dist
-        self.ammo_type = ammo_type
-#distance at which it should be used. Will have to be a range
-    def get_dist(self):
-        return self.dist
-#type of ammon needed
-    def get_ammo_type(self):
-        return self.ammo_type
+    pass
 
 
 class heal_magic(weapon, heal_item):
@@ -167,7 +129,7 @@ class attack:
 
 class ranged_attack(attack):
     def __init__(self, dmg, dscrpt, ammo_cost, acc=100):
-        super()
+        super().__init__(dmg, dscrpt)
         self.attack_dict['accuracy'] = acc
         self.attack_dict['ammo_cost'] = ammo_cost
 
@@ -197,3 +159,8 @@ class item_collection:
 
 class vendor_collection(item_collection):
     pass
+
+
+player_items = item_collection(['one', 'two', 'three', 'four'])
+player_stats = battler_stats(100, 1, 0, 50, 100)
+player = battler('Test', player_items, player_stats, None)
