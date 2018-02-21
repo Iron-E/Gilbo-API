@@ -11,31 +11,59 @@ def type(phrase, waTime=.045, enTime=.5):
 
     sleep(enTime)
 
-
+#
 # Abstract class from which all enemies, NPCs, and players are derived.
+#
+
 class entity(ABC):
     def __init__(self, name):
         self.entity_dict = {}
         self.entity_dict['name'] = name
+    @property
+    def name(self):
+        return self.entity_dict['name']
+
+    @name.setter
+    def name(self, value):
+        self.entity_dict['name'] = value
 
 
 class vendor(entity):
-    pass
+    def __init__(self, name, inv, coin):
+        self.entity_dict['inventory'] = inv
+        self.entity_dict['currency'] = coin
+
+    @property
+    def coin(self):
+        return self.entity_dict['currency']
+
+    @coin.setter
+    def currency(self, value):
+        self.entity_dict['currency'] += value
+
+    @property
+    def inv(self):
+        return self.entity_dict['inventory']
 
 
 class battler(entity):
-    def __init__(self, name, inv, stats, attack_list):
-        super().__init__(name)
-        self.entity_dict['inventory'] = inv
+    def __init__(self, name, inv, coin, stats, attack_list):
+        super().__init__(name, inv, coin)
         self.entity_dict['stats'] = stats
         self.entity_dict['attack_list'] = attack_list
 
+    @property
+    def stats(self):
+        return self.entity_dict['stats']
 
-class player(entity):
-    pass
+    @property
+    def attacks(self):
+        return self.entity_dict['attack_list']
 
-
+#
 # Items/Weapons in the game
+#
+
 class item:
     pass
 
@@ -59,12 +87,14 @@ class ranged_weapon(weapon):
 class heal_magic(weapon, heal_item):
     pass
 
-
+#
 # Entity Stats
+#
+
 class battler_stats:
-    stat_dict = {'hp': 0, 'strength': 0, 'armor': 0, 'agility': 0, 'power': 0}
 
     def __init__(self, hp, stren, armr, agil, pwr):
+        self.stat_dict = {}
         self.stat_dict['hp'] = hp
         self.stat_dict['strength'] = stren
         self.stat_dict['armor'] = armr
@@ -111,36 +141,50 @@ class battler_stats:
     def power(self, value):
         self.stat_dict['power'] = value
 
-
+#
 # Locations
+#
+
+#
 # Descriptors
+#
 class attack:
-    def __init__(self, dmg, dscrpt):
+    def __init__(self, dmg, dscrpt, count=1):
         self.attack_dict = {}
         self.attack_dict['dmg'] = dmg
         self.attack_dict['description'] = dscrpt
+        self.attack_dict['hit_count'] = count
 
-    def get_dmg(self):
+    @property
+    def dmg(self):
         return self.attack_dict['dmg']
 
-    def get_dscrpt(self):
+    @property
+    def dscrpt(self):
         return self.attack_dict['description']
+
+    @property
+    def count(self):
+        return self.attack_dict['hit_count']
 
 
 class ranged_attack(attack):
-    def __init__(self, dmg, dscrpt, ammo_cost, acc=100):
-        super().__init__(dmg, dscrpt)
+    def __init__(self, dmg, dscrpt, count, acc, ammo_cost):
+        super().__init__(dmg, dscrpt, count)
         self.attack_dict['accuracy'] = acc
         self.attack_dict['ammo_cost'] = ammo_cost
 
-    def get_ammo_cost(self):
+    @property
+    def ammo_cost(self):
         return self.attack_dict['ammo_cost']
 
-    def get_acc(self):
+    @property
+    def gacc(self):
         return self.attack_dict['accuracy']
 
-
+#
 # Inventory
+#
 class item_collection:
     def __init__(self, items=list()):
         self.items = items
@@ -159,8 +203,3 @@ class item_collection:
 
 class vendor_collection(item_collection):
     pass
-
-
-player_items = item_collection(['one', 'two', 'three', 'four'])
-player_stats = battler_stats(100, 1, 0, 50, 100)
-player = battler('Test', player_items, player_stats, None)
