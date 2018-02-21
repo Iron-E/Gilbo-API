@@ -1,6 +1,9 @@
 # Gilbo-API
 An API to design and create RPG text adventure games. Written in Python.
 
+## Requirements
+- [blinker](https://github.com/jek/blinker)
+
 ## Features 
 ### Player & NPC Management
 - [ ] Create entities (NPCs, Players, Vendors, etc.)
