@@ -39,23 +39,59 @@ class player(entity):
 
 # Items/Weapons in the game
 class item:
-    pass
+    def __init__(self, value, name, discript):
+        self.value = value
+        self.name = name
+        self.discript = discript
+#sell and buy price
+    def get_value(self):
+        return self.value
+#name of item
+    def get_name(self):
+        return self.name
+#discription of item
+    def get_discript(self):
+        return self.discript
 
 
 class weapon(item):
-    pass
+    def __init__(self, damg):
+        super()
+        self.damg = damg
+#how much damage the weapon does
+    def get_damg(self):
+        return self.damg
 
 
 class armor(item):
-    pass
+    def __init__(self, shield):
+        super()
+        self.shield = shield
+#how much damage is reduces
+    def get_shield(self):
+        return self.shield
 
 
 class heal_item(item):
-    pass
+    def __init__(self, heal):
+        super()
+        self.heal = heal
+#How much health it returns
+    def get_heal(self):
+        return self.heal
 
 
 class ranged_weapon(weapon):
-    pass
+    def __init__(self, dist, ammo_type):
+        super()
+        self.dist = dist
+        self.ammo_type = ammo_type
+#distance at which it should be used. Will have to be a range
+    def get_dist(self):
+        return self.dist
+#type of ammon needed
+    def get_ammo_type(self):
+        return self.ammo_type
 
 
 class heal_magic(weapon, heal_item):
