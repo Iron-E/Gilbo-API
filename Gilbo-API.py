@@ -1,6 +1,7 @@
 from abc import ABC
 from random import randint
 from time import sleep
+from enum import Enum
 
 
 def type(phrase, waTime=.045, enTime=.5):
@@ -22,7 +23,14 @@ class vendor(entity):
 
 
 class battler(entity):
-    pass
+    def __init__(self, name, inv, stats, attack_list):
+        super()
+        self.inv = inv
+        self.stats = stats
+        self.attack_list = attack_list
+
+    def listInv(self):
+        pass
 
 
 class player(entity):
@@ -56,47 +64,82 @@ class heal_magic(weapon, heal_item):
 
 # Entity Stats
 class battler_stats:
-    stat_dict = {"hp": 0, "strength": 0, "armor": 0, "agility": 0, "power": 0}
+    stat_dict = {'hp': 0, 'strength': 0, 'armor': 0, 'agility': 0, 'power': 0}
 
     def __init__(self, hp, stren, armr, agil, pwr):
-        self.stat_dict["hp"] = hp
-        self.stat_dict["strength"] = stren
-        self.stat_dict["armor"] = armr
-        self.stat_dict["agility"] = agil
-        self.stat_dict["power"] = pwr
+        self.stat_dict['hp'] = hp
+        self.stat_dict['strength'] = stren
+        self.stat_dict['armor'] = armr
+        self.stat_dict['agility'] = agil
+        self.stat_dict['power'] = pwr
 
-    def get_stat(self, stat):
-        return self.stat_dict[stat]
+    @property
+    def health(self):
+        return self.stat_dict['hp']
 
-    def mod_stat(self, stat, value):
-        self.stat_dict[stat] = value
+    @health.setter
+    def health(self, value):
+        self.stat_dict['hp'] = value
+
+    @property
+    def stren(self):
+        return self.stat_dict['strength']
+
+    @stren.setter
+    def stren(self, value):
+        self.stat_dict['strength'] = value
+
+    @property
+    def armor(self):
+        return self.stat_dict['armor']
+
+    @armor.setter
+    def armor(self, value):
+        self.stat_dict['armor'] = value
+
+    @property
+    def agility(self):
+        return self.stat_dict['agility']
+
+    @agility.setter
+    def agility(self, value):
+        self.stat_dict['agility'] = value
+
+    @property
+    def power(self):
+        return self.stat_dict['power']
+
+    @power.setter
+    def power(self, value):
+        self.stat_dict['power'] = value
 
 
 # Locations
 # Descriptors
 class attack:
     def __init__(self, dmg, dscrpt):
-        self.dmg = dmg
-        self.dscrpt = dscrpt
+        self.attack_dict = {}
+        self.attack_dict['dmg'] = dmg
+        self.attack_dict['description'] = dscrpt
 
     def get_dmg(self):
-        return self.dmg
+        return self.attack_dict['dmg']
 
     def get_dscrpt(self):
-        return self.dscrpt
+        return self.attack_dict['description']
 
 
 class ranged_attack(attack):
     def __init__(self, dmg, dscrpt, ammo_cost, acc=100):
         super()
-        self.acc = acc
-        self.ammo_cost = ammo_cost
+        self.attack_dict['accuracy'] = acc
+        self.attack_dict['ammo_cost'] = ammo_cost
 
     def get_ammo_cost(self):
-        return self.ammo_cost
+        return self.attack_dict['ammo_cost']
 
     def get_acc(self):
-        return self.acc
+        return self.attack_dict['accuracy']
 
 
 # Inventory
