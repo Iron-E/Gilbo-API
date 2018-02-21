@@ -4,7 +4,7 @@ An API to design and create RPG text adventure games. Written in Python.
 By using this API you agree to the [license](https://github.com/ajzett/Gilbo-API/edit/dev_ajzett/LICENSE.md).
 
 ## Requirements
-- [blinker](https://github.com/jek/blinker)
+- [blinker](https://github.com/jek/blinker/blob/master/LICENSE)
 
 ## Features 
 ### Player & NPC Management
