@@ -111,14 +111,27 @@ class battler(vendor):
 # Items/Weapons in the game
 #
 
+class Item_Types(Enum):
+    basic_item = 0
+    basic_equippable = 1
+    weapon = 2
+    armor = 3
+    power = 5
+
+
 
 class item:
     def __init__(self, name, dscrpt, weight, val):
         self.item_dict = {}
+        self.item_dict['type'] = Item_Types.basic_item
         self.item_dict['name'] = name
         self.item_dict['description'] = dscrpt
         self.item_dict['carry_weight'] = weight
         self.item_dict['value'] = val
+
+    @property
+    def type(self):
+        return self.item_dict['type']
 
     @property
     def name(self):
@@ -138,27 +151,41 @@ class item:
 
 
 class equippable(item):
-    def __init__(self, name, dscrpt, weight, on_entity=False):
+    def __init__(self, name, dscrpt, weight):
         super().__init__(name, dscrpt, weight)
+        self.item_dict['type'] = Item_Types.basic_equippable
+        self.item_dict['equipped'] = on_entity
 
 
 class weapon(equippable):
-    pass
+    def __init__(self, name, dscrpt, weight, dmg):
+        super().__init__(name, dscrpt, weight)
+        self.item_dict['type'] = Item_Types.weapon
+        self.item_dict['wpn_dmg'] = dmg
 
 
 class armor(equippable):
-    pass
+    def __init__(self, name, dscrpt, weight, armr):
+        super().__init__(name, dscrpt, weight,)
+        self.item_dict['type'] = Item_Types.armor
+        self.item_dict['wpn_dmg'] = armr
 
 
 class heal_item(item):
-    pass
+    def __init__(self, name, dscrpt, weight, val, heal_amnt):
+        super().__init__(name, dscrpt, weight, val)
+        self.item_dict['heal_amount'] = heal_amnt
+        self.item_dict['type'] = basic_item
 
 
 class ranged_weapon(weapon):
-    pass
+    def __init__(self, name, dscrpt, weight, dmg, ammo):
+        super().__init__(name, dscrpt, weight, dmg)
+        self.item_dict['type'] = weapon
+        self.item_dict['ammo'] = ammo
 
 
-class heal_magic(weapon, heal_item):
+class magic(ranged_weapon, heal_item):
     pass
 
 #
@@ -259,6 +286,12 @@ class player_stats(battler_stats):
 # Locations
 #
 
+class Directions(Enum):
+    North = 0
+    South = 1
+    East = 2
+    West = 3
+
 
 matrix_indexer = signal('matrix-indexer')
 
@@ -266,12 +299,19 @@ matrix_indexer = signal('matrix-indexer')
 class location_manager:
     def __init__(self, maps=list(), quests=list()):
         self.xy_dict = {}
+        self.xy_dict['Error_Message'] = 'You cannot go that way'
         self.xy_dict['maps'] = maps
         self.xy_dict['quests'] = quests
         for i in range(len(self.xy_dict['maps'])):
             self.xy_dict['id_directory'][i] = self.xy_dict['maps'][i].id
 
-    def move(entity, player_position, direction):
+    def move(entity, direction, map_id):
+        if map_id in self.xy_dict['id_dictionary']:
+            pass
+        else:
+            print(self.xy_dict['Error_Message'])
+
+    def teleport(entity, position):
         pass
 
 
@@ -343,6 +383,7 @@ class ranged_attack(attack):
 # Inventory
 #
 
+item_equipped = signal('update-properties')
 
 class item_collection:
     def __init__(self, items=list()):
@@ -359,7 +400,8 @@ class item_collection:
             else:
                 print("There is/are no more " + itm + " to use, sell, or buy.")
 
-    def get_inventory(self):
+    @property
+    def inventory(self):
         return self.items
 
 
@@ -380,14 +422,37 @@ class vendor_collection(item_collection):
             print("That item doesn't exist in this inventory.")
 
 
-class player_collection(vendor_collection):
-    def __init__(self, items):
+class battler_collection(item_collection):
+    def __init__(self, items, equipped=list()):
         super().__init__(items)
+        self.on_entity = equipped
+
+    Error_Message = "That didn't work."
+
+    def equip(self, item):
+        if item in self.items and isinstance(item, equippable):
+            for i in range(len(self.equipped)):
+                if item.type = self.on_entity[i].type:
+                    del self.on_entity[i]
+
+            self.on_entity.append(item)
+            item_equipped.send(self)
+        else:
+            print(Error_Message)
+
+        @property
+        def equipped(self):
+            return self.on_entity
+
+
+class player_collection(vendor_collection, battler_collection):
+    def __init__(self, items, equipped):
+        super().__init__(items, equipped)
 
     def add_itm(self, itm, amnt=Enumerators.items_to_modify):
         for i in range(amnt):
             self.items.append(itm)
-            item_obtained.send(item=self.get_inventory())
+            item_obtained.send(item=self.inventory())
 
 
 #
