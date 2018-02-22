@@ -1,11 +1,17 @@
 # Gilbo-API
 An API to design and create RPG text adventure games. Written in Python.
 
+By using this API you agree to the [license](https://github.com/ajzett/Gilbo-API/edit/dev_ajzett/LICENSE.md).
+
+## Requirements
+- [blinker](https://github.com/jek/blinker/blob/master/LICENSE)
+- [NumPy](https://github.com/scipy/scipy/blob/master/LICENSE.txt)
+
 ## Features 
 ### Player & NPC Management
-- [ ] Create entities (NPCs, Players, Vendors, etc.)
-- [ ] Create inventory lists independant of the entity
-- [ ] Create stat lists independant of an entity, allowing them to be reused
+- [x] Create entities (NPCs, Players, Vendors, etc.)
+- [x] Define an item list for an entity.
+- [x] Define stat lists for an entity.
 - [ ] Save & Load player data
 - [ ] Gear based progression
 
@@ -15,13 +21,16 @@ An API to design and create RPG text adventure games. Written in Python.
 - [ ] Quest completion rewards
 
 ### Locations
+The location manager defaults to working with Matrix-based maps and works by increasing or decreasing the player's "position" on said map, which triggers a function that reads what is on that tile. However, it can be easily modified to use other ASCII, 2D, or even 3D libraries to manage a location. See [documentation](https://github.com/ajzett/Gilbo-API/blob/master/DOCUMENTATION.md) for more. 
+
 - [ ] Location manager loads in and empties location data automatically
 - [ ] Location manager feeds data to Save & Load data to the save and load functions so your character can start in the same place
 
 ### LAN Battle?
 - [ ] Battle other players over LAN. Not really sure about this one.
 
-### Modification
-- MIT License and Object-oriented design makes modification and redistribution easy.
+### Modification / Structure
+- Creative Commons License and Object-oriented design makes modification and redistribution easy.
+- All objects (inventories, attack lists, stat lists, etc) are created independantly and then an *entity* is defined as having them. See [documentation](https://github.com/ajzett/Gilbo-API/blob/master/DOCUMENTATION.md) for more.
 
 # Changelogs
