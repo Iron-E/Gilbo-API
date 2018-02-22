@@ -120,14 +120,12 @@ class Item_Types(Enum):
 
 
 
-class item:
-    def __init__(self, name, dscrpt, weight, val):
+class item_unweighted:
+    def __init__(self, name, dscrpt):
         self.item_dict = {}
         self.item_dict['type'] = Item_Types.basic_item
         self.item_dict['name'] = name
         self.item_dict['description'] = dscrpt
-        self.item_dict['carry_weight'] = weight
-        self.item_dict['value'] = val
 
     @property
     def type(self):
@@ -141,6 +139,14 @@ class item:
     def dscrpt(self):
         return self.item_dict['description']
 
+
+class item_weighted(item_unweighted):
+    def __init__(self, name, dscrpt, weight, val):
+        super().__init__(name, dscrpt)
+        self.item_dict['type'] = Item_Types.basic_item
+        self.item_dict['carry_weight'] = weight
+        self.item_dict['value'] = val
+
     @property
     def weight(self):
         return self.item_dict['carry_weight']
@@ -150,28 +156,27 @@ class item:
         return self.item_dict['value']
 
 
-class equippable(item):
-    def __init__(self, name, dscrpt, weight):
+class equippable(item_weighted):
+    def __init__(self, name, dscrpt, weight, val):
         super().__init__(name, dscrpt, weight)
         self.item_dict['type'] = Item_Types.basic_equippable
-        self.item_dict['equipped'] = on_entity
 
 
 class weapon(equippable):
-    def __init__(self, name, dscrpt, weight, dmg):
-        super().__init__(name, dscrpt, weight)
+    def __init__(self, name, dscrpt, weight, val, dmg):
+        super().__init__(name, dscrpt, weight, val)
         self.item_dict['type'] = Item_Types.weapon
         self.item_dict['wpn_dmg'] = dmg
 
 
 class armor(equippable):
-    def __init__(self, name, dscrpt, weight, armr):
-        super().__init__(name, dscrpt, weight,)
+    def __init__(self, name, dscrpt, weight, val, armr):
+        super().__init__(name, dscrpt, weight, val)
         self.item_dict['type'] = Item_Types.armor
         self.item_dict['wpn_dmg'] = armr
 
 
-class heal_item(item):
+class heal_item(item_weighted):
     def __init__(self, name, dscrpt, weight, val, heal_amnt):
         super().__init__(name, dscrpt, weight, val)
         self.item_dict['heal_amount'] = heal_amnt
@@ -179,13 +184,18 @@ class heal_item(item):
 
 
 class ranged_weapon(weapon):
-    def __init__(self, name, dscrpt, weight, dmg, ammo):
+    def __init__(self, name, dscrpt, weight, dmg, linked_attack):
         super().__init__(name, dscrpt, weight, dmg)
         self.item_dict['type'] = weapon
-        self.item_dict['ammo'] = ammo
+        # Every ranged weapon has a corresponding ranged_attack object
+        self.item_dict['linked_attack'] = linked_attack
+
+    @property
+    def lnkt_atk(self):
+        return self.item_dict['linked_attack']
 
 
-class magic:
+class magic(item_unweighted):
     pass
 
 #
@@ -285,6 +295,8 @@ class player_stats(battler_stats):
 #
 # Locations
 #
+
+pass
 
 class Directions(Enum):
     North = 0
@@ -467,6 +479,7 @@ created_quest = signal('created-quest')
 
 
 class object_tracker:
+    pass
     def __init__(self):
         self.track_dict = {}
         self.track_dict['entities'] = list()
