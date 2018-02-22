@@ -46,9 +46,11 @@ def type(phrase, type_speed=.045, line_delay=.5):
 
 
 class entity(ABC):
-    def __init__(self, name):
+
+    def __init__(self, name, location, x, y):
         self.entity_dict = {}
         self.entity_dict['name'] = name
+        self.entity_dict['location'] = location.layout[x, y]
 
     @property
     def name(self):
@@ -58,10 +60,23 @@ class entity(ABC):
     def name(self, value):
         self.entity_dict['name'] = value
 
+    @property
+    def location(self):
+        return self.entity_dict['location']
+
+    @location.setter
+    def location(self, location, x, y):
+        self.entity_dict['location'] = location.layout[x, y]
+
+
+class NPC(entity):
+    def __init__(self, name, dialogue):
+        super().__init__(name)
+
 
 class vendor(entity):
-    def __init__(self, name, inv, coin):
-        super().__init__(name)
+    def __init__(self, name, location, x, y, inv, coin):
+        super().__init__(name, location, x, y)
         self.entity_dict['inventory'] = inv
         self.entity_dict['currency'] = coin
 
@@ -239,28 +254,39 @@ class player_stats(battler_stats):
 
         if total_weight > self.calc_carry_cap():
             self.over_enc = True
+
 #
 # Locations
 #
 
 
-class mapcode(Enum):
-    edge = 0
-    grass = 1
-    water = 2
-    wall = 3
-    entrance = 4
+matrix_indexer = signal('matrix-indexer')
 
 
 class location_manager:
-    pass
+    def __init__(self, maps=list(), quests=list()):
+        self.xy_dict = {}
+        self.xy_dict['maps'] = maps
+        self.xy_dict['quests'] = quests
+        for i in range(len(self.xy_dict['maps'])):
+            self.xy_dict['id_directory'][i] = self.xy_dict['maps'][i].id
+
+    def move(entity, player_position, direction):
+        pass
 
 
 class matrix_map:
-    def __init__(self, map_id, map):
+    def __init__(self, map_id, map, entities=list()):
         self.map_dict = {}
         self.map_dict['map_id'] = map_id
         self.map_dict['map_layout'] = matrix(map)
+        self.map_dict['entities'] = entities
+
+    @matrix_indexer.connect
+    def give_data(self):
+        data = {}
+        data['entities'] = self.entities
+        data['']
 
     @property
     def id(self):
@@ -269,6 +295,10 @@ class matrix_map:
     @property
     def layout(self):
         return self.map_dict['map_layout']
+
+    @property
+    def entities(self):
+        return self.map_dict['entities']
 
 #
 # Battle Backend
@@ -327,7 +357,7 @@ class item_collection:
             if itm in self.items:
                 self.items.remove(itm)
             else:
-                print("There is/are no more " + itm + " to use, sell, or buy!")
+                print("There is/are no more " + itm + " to use, sell, or buy.")
 
     def get_inventory(self):
         return self.items
@@ -358,3 +388,34 @@ class player_collection(vendor_collection):
         for i in range(amnt):
             self.items.append(itm)
             item_obtained.send(item=self.get_inventory())
+
+
+#
+# Counter
+#
+
+created_entity = signal('created-entity')
+created_item = signal('created-item')
+created_location = signal('created-location')
+created_collection = signal('created-collection')
+created_quest = signal('created-quest')
+
+
+class object_tracker:
+    def __init__(self):
+        self.track_dict = {}
+        self.track_dict['entities'] = list()
+        self.track_dict['items'] = list()
+        self.track_dict['locations'] = list()
+        self.track_dict['collections'] = list()
+        self.track_dict['quests'] = list()
+
+    @property
+    def all_collections(self):
+        return self.track_dict['collections']
+
+    @created_collection.connect
+    def add_collection(self, **kw):
+        self.track_dict['collections'].append(kw)
+
+# Finishing creating connect and property functions, then implement the send commands (and do it RIGHT!)
