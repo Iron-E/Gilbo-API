@@ -185,7 +185,7 @@ class ranged_weapon(weapon):
         self.item_dict['ammo'] = ammo
 
 
-class magic(ranged_weapon, heal_item):
+class magic:
     pass
 
 #
@@ -274,7 +274,7 @@ class player_stats(battler_stats):
 
     @item_obtained.connect
     def check_carry_weight(self, **kw):
-        total_weight = 0
+        total_weight = None
 
         for i in range(len(kw['item'])):
             total_weight += kw['item'][i].weight
