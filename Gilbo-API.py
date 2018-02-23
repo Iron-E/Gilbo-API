@@ -523,11 +523,11 @@ class object_tracker:
         self.track_dict['inventories'] = list()
         self.track_dict['quests'] = list()
 
-    def empty_dict(self):
+    def empty_tracker(self):
         self.track_dict.update((key, []) for key in self.track_dict)
 
     def update_tracker(self):
-        self.empty_dict()
+        self.empty_tracker()
 
         for key in globals():
             if isinstance(globals()[key], entity):
