@@ -328,7 +328,7 @@ class location_manager:
         if isinstance(thing.inv, player_collection) and entity.inv.over_enc is True:
             return print(self.xy_dict['Error_Message'][Location_Errors.encumbered])
         # Insert data collection from map
-        check_bounds(thing.location[Locate_Entity.map_name], direction, thing.location[Locate_Entity.x_coordinate] thing.location[Locate_Entity.y_coordinate])
+        self.check_bounds(thing.location[Locate_Entity.map_name], direction, thing.location[Locate_Entity.x_coordinate], thing.location[Locate_Entity.y_coordinate])
 
     def teleport(self, thing, map, x, y):
         if map in self.xy_dict['maps']:
@@ -352,7 +352,7 @@ class location_manager:
             return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
 
         try:
-            map.layout[new_place]
+            assert map.layout[new_place]
         except IndexError:
             return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
 
@@ -493,7 +493,7 @@ class battler_collection(item_collection):
                     del self.on_entity[i]
 
             self.on_entity.append(item)
-            item_equipped.send(self)
+            item_equipped.send(item=item)
         else:
             print(self.Error_Message)
 
