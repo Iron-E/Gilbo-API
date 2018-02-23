@@ -455,7 +455,7 @@ class item_collection(ABC):
             if itm in self.items:
                 self.items.remove(itm)
             else:
-                print("There is/are no more " + itm + " to use, sell, or buy.")
+                print("There is/are no more " + itm.name + " to use, sell, or buy.")
 
     @property
     def inventory(self):
@@ -521,6 +521,14 @@ class quest:
         # Placeholder
         self.name = name
         pass
+
+
+#
+# Battle System
+#
+
+class battle_manager:
+    pass
 
 
 #
