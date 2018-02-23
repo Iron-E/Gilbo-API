@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from random import randint
 from time import sleep
 from enum import Enum, IntFlag
@@ -49,7 +49,9 @@ def type(phrase, type_speed=.045, line_delay=.5):
 
 class Locate_Entity(Enum):
     map_name = 0
-    index_num = 1
+    coordinates = 1
+    x_coordinate = 2
+    y_coordinate = 3
 
 
 class entity(ABC):
@@ -57,7 +59,9 @@ class entity(ABC):
         self.entity_dict = {}
         self.entity_dict['name'] = name
         self.entity_dict['location'][Locate_Entity.map_name] = location.id
-        self.entity_dict['location'][Locate_Entity.index_num] = location.layout[x, y]
+        self.entity_dict['location'][Locate_Entity.coordinates] = [x, y]
+        self.entity_dict['location'][Locate_Entity.x_coordinate] = x
+        self.entity_dict['location'][Locate_Entity.y_coordinate] = y
 
     @property
     def name(self):
@@ -308,31 +312,51 @@ class Directions(Enum):
 class Location_Errors(Enum):
     no_exist = 0
     encumbered = 1
-
-
-matrix_indexer = signal('matrix-indexer')
+    invalid_direction = 2
 
 
 class location_manager:
     def __init__(self, maps=list(), quests=list()):
         self.xy_dict = {}
-        self.xy_dict['Error_Message'][Location_Errors.no_exist] = "That map doesn't exist."
+        self.xy_dict['Error_Message'][Location_Errors.no_exist] = "That place doesn't exist."
         self.xy_dict['Error_Message'][Location_Errors.encumbered] = "You're carrying too much."
+        self.xy_dict['Error_Message'][Location_Errors.invalid_direction] = "You cannot go that way."
         self.xy_dict['maps'] = maps
         self.xy_dict['quests'] = quests
 
-    def move(self, entity, direction):
-        matrix_indexer.send(position=entity.location)
+    def move(self, thing, direction):
+        if isinstance(thing.inv, player_collection) and entity.inv.over_enc is True:
+            return print(self.xy_dict['Error_Message'][Location_Errors.encumbered])
+        # Insert data collection from map
+        check_bounds(thing.location[Locate_Entity.map_name], direction, thing.location[Locate_Entity.x_coordinate] thing.location[Locate_Entity.y_coordinate])
 
-    def teleport(self, entity, map, x, y):
+    def teleport(self, thing, map, x, y):
         if map in self.xy_dict['maps']:
-            if isinstance(entity.inv, player_collection):
-                if entity.inv.over_enc is True:
-                    return print(self.xy_dict['Error_Message'][Location_Errors.encumbered])
+            if isinstance(thing.inv, player_collection) and thing.inv.over_enc is True:
+                return print(self.xy_dict['Error_Message'][Location_Errors.encumbered])
             # Insert data collection from map
-            entity.set_loc(map, x, y)
+            return map.send_data(list(x, y))
         else:
-            return print(self.xy_dict['Error_Message'])
+            return print(self.xy_dict['Error_Message'][Location_Errors.no_exist])
+
+    def check_bounds(self, map, direction, x, y):
+        if direction is Directions.North:
+            new_place = list(x, y + 1)
+        elif direction is Directions.South:
+            new_place = list(x, y - 1)
+        elif direction is Directions.East:
+            new_place = list(x - 1, y)
+        elif direction is Directions.West:
+            new_place = list(x + 1, y)
+        else:
+            return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
+
+        try:
+            map.layout[new_place]
+        except IndexError:
+            return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
+
+        return map.send_data(new_place)
 
 
 class matrix_map:
@@ -341,6 +365,10 @@ class matrix_map:
         self.map_dict['map_id'] = name
         self.map_dict['map_layout'] = matrix(map)
         self.map_dict['entities'] = entities
+
+    @abstractmethod
+    def send_data(self, tile):
+        raise NotImplementedError('Please define this method.')
 
     @property
     def id(self):
@@ -570,5 +598,4 @@ class object_tracker:
 
     @property
     def tracker(self):
-        self.update_tracker()
         return self.track_dict
