@@ -5,7 +5,7 @@ By using this API you agree to the [license](https://github.com/ajzett/Gilbo-API
 
 ## Requirements
 - [blinker](https://github.com/jek/blinker/blob/master/LICENSE)
-- [NumPy](https://github.com/scipy/scipy/blob/master/LICENSE.txt) (if you want to use Matrix indexing)
+- [NumPy](https://github.com/scipy/scipy/blob/master/LICENSE.txt) (if you want to use Matrix indexing for locations)
 
 ## Features 
 ### Player & NPC Management
