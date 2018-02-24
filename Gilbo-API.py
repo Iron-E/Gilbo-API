@@ -1,7 +1,9 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from random import randint
 from time import sleep
 from enum import Enum, IntFlag
+
+# 3rd Party Libraries
 from blinker import signal
 from numpy import matrix
 
@@ -45,12 +47,21 @@ def type(phrase, type_speed=.045, line_delay=.5):
 #
 
 
-class entity(ABC):
+class Locate_Entity(Enum):
+    map_name = 0
+    coordinates = 1
+    x_coordinate = 2
+    y_coordinate = 3
 
+
+class entity(ABC):
     def __init__(self, name, location, x, y):
         self.entity_dict = {}
         self.entity_dict['name'] = name
-        self.entity_dict['location'] = location.layout[x, y]
+        self.entity_dict['location'][Locate_Entity.map_name] = location.id
+        self.entity_dict['location'][Locate_Entity.coordinates] = [x, y]
+        self.entity_dict['location'][Locate_Entity.x_coordinate] = x
+        self.entity_dict['location'][Locate_Entity.y_coordinate] = y
 
     @property
     def name(self):
@@ -64,14 +75,22 @@ class entity(ABC):
     def location(self):
         return self.entity_dict['location']
 
-    @location.setter
-    def location(self, location, x, y):
-        self.entity_dict['location'] = location.layout[x, y]
+    def set_loc(self, location, x, y):
+        self.entity_dict['location'][Locate_Entity.map_name] = location.id
+        self.entity_dict['location'][Locate_Entity.index_num] = location.layout[x, y]
 
 
-class NPC(entity):
-    def __init__(self, name, dialogue):
-        super().__init__(name)
+class NPC:
+    def __init__(self, name, location, x, y):
+        super().__init__(name, location, x, y)
+        self.dialogue_dict = {}
+
+    def add_dialogue(self, diag_name, diag_content):
+        self.dialogue_dict[diag_name] = diag_content
+
+    def type_dialogue(self, diag_name):
+        for i in range(len(self.dialogue_dict[diag_name])):
+            type(self.dialogue_dict[diag_name][i])
 
 
 class vendor(entity):
@@ -111,6 +130,7 @@ class battler(vendor):
 # Items/Weapons in the game
 #
 
+
 class Item_Types(Enum):
     basic_item = 0
     basic_equippable = 1
@@ -119,15 +139,12 @@ class Item_Types(Enum):
     power = 5
 
 
-
-class item:
-    def __init__(self, name, dscrpt, weight, val):
+class item_unweighted:
+    def __init__(self, name, dscrpt):
         self.item_dict = {}
         self.item_dict['type'] = Item_Types.basic_item
         self.item_dict['name'] = name
         self.item_dict['description'] = dscrpt
-        self.item_dict['carry_weight'] = weight
-        self.item_dict['value'] = val
 
     @property
     def type(self):
@@ -141,6 +158,14 @@ class item:
     def dscrpt(self):
         return self.item_dict['description']
 
+
+class item_weighted(item_unweighted):
+    def __init__(self, name, dscrpt, weight, val):
+        super().__init__(name, dscrpt)
+        self.item_dict['type'] = Item_Types.basic_item
+        self.item_dict['carry_weight'] = weight
+        self.item_dict['value'] = val
+
     @property
     def weight(self):
         return self.item_dict['carry_weight']
@@ -150,43 +175,38 @@ class item:
         return self.item_dict['value']
 
 
-class equippable(item):
-    def __init__(self, name, dscrpt, weight):
-        super().__init__(name, dscrpt, weight)
+class equippable(item_weighted):
+    def __init__(self, name, dscrpt, weight, val):
+        super().__init__(name, dscrpt, weight, val)
         self.item_dict['type'] = Item_Types.basic_equippable
-        self.item_dict['equipped'] = on_entity
+
+    # The API users will have to define their own equip effect
 
 
 class weapon(equippable):
-    def __init__(self, name, dscrpt, weight, dmg):
-        super().__init__(name, dscrpt, weight)
+    def __init__(self, name, dscrpt, weight, val, dmg, linked_attacks):
+        super().__init__(name, dscrpt, weight, val)
         self.item_dict['type'] = Item_Types.weapon
         self.item_dict['wpn_dmg'] = dmg
+        self.item_dict['linked_attack_list'] = linked_attacks
+
+        @property
+        def attacks(self):
+            return self.item_dict['linked_attack_list']
 
 
 class armor(equippable):
-    def __init__(self, name, dscrpt, weight, armr):
-        super().__init__(name, dscrpt, weight,)
+    def __init__(self, name, dscrpt, weight, val, armr):
+        super().__init__(name, dscrpt, weight, val)
         self.item_dict['type'] = Item_Types.armor
         self.item_dict['wpn_dmg'] = armr
 
 
-class heal_item(item):
+class heal_item(item_weighted):
     def __init__(self, name, dscrpt, weight, val, heal_amnt):
         super().__init__(name, dscrpt, weight, val)
         self.item_dict['heal_amount'] = heal_amnt
-        self.item_dict['type'] = basic_item
-
-
-class ranged_weapon(weapon):
-    def __init__(self, name, dscrpt, weight, dmg, ammo):
-        super().__init__(name, dscrpt, weight, dmg)
-        self.item_dict['type'] = weapon
-        self.item_dict['ammo'] = ammo
-
-
-class magic:
-    pass
+        self.item_dict['type'] = Item_Types.basic_item
 
 #
 # Entity Stats
@@ -286,6 +306,7 @@ class player_stats(battler_stats):
 # Locations
 #
 
+
 class Directions(Enum):
     North = 0
     South = 1
@@ -293,40 +314,66 @@ class Directions(Enum):
     West = 3
 
 
-matrix_indexer = signal('matrix-indexer')
+class Location_Errors(Enum):
+    no_exist = 0
+    encumbered = 1
+    invalid_direction = 2
 
 
 class location_manager:
     def __init__(self, maps=list(), quests=list()):
         self.xy_dict = {}
-        self.xy_dict['Error_Message'] = 'You cannot go that way'
+        self.xy_dict['Error_Message'][Location_Errors.no_exist] = "That place doesn't exist."
+        self.xy_dict['Error_Message'][Location_Errors.encumbered] = "You're carrying too much."
+        self.xy_dict['Error_Message'][Location_Errors.invalid_direction] = "You cannot go that way."
         self.xy_dict['maps'] = maps
         self.xy_dict['quests'] = quests
-        for i in range(len(self.xy_dict['maps'])):
-            self.xy_dict['id_directory'][i] = self.xy_dict['maps'][i].id
 
-    def move(entity, direction, map_id):
-        if map_id in self.xy_dict['id_dictionary']:
-            pass
+    def move(self, thing, direction):
+        if isinstance(thing.inv, player_collection) and entity.inv.over_enc is True:
+            return print(self.xy_dict['Error_Message'][Location_Errors.encumbered])
+        # Insert data collection from map
+        self.check_bounds(thing.location[Locate_Entity.map_name], direction, thing.location[Locate_Entity.x_coordinate], thing.location[Locate_Entity.y_coordinate])
+
+    def teleport(self, thing, map, x, y):
+        if map in self.xy_dict['maps']:
+            if isinstance(thing.inv, player_collection) and thing.inv.over_enc is True:
+                return print(self.xy_dict['Error_Message'][Location_Errors.encumbered])
+            # Insert data collection from map
+            return map.send_data(list(x, y))
         else:
-            print(self.xy_dict['Error_Message'])
+            return print(self.xy_dict['Error_Message'][Location_Errors.no_exist])
 
-    def teleport(entity, position):
-        pass
+    def check_bounds(self, map, direction, x, y):
+        if direction is Directions.North:
+            new_place = list(x, y + 1)
+        elif direction is Directions.South:
+            new_place = list(x, y - 1)
+        elif direction is Directions.East:
+            new_place = list(x - 1, y)
+        elif direction is Directions.West:
+            new_place = list(x + 1, y)
+        else:
+            return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
+
+        try:
+            assert map.layout[new_place]
+        except IndexError:
+            return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
+
+        return map.send_data(new_place)
 
 
 class matrix_map:
-    def __init__(self, map_id, map, entities=list()):
+    def __init__(self, name, map, entities=list()):
         self.map_dict = {}
-        self.map_dict['map_id'] = map_id
+        self.map_dict['map_id'] = name
         self.map_dict['map_layout'] = matrix(map)
         self.map_dict['entities'] = entities
 
-    @matrix_indexer.connect
-    def give_data(self):
-        data = {}
-        data['entities'] = self.entities
-        data['']
+    @abstractmethod
+    def send_data(self, tile):
+        raise NotImplementedError('Please define this method.')
 
     @property
     def id(self):
@@ -379,13 +426,28 @@ class ranged_attack(attack):
     def acc(self):
         return self.attack_dict['accuracy']
 
+
+class magic_attack(ranged_attack):
+    pass
+
+
+class attack_list:
+    def __init__(self, attacks=list()):
+        self.attack_list = attacks
+
+    @property
+    def alist(self):
+        return self.attack_list
+
 #
 # Inventory
 #
 
+
 item_equipped = signal('update-properties')
 
-class item_collection:
+
+class item_collection(ABC):
     def __init__(self, items=list()):
         self.items = items
 
@@ -398,7 +460,7 @@ class item_collection:
             if itm in self.items:
                 self.items.remove(itm)
             else:
-                print("There is/are no more " + itm + " to use, sell, or buy.")
+                print("There is/are no more " + itm.name + " to use, sell, or buy.")
 
     @property
     def inventory(self):
@@ -432,13 +494,13 @@ class battler_collection(item_collection):
     def equip(self, item):
         if item in self.items and isinstance(item, equippable):
             for i in range(len(self.equipped)):
-                if item.type = self.on_entity[i].type:
+                if item.type is self.on_entity[i].type:
                     del self.on_entity[i]
 
             self.on_entity.append(item)
-            item_equipped.send(self)
+            item_equipped.send(item=item)
         else:
-            print(Error_Message)
+            print(self.Error_Message)
 
         @property
         def equipped(self):
@@ -454,33 +516,99 @@ class player_collection(vendor_collection, battler_collection):
             self.items.append(itm)
             item_obtained.send(item=self.inventory())
 
+#
+# Quests
+#
+
+
+class quest:
+    def __init__(self, name):
+        # Placeholder
+        self.name = name
+        pass
+
+
+#
+# Battle System
+#
+
+class battle_manager:
+    pass
+
 
 #
 # Counter
 #
 
-created_entity = signal('created-entity')
-created_item = signal('created-item')
-created_location = signal('created-location')
-created_collection = signal('created-collection')
-created_quest = signal('created-quest')
-
-
 class object_tracker:
     def __init__(self):
         self.track_dict = {}
         self.track_dict['entities'] = list()
+        self.track_dict['NPCs'] = list()
+        self.track_dict['vendors'] = list()
+        self.track_dict['battlers'] = list()
+
         self.track_dict['items'] = list()
+        self.track_dict['equippables'] = list()
+        self.track_dict['weapons'] = list()
+        self.track_dict['armor'] = list()
+        self.track_dict['healing_items'] = list()
+
+        self.track_dict['stat_lists'] = list()
+        self.track_dict['attack_lists'] = list()
+        self.track_dict['attacks'] = list()
+        self.track_dict['ranged_attacks'] = list()
+        self.track_dict['magic_attacks'] = list()
+
         self.track_dict['locations'] = list()
-        self.track_dict['collections'] = list()
+        self.track_dict['inventories'] = list()
         self.track_dict['quests'] = list()
 
+    def empty_tracker(self):
+        self.track_dict.update((key, []) for key in self.track_dict)
+
+    def update_tracker(self):
+        self.empty_tracker()
+
+        for key in globals():
+            if isinstance(globals()[key], entity):
+                self.track_dict['entities'].append(key)
+                if isinstance(globals()[key], NPC):
+                    self.track_dict['NPCs'].append(key)
+                elif isinstance(globals()[key], vendor) and not isinstance(globals()[key], battler):
+                    self.track_dict['vendors'].append(key)
+                elif isinstance(globals()[key], battler):
+                    self.track_dict['battlers'].append(key)
+
+            elif isinstance(globals()[key], item_unweighted):
+                self.track_dict['items'].append(key)
+                if isinstance(globals()[key], equippable) and not isinstance(globals()[key], weapon) and not isinstance(globals()[key], armor):
+                    self.track_dict['equippables'].append(key)
+                elif isinstance(globals()[key], heal_item):
+                    self.track_dict['healing_items'].append(key)
+                elif isinstance(globals()[key], weapon):
+                    self.track_dict['weapons'].append(key)
+                elif isinstance(globals()[key], armor):
+                    self.track_dict['armor'].append(key)
+
+            elif isinstance(globals()[key], battler_stats):
+                self.track_dict['stat_lists'].append(key)
+
+            elif isinstance(globals()[key], attack_list):
+                self.track_dict['attack_lists'].append(key)
+
+            elif isinstance(globals()[key], attack):
+                self.track_dict['attacks'].append(key)
+
+            elif isinstance(globals()[key], matrix_map):
+                self.track_dict['locations'].append(key)
+
+            elif isinstance(globals()[key], item_collection):
+                self.track_dict['inventories'].append(key)
+
+            elif isinstance(globals()[key], quest):
+                self.track_dict['quests'].append(key)
+
     @property
-    def all_collections(self):
-        return self.track_dict['collections']
-
-    @created_collection.connect
-    def add_collection(self, **kw):
-        self.track_dict['collections'].append(kw)
-
-# Finishing creating connect and property functions, then implement the send commands (and do it RIGHT!)
+    def tracker(self):
+        return self.track_dict
