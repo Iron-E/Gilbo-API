@@ -363,6 +363,9 @@ class location_manager:
 
         return map.send_data(new_place)
 
+    def load_loc(self, map):
+        pass
+
 
 class matrix_map:
     def __init__(self, name, map, entities=list()):
@@ -612,3 +615,19 @@ class object_tracker:
     @property
     def tracker(self):
         return self.track_dict
+
+"""x = matrix('0 0 0; 3 1 4')
+
+def interp_x(clmn):
+    for i in range(len(x)):
+        for j in range(clmn):
+            if x[i,j] == 0:
+                print('zero', end=' ')
+            elif x[i,j] == 1:
+                print('one', end=' ')
+            elif x[i,j] == 3:
+                print('three', end=' ')
+            elif x[i,j] == 4:
+                print('four', end=' ')
+
+interp_x(3)"""
