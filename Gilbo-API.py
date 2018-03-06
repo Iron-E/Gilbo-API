@@ -5,7 +5,7 @@ from enum import Enum, IntFlag
 
 # 3rd Party Libraries
 from blinker import signal
-from numpy import matrix
+import numpy as np
 
 
 #
@@ -136,7 +136,6 @@ class Item_Types(Enum):
     basic_equippable = 1
     weapon = 2
     armor = 3
-    power = 5
 
 
 class item_unweighted:
@@ -319,6 +318,9 @@ class Location_Errors(Enum):
     encumbered = 1
     invalid_direction = 2
 
+class Tiles(Enum):
+    pass
+
 
 class location_manager:
     def __init__(self, maps=list(), quests=list()):
@@ -335,16 +337,16 @@ class location_manager:
         # Insert data collection from map
         self.check_bounds(thing.location[Locate_Entity.map_name], direction, thing.location[Locate_Entity.x_coordinate], thing.location[Locate_Entity.y_coordinate])
 
-    def teleport(self, thing, map, x, y):
-        if map in self.xy_dict['maps']:
+    def teleport(self, thing, mapid, x, y):
+        if mapid in self.xy_dict['maps']:
             if isinstance(thing.inv, player_collection) and thing.inv.over_enc is True:
                 return print(self.xy_dict['Error_Message'][Location_Errors.encumbered])
             # Insert data collection from map
-            return map.send_data(list(x, y))
+            return mapid.send_data(list(x, y))
         else:
             return print(self.xy_dict['Error_Message'][Location_Errors.no_exist])
 
-    def check_bounds(self, map, direction, x, y):
+    def check_bounds(self, mapid, direction, x, y):
         if direction is Directions.North:
             new_place = list(x, y + 1)
         elif direction is Directions.South:
@@ -357,21 +359,23 @@ class location_manager:
             return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
 
         try:
-            assert map.layout[new_place]
+            assert mapid.layout[new_place]
         except IndexError:
             return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
 
-        return map.send_data(new_place)
+        return mapid.send_data(new_place)
 
-    def load_loc(self, map):
-        pass
+    def load_loc(self, mapid, clmns):
+        for i in range(len(mapid.layout)):
+            for j in range(clmn):
+                pass
 
 
 class matrix_map:
-    def __init__(self, name, map, entities=list()):
+    def __init__(self, name, entities=list()):
         self.map_dict = {}
         self.map_dict['map_id'] = name
-        self.map_dict['map_layout'] = matrix(map)
+        self.map_dict['map_layout'] = None
         self.map_dict['entities'] = entities
 
     @abstractmethod
@@ -385,6 +389,12 @@ class matrix_map:
     @property
     def layout(self):
         return self.map_dict['map_layout']
+
+    @layout.setter
+    def layout(self, value):
+        assert isinstance(value, np.ndarray)
+        self.map_dict['map_layout'] = value
+
 
     @property
     def entities(self):
@@ -631,3 +641,5 @@ def interp_x(clmn):
                 print('four', end=' ')
 
 interp_x(3)"""
+
+#print('\u20E4 \033[')
