@@ -6,6 +6,7 @@ By using this API you agree to the [license](https://github.com/ajzett/Gilbo-API
 ## Requirements
 - [blinker](https://github.com/jek/blinker/blob/master/LICENSE)
 - [NumPy](https://github.com/scipy/scipy/blob/master/LICENSE.txt)
+- [colorama](https://github.com/tartley/colorama/blob/master/LICENSE.txt)
 
 ## Features 
 ### Player & NPC Management
