@@ -4,8 +4,9 @@ from time import sleep
 from enum import Enum, IntFlag
 
 # 3rd Party Libraries
-from blinker import signal
 import numpy as np
+from blinker import signal
+from colorama import Fore, Back, Style
 
 
 #
@@ -318,8 +319,16 @@ class Location_Errors(Enum):
     encumbered = 1
     invalid_direction = 2
 
+
 class Tiles(Enum):
-    pass
+    Player = 0
+    Grass = 1
+    Wall = 2
+    Mountain = 3
+    Cave = 4
+    Water = 5
+    Building = 6
+    Lava = 7
 
 
 class location_manager:
@@ -359,16 +368,19 @@ class location_manager:
             return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
 
         try:
-            assert mapid.layout[new_place]
+            mapid.layout[new_place]
+
+            return mapid.send_data(new_place)
         except IndexError:
             return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
 
-        return mapid.send_data(new_place)
-
     def load_loc(self, mapid, clmns):
         for i in range(len(mapid.layout)):
-            for j in range(clmn):
-                pass
+            for j in range(clmns):
+                if mapid.layout[i, j] == Tiles.Grass:
+                    print(Fore.GREEN + Style.BRIGHT + '\u2D19' + Style.RESET_ALL)
+                elif mapid.layout[i, j] == Tiles.Wall:
+                    print(Fore.WHITE + Style.DIM + '\u26DD' + Style.RESET_ALL)
 
 
 class matrix_map:
@@ -394,7 +406,6 @@ class matrix_map:
     def layout(self, value):
         assert isinstance(value, np.ndarray)
         self.map_dict['map_layout'] = value
-
 
     @property
     def entities(self):
@@ -626,6 +637,7 @@ class object_tracker:
     def tracker(self):
         return self.track_dict
 
+
 """x = matrix('0 0 0; 3 1 4')
 
 def interp_x(clmn):
@@ -642,4 +654,4 @@ def interp_x(clmn):
 
 interp_x(3)"""
 
-print(u'\u001b[32;1m \u104D \u001b[0m')
+print(Fore.WHITE + Style.DIM + '\u26DD' + Style.RESET_ALL)
