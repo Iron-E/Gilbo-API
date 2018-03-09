@@ -378,9 +378,17 @@ class location_manager:
         for i in range(len(mapid.layout)):
             for j in range(clmns):
                 if mapid.layout[i, j] == Tiles.Grass:
-                    print(Fore.GREEN + Style.BRIGHT + '\u2D19' + Style.RESET_ALL)
+                    print(Fore.GREEN + Style.BRIGHT + '\u26B6' + Style.RESET_ALL, end=' ')
                 elif mapid.layout[i, j] == Tiles.Wall:
-                    print(Fore.WHITE + Style.DIM + '\u26DD' + Style.RESET_ALL)
+                    print(Fore.WHITE + Style.DIM + '\u26DD' + Style.RESET_ALL, end=' ')
+                elif mapid.layout[i, j] == Tiles.Mountain:
+                    print(Fore.YELLOW + '\u1A12' + Style.RESET_ALL, end=' ')
+                elif mapid.layout[i, j] == Tiles.Cave:
+                    print(Fore.YELLOW + '\u1A0A' + Style.RESET_ALL, end=' ')
+                elif mapid.layout[i, j] == Tiles.Water:
+                    print(Fore.BLUE + Style.BRIGHT + '\u26C6' + Style.RESET_ALL, end=' ')
+
+            print()
 
 
 class matrix_map:
@@ -653,5 +661,3 @@ def interp_x(clmn):
                 print('four', end=' ')
 
 interp_x(3)"""
-
-print(Fore.WHITE + Style.DIM + '\u26DD' + Style.RESET_ALL)
