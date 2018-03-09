@@ -114,10 +114,9 @@ class vendor(entity):
 
 
 class battler(vendor):
-    def __init__(self, name, inv, coin, stats, attack_list):
+    def __init__(self, name, inv, coin, stats):
         super().__init__(name, inv, coin)
         self.entity_dict['stats'] = stats
-        self.entity_dict['attack_list'] = attack_list
 
     @property
     def stats(self):
@@ -125,7 +124,14 @@ class battler(vendor):
 
     @property
     def attacks(self):
-        return self.entity_dict['attack_list']
+        Error_Incorrect_Inventory = 'Incorrect inventory class.'
+        # isinstance(self.inv, battler_collection)
+        try:
+            for i in range(len(self.inv.equipped)):
+                if isinstance(self.inv.equipped[i], weapon):
+                    return self.inv.equipped[i]
+        except AttributeError:
+            print(Error_Incorrect_Inventory)
 
 #
 # Items/Weapons in the game
@@ -184,7 +190,7 @@ class equippable(item_weighted):
 
 
 class weapon(equippable):
-    def __init__(self, name, dscrpt, weight, val, dmg, linked_attacks):
+    def __init__(self, name, dscrpt, weight, val, dmg, linked_attacks=list()):
         super().__init__(name, dscrpt, weight, val)
         self.item_dict['type'] = Item_Types.weapon
         self.item_dict['wpn_dmg'] = dmg
@@ -375,17 +381,17 @@ class location_manager:
             return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
 
     def load_loc(self, mapid, clmns):
-        for i in range(len(mapid.layout)):
-            for j in range(clmns):
-                if mapid.layout[i, j] == Tiles.Grass:
+        for y in range(len(mapid.layout)):
+            for x in range(clmns):
+                if mapid.layout[y, x] == Tiles.Grass:
                     print(Fore.GREEN + Style.BRIGHT + '\u26B6' + Style.RESET_ALL, end=' ')
-                elif mapid.layout[i, j] == Tiles.Wall:
+                elif mapid.layout[y, x] == Tiles.Wall:
                     print(Fore.WHITE + Style.DIM + '\u26DD' + Style.RESET_ALL, end=' ')
-                elif mapid.layout[i, j] == Tiles.Mountain:
+                elif mapid.layout[y, x] == Tiles.Mountain:
                     print(Fore.YELLOW + '\u1A12' + Style.RESET_ALL, end=' ')
-                elif mapid.layout[i, j] == Tiles.Cave:
+                elif mapid.layout[y, x] == Tiles.Cave:
                     print(Fore.YELLOW + '\u1A0A' + Style.RESET_ALL, end=' ')
-                elif mapid.layout[i, j] == Tiles.Water:
+                elif mapid.layout[y, x] == Tiles.Water:
                     print(Fore.BLUE + Style.BRIGHT + '\u26C6' + Style.RESET_ALL, end=' ')
 
             print()
@@ -458,19 +464,6 @@ class ranged_attack(attack):
     def acc(self):
         return self.attack_dict['accuracy']
 
-
-class magic_attack(ranged_attack):
-    pass
-
-
-class attack_list:
-    def __init__(self, attacks=list()):
-        self.attack_list = attacks
-
-    @property
-    def alist(self):
-        return self.attack_list
-
 #
 # Inventory
 #
@@ -503,6 +496,8 @@ class vendor_collection(item_collection):
     def __init__(self, items):
         super().__init__(items)
 
+    Error_No_Exist = "That item doesn't exist in this inventory."
+
     def swap_item(self, item, swapee, count):
         if item in self.items:
             for i in range(count):
@@ -513,7 +508,7 @@ class vendor_collection(item_collection):
                 else:
                     print(swapee.name + " ran out of money.")
         else:
-            print("That item doesn't exist in this inventory.")
+            print(Error_No_Exist)
 
 
 class battler_collection(item_collection):
@@ -574,30 +569,35 @@ class battle_manager:
 
 class object_tracker:
     def __init__(self):
-        self.track_dict = {}
-        self.track_dict['entities'] = list()
-        self.track_dict['NPCs'] = list()
-        self.track_dict['vendors'] = list()
-        self.track_dict['battlers'] = list()
-
-        self.track_dict['items'] = list()
-        self.track_dict['equippables'] = list()
-        self.track_dict['weapons'] = list()
-        self.track_dict['armor'] = list()
-        self.track_dict['healing_items'] = list()
-
-        self.track_dict['stat_lists'] = list()
-        self.track_dict['attack_lists'] = list()
-        self.track_dict['attacks'] = list()
-        self.track_dict['ranged_attacks'] = list()
-        self.track_dict['magic_attacks'] = list()
-
-        self.track_dict['locations'] = list()
-        self.track_dict['inventories'] = list()
-        self.track_dict['quests'] = list()
+        one_time_init = 0
 
     def empty_tracker(self):
-        self.track_dict.update((key, []) for key in self.track_dict)
+        if one_time_init == 0:
+            self.track_dict = {}
+            self.track_dict['entities'] = list()
+            self.track_dict['NPCs'] = list()
+            self.track_dict['vendors'] = list()
+            self.track_dict['battlers'] = list()
+
+            self.track_dict['items'] = list()
+            self.track_dict['equippables'] = list()
+            self.track_dict['weapons'] = list()
+            self.track_dict['armor'] = list()
+            self.track_dict['healing_items'] = list()
+
+            self.track_dict['stat_lists'] = list()
+            self.track_dict['attack_lists'] = list()
+            self.track_dict['attacks'] = list()
+            self.track_dict['ranged_attacks'] = list()
+            self.track_dict['magic_attacks'] = list()
+
+            self.track_dict['locations'] = list()
+            self.track_dict['inventories'] = list()
+            self.track_dict['quests'] = list()
+
+            one_time_init = 1
+        else:
+            self.track_dict.update((key, []) for key in self.track_dict)
 
     def update_tracker(self):
         self.empty_tracker()
@@ -661,3 +661,5 @@ def interp_x(clmn):
                 print('four', end=' ')
 
 interp_x(3)"""
+
+print(Fore.WHITE + '\u25AD \u25AE' + Style.RESET_ALL, end=' ')
