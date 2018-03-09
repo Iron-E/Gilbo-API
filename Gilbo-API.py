@@ -125,7 +125,6 @@ class battler(vendor):
     @property
     def attacks(self):
         Error_Incorrect_Inventory = 'Incorrect inventory class.'
-        # isinstance(self.inv, battler_collection)
         try:
             for i in range(len(self.inv.equipped)):
                 if isinstance(self.inv.equipped[i], weapon):
