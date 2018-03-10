@@ -117,6 +117,7 @@ class battler(vendor):
     def __init__(self, name, inv, coin, stats):
         super().__init__(name, inv, coin)
         self.entity_dict['stats'] = stats
+        self.Error_Incorrect_Inventory = 'Incorrect inventory class.'
 
     @property
     def stats(self):
@@ -124,13 +125,12 @@ class battler(vendor):
 
     @property
     def attacks(self):
-        Error_Incorrect_Inventory = 'Incorrect inventory class.'
         try:
             for i in range(len(self.inv.equipped)):
                 if isinstance(self.inv.equipped[i], weapon):
                     return self.inv.equipped[i]
         except AttributeError:
-            print(Error_Incorrect_Inventory)
+            print(self.Error_Incorrect_Inventory)
 
 #
 # Items/Weapons in the game
@@ -494,8 +494,7 @@ class item_collection(ABC):
 class vendor_collection(item_collection):
     def __init__(self, items):
         super().__init__(items)
-
-    Error_No_Exist = "That item doesn't exist in this inventory."
+        self.Error_No_Exist = "That item doesn't exist in this inventory."
 
     def swap_item(self, item, swapee, count):
         if item in self.items:
@@ -507,15 +506,14 @@ class vendor_collection(item_collection):
                 else:
                     print(swapee.name + " ran out of money.")
         else:
-            print(Error_No_Exist)
+            print(self.Error_No_Exist)
 
 
 class battler_collection(item_collection):
     def __init__(self, items, equipped=list()):
         super().__init__(items)
         self.on_entity = equipped
-
-    Error_Message = "That didn't work."
+        self.Error_Message = "That didn't work."
 
     def equip(self, item):
         if item in self.items and isinstance(item, equippable):
@@ -568,10 +566,10 @@ class battle_manager:
 
 class object_tracker:
     def __init__(self):
-        one_time_init = 0
+        self.one_time_init = 0
 
     def empty_tracker(self):
-        if one_time_init == 0:
+        if self.one_time_init == 0:
             self.track_dict = {}
             self.track_dict['entities'] = list()
             self.track_dict['NPCs'] = list()
@@ -594,7 +592,7 @@ class object_tracker:
             self.track_dict['inventories'] = list()
             self.track_dict['quests'] = list()
 
-            one_time_init = 1
+            self.one_time_init = 1
         else:
             self.track_dict.update((key, []) for key in self.track_dict)
 
@@ -624,9 +622,6 @@ class object_tracker:
 
             elif isinstance(globals()[key], battler_stats):
                 self.track_dict['stat_lists'].append(key)
-
-            elif isinstance(globals()[key], attack_list):
-                self.track_dict['attack_lists'].append(key)
 
             elif isinstance(globals()[key], attack):
                 self.track_dict['attacks'].append(key)
@@ -660,5 +655,3 @@ def interp_x(clmn):
                 print('four', end=' ')
 
 interp_x(3)"""
-
-print(Fore.WHITE + '\u25AD \u25AE' + Style.RESET_ALL, end=' ')
