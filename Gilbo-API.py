@@ -8,12 +8,19 @@ import numpy as np
 from blinker import signal
 from colorama import Fore, Back, Style
 
+# Links to remember
+# ascii-table.com/ansi-escape-sequences.php
+# https://unicode-table.com/en/blocks/box-drawing/
+
 
 #
 # Events
 #
 
 item_obtained = signal('check-carry-weight')
+item_equipped = signal('update-properties')
+
+chk_plyr_pos = signal('check-position')
 
 #
 # Common Enumerators
@@ -81,7 +88,7 @@ class entity(ABC):
         self.entity_dict['location'][Locate_Entity.index_num] = location.layout[x, y]
 
 
-class NPC:
+class NPC(entity):
     def __init__(self, name, location, x, y):
         super().__init__(name, location, x, y)
         self.dialogue_dict = {}
@@ -114,8 +121,8 @@ class vendor(entity):
 
 
 class battler(vendor):
-    def __init__(self, name, inv, coin, stats):
-        super().__init__(name, inv, coin)
+    def __init__(self, name, location, x, y, inv, coin, stats):
+        super().__init__(name, location, x, y, inv, coin)
         self.entity_dict['stats'] = stats
         self.Error_Incorrect_Inventory = 'Incorrect inventory class.'
 
@@ -131,6 +138,16 @@ class battler(vendor):
                     return self.inv.equipped[i]
         except AttributeError:
             print(self.Error_Incorrect_Inventory)
+
+
+class player(battler):
+    def __init__(self, name, location, x, y, inv, coin, stats):
+        super().__init__(name, location, x, y, inv, coin, stats)
+
+    @chk_plyr_pos.connect
+    def get_location(self):
+        # If player position doesn't work, this function is why. Leave comment until 1.0.0
+        return self.location
 
 #
 # Items/Weapons in the game
@@ -313,10 +330,14 @@ class player_stats(battler_stats):
 
 
 class Directions(Enum):
-    North = 0
-    South = 1
-    East = 2
-    West = 3
+    Up_Left = 0
+    Up = 1
+    Up_Right = 2
+    Left = 2
+    Right = 3
+    Down_Left = 4
+    Down = 5
+    Down_Right = 6
 
 
 class Location_Errors(Enum):
@@ -334,6 +355,9 @@ class Tiles(Enum):
     Water = 5
     Building = 6
     Lava = 7
+    Dirt = 8
+    Ice = 9
+    Pit = 10
 
 
 class location_manager:
@@ -361,13 +385,13 @@ class location_manager:
             return print(self.xy_dict['Error_Message'][Location_Errors.no_exist])
 
     def check_bounds(self, mapid, direction, x, y):
-        if direction is Directions.North:
+        if direction is Directions.Up:
             new_place = list(x, y + 1)
-        elif direction is Directions.South:
+        elif direction is Directions.Down:
             new_place = list(x, y - 1)
-        elif direction is Directions.East:
+        elif direction is Directions.Left:
             new_place = list(x - 1, y)
-        elif direction is Directions.West:
+        elif direction is Directions.Right:
             new_place = list(x + 1, y)
         else:
             return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
@@ -379,21 +403,46 @@ class location_manager:
         except IndexError:
             return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
 
-    def load_loc(self, mapid, clmns):
-        for y in range(len(mapid.layout)):
-            for x in range(clmns):
-                if mapid.layout[y, x] == Tiles.Grass:
-                    print(Fore.GREEN + Style.BRIGHT + '\u26B6' + Style.RESET_ALL, end=' ')
-                elif mapid.layout[y, x] == Tiles.Wall:
-                    print(Fore.WHITE + Style.DIM + '\u26DD' + Style.RESET_ALL, end=' ')
-                elif mapid.layout[y, x] == Tiles.Mountain:
-                    print(Fore.YELLOW + '\u1A12' + Style.RESET_ALL, end=' ')
-                elif mapid.layout[y, x] == Tiles.Cave:
-                    print(Fore.YELLOW + '\u1A0A' + Style.RESET_ALL, end=' ')
-                elif mapid.layout[y, x] == Tiles.Water:
-                    print(Fore.BLUE + Style.BRIGHT + '\u26C6' + Style.RESET_ALL, end=' ')
+    def detect_tile(self, til):
+            self.value = ''
 
-            print()
+            if til == chk_plyr_pos.send().layout[chk_plyr_pos.send()[Locate_Entity.y_coordinate], chk_plyr_pos.send()[Locate_Entity.x_coordinate]]:
+                self.value.join(Back.MAGENTA)
+
+            if til == Tiles.Grass:
+                self.value.join(Fore.GREEN + Style.BRIGHT + '\u26B6' + Style.RESET_ALL)
+            elif til == Tiles.Wall:
+                self.value.join(Fore.WHITE + Style.DIM + '\u26DD' + Style.RESET_ALL)
+            elif til == Tiles.Mountain:
+                self.value.join(Fore.YELLOW + '\u1A12' + Style.RESET_ALL)
+            elif til == Tiles.Cave:
+                self.value.join(Fore.YELLOW + '\u1A0A' + Style.RESET_ALL)
+            elif til == Tiles.Water:
+                self.value.join(Fore.CYAN + '\u2307' + Style.RESET_ALL)
+            elif til == Tiles.Building:
+                self.value.join(Fore.WHITE + '\u16A5' + Style.RESET_ALL)
+            elif til == Tiles.Lava:
+                self.value.join(Fore.RED + Style.BRIGHT + '\u26C6' + Style.RESET_ALL)
+            elif til == Tiles.Dirt:
+                self.value.join(Fore.YELLOW + Style.BRIGHT + '\u26C6' + Style.RESET_ALL)
+            elif til == Tiles.Ice:
+                self.value.join(Fore.CYAN + Style.BRIGHT + '\u26C6' + Style.RESET_ALL)
+            elif til == Tiles.Pit:
+                self.value.join(Fore.BLACK + Style.DIM + '\u25CF' + Style.RESET_ALL)
+
+            return self.value
+
+    def load_loc(self, mapid, clmns, rows=None):
+        if rows is None:
+            rows = len(mapid.layout)
+
+        try:
+            for y in range(rows):
+                for x in range(clmns):
+                    print(self.detect_tile(mapid.layout[y, x]), end=' ')
+                print()
+        except IndexError:
+            print(self.xy_dict['Error_Message'][Location_Errors.no_exist])
 
 
 class matrix_map:
@@ -468,9 +517,6 @@ class ranged_attack(attack):
 #
 
 
-item_equipped = signal('update-properties')
-
-
 class item_collection(ABC):
     def __init__(self, items=list()):
         self.items = items
@@ -496,7 +542,7 @@ class vendor_collection(item_collection):
         super().__init__(items)
         self.Error_No_Exist = "That item doesn't exist in this inventory."
 
-    def swap_item(self, item, swapee, count):
+    def swap_item(self, item, swapee, count=1):
         if item in self.items:
             for i in range(count):
                 if swapee.coin >= (item.value * count):
@@ -596,62 +642,43 @@ class object_tracker:
         else:
             self.track_dict.update((key, []) for key in self.track_dict)
 
+    def categ_globals(self, globl, ref_added):
+        if isinstance(globl, entity):
+            self.track_dict['entities'].append(ref_added)
+            return
+
+        elif isinstance(globl, item_unweighted):
+            self.track_dict['items'].append(ref_added)
+            return
+
+        elif isinstance(globl, battler_stats):
+            self.track_dict['stat_lists'].append(ref_added)
+            return
+
+        elif isinstance(globl, attack):
+            self.track_dict['attacks'].append(ref_added)
+            return
+
+        elif isinstance(globl, matrix_map):
+            self.track_dict['locations'].append(ref_added)
+            return
+
+        elif isinstance(globl, item_collection):
+            self.track_dict['inventories'].append(ref_added)
+            return
+
+        elif isinstance(globl, quest):
+            self.track_dict['quests'].append(ref_added)
+            return
+
     def update_tracker(self):
         self.empty_tracker()
 
         for key in globals():
-            if isinstance(globals()[key], entity):
-                self.track_dict['entities'].append(key)
-                if isinstance(globals()[key], NPC):
-                    self.track_dict['NPCs'].append(key)
-                elif isinstance(globals()[key], vendor) and not isinstance(globals()[key], battler):
-                    self.track_dict['vendors'].append(key)
-                elif isinstance(globals()[key], battler):
-                    self.track_dict['battlers'].append(key)
-
-            elif isinstance(globals()[key], item_unweighted):
-                self.track_dict['items'].append(key)
-                if isinstance(globals()[key], equippable) and not isinstance(globals()[key], weapon) and not isinstance(globals()[key], armor):
-                    self.track_dict['equippables'].append(key)
-                elif isinstance(globals()[key], heal_item):
-                    self.track_dict['healing_items'].append(key)
-                elif isinstance(globals()[key], weapon):
-                    self.track_dict['weapons'].append(key)
-                elif isinstance(globals()[key], armor):
-                    self.track_dict['armor'].append(key)
-
-            elif isinstance(globals()[key], battler_stats):
-                self.track_dict['stat_lists'].append(key)
-
-            elif isinstance(globals()[key], attack):
-                self.track_dict['attacks'].append(key)
-
-            elif isinstance(globals()[key], matrix_map):
-                self.track_dict['locations'].append(key)
-
-            elif isinstance(globals()[key], item_collection):
-                self.track_dict['inventories'].append(key)
-
-            elif isinstance(globals()[key], quest):
-                self.track_dict['quests'].append(key)
+            # Switch the lines below to make the tracker contain refrences to objects:
+            # self.categ_globals(globals()[key], globals()[key])
+            self.categ_globals(globals()[key], key)
 
     @property
     def tracker(self):
         return self.track_dict
-
-
-"""x = matrix('0 0 0; 3 1 4')
-
-def interp_x(clmn):
-    for i in range(len(x)):
-        for j in range(clmn):
-            if x[i,j] == 0:
-                print('zero', end=' ')
-            elif x[i,j] == 1:
-                print('one', end=' ')
-            elif x[i,j] == 3:
-                print('three', end=' ')
-            elif x[i,j] == 4:
-                print('four', end=' ')
-
-interp_x(3)"""
