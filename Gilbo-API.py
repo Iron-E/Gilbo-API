@@ -14,16 +14,27 @@ from colorama import Fore, Back, Style
 
 
 #
-# Events
+# Events #
 #
 
+# Inventory-related
 item_obtained = signal('check-carry-weight')
 item_equipped = signal('update-properties')
 
+# Entity-position-related
 chk_plyr_pos = signal('check-position')
 
+# Object related
+find_entity = signal('find-entity')
+find_item = signal('find-item')
+find_stat = signal('find-stats')
+find_map = signal('find-map')
+find_attack = signal('find-attack')
+find_inv = signal('find-inventory')
+find_quest = signal('find-quest')
+
 #
-# Common Enumerators
+# Common Enumerators #
 #
 
 
@@ -39,7 +50,7 @@ class Enumerators(IntFlag):
 
 
 #
-# Functions
+# Functions #
 #
 
 
@@ -51,7 +62,7 @@ def type(phrase, type_speed=.045, line_delay=.5):
     sleep(line_delay)
 
 #
-# Abstract class from which all enemies, NPCs, and players are derived.
+# Abstract class from which all enemies, NPCs, and players are derived. #
 #
 
 
@@ -150,7 +161,7 @@ class player(battler):
         return self.location
 
 #
-# Items/Weapons in the game
+# Items/Weapons in the game #
 #
 
 
@@ -231,7 +242,7 @@ class heal_item(item_weighted):
         self.item_dict['type'] = Item_Types.basic_item
 
 #
-# Entity Stats
+# Entity Stats #
 #
 
 
@@ -325,7 +336,7 @@ class player_stats(battler_stats):
             self.over_enc = True
 
 #
-# Locations
+# Locations #
 #
 
 
@@ -474,7 +485,7 @@ class matrix_map:
         return self.map_dict['entities']
 
 #
-# Battle Backend
+# Battle Backend #
 #
 
 
@@ -513,7 +524,7 @@ class ranged_attack(attack):
         return self.attack_dict['accuracy']
 
 #
-# Inventory
+# Inventory #
 #
 
 
@@ -587,7 +598,7 @@ class player_collection(vendor_collection, battler_collection):
             item_obtained.send(item=self.inventory())
 
 #
-# Quests
+# Quests #
 #
 
 
@@ -599,7 +610,7 @@ class quest:
 
 
 #
-# Battle System
+# Battle System #
 #
 
 class battle_manager:
@@ -607,7 +618,7 @@ class battle_manager:
 
 
 #
-# Counter
+# Counter #
 #
 
 class object_tracker:
