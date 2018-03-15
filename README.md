@@ -14,8 +14,8 @@ By using this API you agree to the [license](https://github.com/ajzett/Gilbo-API
 - [x] Create entities (NPCs, Players, Vendors, etc.)
 - [x] Define an item list for an entity.
 - [x] Define stat lists for an entity.
-- [-] Save & Load player data
-- [ ] Gear based progression
+- [ ] Basic Save & Load data
+- [ ] Gear based progression system
 
 ### Quests & Staging
 - [ ] Quests have multiple stages
