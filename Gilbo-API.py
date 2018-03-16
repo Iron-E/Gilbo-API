@@ -24,11 +24,6 @@ item_equipped = signal('update-properties')
 # Entity-position-related
 chk_plyr_pos = signal('check-position')
 
-# Object related
-get_type = signal('get_type')
-find_map = signal('find-map')
-find_quest = signal('find-quest')
-
 #
 # Common Enumerators #
 #
@@ -56,20 +51,6 @@ def type(phrase, type_speed=.045, line_delay=.5):
         sleep(type_speed)
 
     sleep(line_delay)
-
-
-def sep_bases(start_bases):
-    end_bases = list()
-    for i in range(len(start_bases)):
-        temp = list()
-        temp = start_bases[i].split('.')[1]
-        temp = temp.split("'")[0]
-        end_bases.append(temp)
-
-    return end_bases
-
-test = ["<class '__main__.test'>", "<class '__main__.test2'>", "<class '__main__.test3'>"]
-print(sep_bases(test))
 
 
 #
@@ -109,7 +90,6 @@ class entity(ABC):
         self.entity_dict['location'][Locate_Entity.map_name] = location.id
         self.entity_dict['location'][Locate_Entity.index_num] = location.layout[x, y]
 
-    '''@get_type.connect'''
 
 
 class NPC(entity):
@@ -260,7 +240,6 @@ class heal_item(item_weighted):
 
 
 class battler_stats:
-
     def __init__(self, hp, stren, armr, agil, pwr):
         self.stat_dict = {}
         self.stat_dict['hp'] = hp
@@ -385,13 +364,14 @@ class Tiles(Enum):
 
 
 class location_manager:
-    def __init__(self, maps=list(), quests=list()):
+    def __init__(self):
         self.xy_dict = {}
         self.xy_dict['Error_Message'][Location_Errors.no_exist] = "That place doesn't exist."
         self.xy_dict['Error_Message'][Location_Errors.encumbered] = "You're carrying too much."
         self.xy_dict['Error_Message'][Location_Errors.invalid_direction] = "You cannot go that way."
-        self.xy_dict['maps'] = maps
-        self.xy_dict['quests'] = quests
+        tracker.update_tracker()
+        self.xy_dict['maps'] = tracker.tracker['maps']
+        self.xy_dict['quests'] = tracker.tracker['quests']
 
     def move(self, thing, direction):
         if isinstance(thing.inv, player_collection) and entity.inv.over_enc is True:
@@ -643,35 +623,26 @@ class object_tracker:
             self.track_dict.update((key, []) for key in self.track_dict)
 
     def categ_globals(self, globl, ref_added):
-
-
-        """if isinstance(globl, entity):
-            self.track_dict['entities'].append(ref_added)
-            return
+        if isinstance(globl, entity):
+            self.track_dict['entities'].append(ref_added); return
 
         elif isinstance(globl, item_unweighted):
-            self.track_dict['items'].append(ref_added)
-            return
+            self.track_dict['items'].append(ref_added); return
 
         elif isinstance(globl, battler_stats):
-            self.track_dict['stat_lists'].append(ref_added)
-            return
+            self.track_dict['stat_lists'].append(ref_added); return
 
         elif isinstance(globl, attack):
-            self.track_dict['attacks'].append(ref_added)
-            return
+            self.track_dict['attacks'].append(ref_added); return
 
         elif isinstance(globl, matrix_map):
-            self.track_dict['locations'].append(ref_added)
-            return
+            self.track_dict['maps'].append(ref_added); return
 
         elif isinstance(globl, item_collection):
-            self.track_dict['inventories'].append(ref_added)
-            return
+            self.track_dict['inventories'].append(ref_added); return
 
         elif isinstance(globl, quest):
-            self.track_dict['quests'].append(ref_added)
-            return"""
+            self.track_dict['quests'].append(ref_added); return
 
     def update_tracker(self):
         self.empty_tracker()
@@ -681,6 +652,10 @@ class object_tracker:
             # self.categ_globals(globals()[key], globals()[key])
             self.categ_globals(globals()[key], key)
 
+        self.one_time_init += 1
+
     @property
     def tracker(self):
         return self.track_dict
+
+tracker = object_tracker()
