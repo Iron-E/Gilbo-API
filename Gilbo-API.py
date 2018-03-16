@@ -25,12 +25,8 @@ item_equipped = signal('update-properties')
 chk_plyr_pos = signal('check-position')
 
 # Object related
-find_entity = signal('find-entity')
-find_item = signal('find-item')
-find_stat = signal('find-stats')
+get_type = signal('get_type')
 find_map = signal('find-map')
-find_attack = signal('find-attack')
-find_inv = signal('find-inventory')
 find_quest = signal('find-quest')
 
 #
@@ -60,6 +56,21 @@ def type(phrase, type_speed=.045, line_delay=.5):
         sleep(type_speed)
 
     sleep(line_delay)
+
+
+def sep_bases(start_bases):
+    end_bases = list()
+    for i in range(len(start_bases)):
+        temp = list()
+        temp = start_bases[i].split('.')[1]
+        temp = temp.split("'")[0]
+        end_bases.append(temp)
+
+    return end_bases
+
+test = ["<class '__main__.test'>", "<class '__main__.test2'>", "<class '__main__.test3'>"]
+print(sep_bases(test))
+
 
 #
 # Abstract class from which all enemies, NPCs, and players are derived. #
@@ -97,6 +108,8 @@ class entity(ABC):
     def set_loc(self, location, x, y):
         self.entity_dict['location'][Locate_Entity.map_name] = location.id
         self.entity_dict['location'][Locate_Entity.index_num] = location.layout[x, y]
+
+    '''@get_type.connect'''
 
 
 class NPC(entity):
@@ -626,35 +639,13 @@ class object_tracker:
         self.one_time_init = 0
 
     def empty_tracker(self):
-        if self.one_time_init == 0:
-            self.track_dict = {}
-            self.track_dict['entities'] = list()
-            self.track_dict['NPCs'] = list()
-            self.track_dict['vendors'] = list()
-            self.track_dict['battlers'] = list()
-
-            self.track_dict['items'] = list()
-            self.track_dict['equippables'] = list()
-            self.track_dict['weapons'] = list()
-            self.track_dict['armor'] = list()
-            self.track_dict['healing_items'] = list()
-
-            self.track_dict['stat_lists'] = list()
-            self.track_dict['attack_lists'] = list()
-            self.track_dict['attacks'] = list()
-            self.track_dict['ranged_attacks'] = list()
-            self.track_dict['magic_attacks'] = list()
-
-            self.track_dict['locations'] = list()
-            self.track_dict['inventories'] = list()
-            self.track_dict['quests'] = list()
-
-            self.one_time_init = 1
-        else:
+        if self.one_time_init != 0:
             self.track_dict.update((key, []) for key in self.track_dict)
 
     def categ_globals(self, globl, ref_added):
-        if isinstance(globl, entity):
+
+
+        """if isinstance(globl, entity):
             self.track_dict['entities'].append(ref_added)
             return
 
@@ -680,7 +671,7 @@ class object_tracker:
 
         elif isinstance(globl, quest):
             self.track_dict['quests'].append(ref_added)
-            return
+            return"""
 
     def update_tracker(self):
         self.empty_tracker()
