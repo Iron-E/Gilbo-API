@@ -150,8 +150,7 @@ class player(battler):
 
     @chk_plyr_pos.connect
     def get_location(self):
-        # If player position doesn't work, this function is why. Leave comment until 1.0.0
-        return self.location
+        loc_man.player_pos = self.location
 
 #
 # Items/Weapons in the game #
@@ -369,6 +368,20 @@ class location_manager:
         self.xy_dict['Error_Message'][Location_Errors.no_exist] = "That place doesn't exist."
         self.xy_dict['Error_Message'][Location_Errors.encumbered] = "You're carrying too much."
         self.xy_dict['Error_Message'][Location_Errors.invalid_direction] = "You cannot go that way."
+
+        tracker.update_tracker()
+        self.xy_dict['maps'] = tracker.tracker['maps']
+        self.xy_dict['quests'] = tracker.tracker['quests']
+
+    @property
+    def player_pos(self, value):
+        return self.xy_dict['player_location']
+
+    @player_pos.setter
+    def player_pos(self, value):
+        self.xy_dict['player_location'] = value
+
+    def reload(self):
         tracker.update_tracker()
         self.xy_dict['maps'] = tracker.tracker['maps']
         self.xy_dict['quests'] = tracker.tracker['quests']
@@ -408,9 +421,10 @@ class location_manager:
             return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
 
     def detect_tile(self, til):
-            self.value = ''
+            self.value = ' '
+            chk_plyr_pos.send()
 
-            if til == chk_plyr_pos.send().layout[chk_plyr_pos.send()[Locate_Entity.y_coordinate], chk_plyr_pos.send()[Locate_Entity.x_coordinate]]:
+            if til == .layout[self.player_pos[Locate_Entity.y_coordinate], self.player_pos[Locate_Entity.x_coordinate]]:
                 self.value.join(Back.MAGENTA)
 
             if til == Tiles.Grass:
@@ -611,7 +625,7 @@ class battle_manager:
 
 
 #
-# Counter #
+# Tracker #
 #
 
 class object_tracker:
@@ -648,14 +662,14 @@ class object_tracker:
         self.empty_tracker()
 
         for key in globals():
-            # Switch the lines below to make the tracker contain refrences to objects:
-            # self.categ_globals(globals()[key], globals()[key])
-            self.categ_globals(globals()[key], key)
+            self.categ_globals(globals()[key], globals()[key])
 
-        self.one_time_init += 1
+        if self.one_time_init != 1:
+            self.one_time_init = 1
 
     @property
     def tracker(self):
         return self.track_dict
 
+loc_man = location_manager()
 tracker = object_tracker()
