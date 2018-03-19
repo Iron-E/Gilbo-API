@@ -1,3 +1,5 @@
+# Gilbo RPG API -- Version 0.4.0-D #
+
 from abc import ABC, abstractmethod
 from random import randint
 from time import sleep
@@ -8,9 +10,7 @@ import numpy as np
 from blinker import signal
 from colorama import Fore, Back, Style
 
-# Links to remember
 # ascii-table.com/ansi-escape-sequences.php
-# https://unicode-table.com/en/blocks/box-drawing/
 
 
 #
@@ -381,7 +381,7 @@ class location_manager:
     def player_pos(self, value):
         self.xy_dict['player_location'] = value
 
-    def reload(self):
+    def load_data(self):
         tracker.update_tracker()
         self.xy_dict['maps'] = tracker.tracker['maps']
         self.xy_dict['quests'] = tracker.tracker['quests']
@@ -421,7 +421,7 @@ class location_manager:
             return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
 
     def detect_tile(self, til):
-            self.value = ' '
+            self.value = ''
             chk_plyr_pos.send()
 
             if til == .layout[self.player_pos[Locate_Entity.y_coordinate], self.player_pos[Locate_Entity.x_coordinate]]:
@@ -450,7 +450,7 @@ class location_manager:
 
             return self.value
 
-    def load_loc(self, mapid, clmns, rows=None):
+    def load_map(self, mapid, clmns, rows=None):
         if rows is None:
             rows = len(mapid.layout)
 
