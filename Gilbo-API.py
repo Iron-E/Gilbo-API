@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.4.0-D #
+# Gilbo RPG API -- Version 0.4.0-F #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -424,7 +424,7 @@ class location_manager:
             self.value = ''
             chk_plyr_pos.send()
 
-            if til == .layout[self.player_pos[Locate_Entity.y_coordinate], self.player_pos[Locate_Entity.x_coordinate]]:
+            if til == self.player_pos.layout[self.player_pos[Locate_Entity.y_coordinate], self.player_pos[Locate_Entity.x_coordinate]]:
                 self.value.join(Back.MAGENTA)
 
             if til == Tiles.Grass:
