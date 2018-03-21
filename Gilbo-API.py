@@ -369,9 +369,7 @@ class location_manager:
         self.xy_dict['Error_Message'][Location_Errors.encumbered] = "You're carrying too much."
         self.xy_dict['Error_Message'][Location_Errors.invalid_direction] = "You cannot go that way."
 
-        tracker.update_tracker()
-        self.xy_dict['maps'] = tracker.tracker['maps']
-        self.xy_dict['quests'] = tracker.tracker['quests']
+        self.reload()
 
     @property
     def player_pos(self, value):
@@ -381,7 +379,7 @@ class location_manager:
     def player_pos(self, value):
         self.xy_dict['player_location'] = value
 
-    def load_data(self):
+    def reload(self):
         tracker.update_tracker()
         self.xy_dict['maps'] = tracker.tracker['maps']
         self.xy_dict['quests'] = tracker.tracker['quests']
