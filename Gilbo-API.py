@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from random import randint
 from time import sleep
-from enum import Enum, IntFlag
+from enum import IntEnum, auto
 
 # 3rd Party Libraries
 import numpy as np
@@ -29,7 +29,7 @@ chk_plyr_pos = signal('check-position')
 #
 
 
-class Enumerators(IntFlag):
+class Enumerators(IntEnum):
     # Stat enums
     base_carry_cap = 100
     carry_cap_modifier = 2
@@ -58,11 +58,11 @@ def type(phrase, type_speed=.045, line_delay=.5):
 #
 
 
-class Locate_Entity(Enum):
-    map_name = 0
-    coordinates = 1
-    x_coordinate = 2
-    y_coordinate = 3
+class Locate_Entity(IntEnum):
+    map_name = auto()
+    coordinates = auto()
+    x_coordinate = auto()
+    y_coordinate = auto()
 
 
 class entity(ABC):
@@ -157,11 +157,11 @@ class player(battler):
 #
 
 
-class Item_Types(Enum):
-    basic_item = 0
-    basic_equippable = 1
-    weapon = 2
-    armor = 3
+class Item_Types(IntEnum):
+    basic_item = auto()
+    basic_equippable = auto()
+    weapon = auto()
+    armor = auto()
 
 
 class item_unweighted:
@@ -331,43 +331,43 @@ class player_stats(battler_stats):
 #
 
 
-class Directions(Enum):
-    Up_Left = 0
-    Up = 1
-    Up_Right = 2
-    Left = 2
-    Right = 3
-    Down_Left = 4
-    Down = 5
-    Down_Right = 6
+class Directions(IntEnum):
+    Up_Left = auto()
+    Up = auto()
+    Up_Right = auto()
+    Left = auto()
+    Right = auto()
+    Down_Left = auto()
+    Down = auto()
+    Down_Right = auto()
 
 
-class Location_Errors(Enum):
-    no_exist = 0
-    encumbered = 1
-    invalid_direction = 2
+class Location_Errors(IntEnum):
+    no_exist = auto()
+    encumbered = auto()
+    invalid_direction = auto()
 
 
-class Tiles(Enum):
-    Player = 0
-    Grass = 1
-    Wall = 2
-    Mountain = 3
-    Cave = 4
-    Water = 5
-    Building = 6
-    Lava = 7
-    Dirt = 8
-    Ice = 9
-    Pit = 10
+class Tiles(IntEnum):
+    Player = auto()
+    Grass = auto()
+    Wall = auto()
+    Mountain = auto()
+    Cave = auto()
+    Water = auto()
+    Building = auto()
+    Lava = auto()
+    Dirt = auto()
+    Ice = auto()
+    Pit = auto()
 
 
 class location_manager:
     def __init__(self):
         self.xy_dict = {}
-        self.xy_dict['Error_Message'][Location_Errors.no_exist] = "That place doesn't exist."
-        self.xy_dict['Error_Message'][Location_Errors.encumbered] = "You're carrying too much."
-        self.xy_dict['Error_Message'][Location_Errors.invalid_direction] = "You cannot go that way."
+        self.xy_dict.update({['Errors'][Location_Errors.no_exist]: "That place doesn't exist."})
+        self.xy_dict.update({['Errors'][Location_Errors.encumbered]: "You're carrying too much."})
+        self.xy_dict.update({['Errors'][Location_Errors.invalid_direction]: "You cannot go that way."})
 
         self.reload()
 
@@ -386,18 +386,18 @@ class location_manager:
 
     def move(self, thing, direction):
         if isinstance(thing.inv, player_collection) and entity.inv.over_enc is True:
-            return print(self.xy_dict['Error_Message'][Location_Errors.encumbered])
+            return print(self.xy_dict['Errors'][Location_Errors.encumbered])
         # Insert data collection from map
         self.check_bounds(thing.location[Locate_Entity.map_name], direction, thing.location[Locate_Entity.x_coordinate], thing.location[Locate_Entity.y_coordinate])
 
     def teleport(self, thing, mapid, x, y):
         if mapid in self.xy_dict['maps']:
             if isinstance(thing.inv, player_collection) and thing.inv.over_enc is True:
-                return print(self.xy_dict['Error_Message'][Location_Errors.encumbered])
+                return print(self.xy_dict['Errors'][Location_Errors.encumbered])
             # Insert data collection from map
             return mapid.send_data(list(x, y))
         else:
-            return print(self.xy_dict['Error_Message'][Location_Errors.no_exist])
+            return print(self.xy_dict['Errors'][Location_Errors.no_exist])
 
     def check_bounds(self, mapid, direction, x, y):
         if direction is Directions.Up:
@@ -409,14 +409,14 @@ class location_manager:
         elif direction is Directions.Right:
             new_place = list(x + 1, y)
         else:
-            return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
+            return print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
 
         try:
             mapid.layout[new_place]
 
             return mapid.send_data(new_place)
         except IndexError:
-            return print(self.xy_dict['Error_Message'][Location_Errors.invalid_direction])
+            return print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
 
     def detect_tile(self, til):
             self.value = ''
@@ -458,7 +458,7 @@ class location_manager:
                     print(self.detect_tile(mapid.layout[y, x]), end=' ')
                 print()
         except IndexError:
-            print(self.xy_dict['Error_Message'][Location_Errors.no_exist])
+            print(self.xy_dict['Errors'][Location_Errors.no_exist])
 
 
 class matrix_map:
@@ -575,7 +575,7 @@ class battler_collection(item_collection):
     def __init__(self, items, equipped=list()):
         super().__init__(items)
         self.on_entity = equipped
-        self.Error_Message = "That didn't work."
+        self.Errors = "That didn't work."
 
     def equip(self, item):
         if item in self.items and isinstance(item, equippable):
@@ -586,7 +586,7 @@ class battler_collection(item_collection):
             self.on_entity.append(item)
             item_equipped.send(item=item)
         else:
-            print(self.Error_Message)
+            print(self.Errors)
 
         @property
         def equipped(self):
@@ -669,5 +669,5 @@ class object_tracker:
     def tracker(self):
         return self.track_dict
 
-loc_man = location_manager()
 tracker = object_tracker()
+loc_man = location_manager()
