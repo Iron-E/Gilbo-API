@@ -67,12 +67,12 @@ class Locate_Entity(IntEnum):
 
 class entity(ABC):
     def __init__(self, name, location, x, y):
-        self.entity_dict = {}
+        self.entity_dict = {'location': []}
         self.entity_dict['name'] = name
-        self.entity_dict['location'][Locate_Entity.map_name] = location.id
-        self.entity_dict['location'][Locate_Entity.coordinates] = [x, y]
-        self.entity_dict['location'][Locate_Entity.x_coordinate] = x
-        self.entity_dict['location'][Locate_Entity.y_coordinate] = y
+        self.entity_dict['location'].insert(Locate_Entity.map_name, location.id)
+        self.entity_dict['location'].insert(Locate_Entity.coordinates, [x, y])
+        self.entity_dict['location'].insert(Locate_Entity.x_coordinate, x)
+        self.entity_dict['location'].insert(Locate_Entity.y_coordinate, y)
 
     @property
     def name(self):
@@ -318,13 +318,15 @@ class player_stats(battler_stats):
 
     @item_obtained.connect
     def check_carry_weight(self, **kw):
-        total_weight = None
+        self.total_weight = 0
 
         for i in range(len(kw['item'])):
             total_weight += kw['item'][i].weight
 
         if total_weight > self.calc_carry_cap():
             self.over_enc = True
+
+        del self.total_weight
 
 #
 # Locations #
@@ -364,12 +366,10 @@ class Tiles(IntEnum):
 
 class location_manager:
     def __init__(self):
-        self.xy_dict = {}
-        self.xy_dict.update({['Errors'][Location_Errors.no_exist]: "That place doesn't exist."})
-        self.xy_dict.update({['Errors'][Location_Errors.encumbered]: "You're carrying too much."})
-        self.xy_dict.update({['Errors'][Location_Errors.invalid_direction]: "You cannot go that way."})
-
-        self.reload()
+        self.xy_dict = {'Errors': []}
+        self.xy_dict['Errors'].insert(Location_Errors.no_exist.value, "That place doesn't exist.")
+        self.xy_dict['Errors'].insert(Location_Errors.encumbered, "You're carrying too much.")
+        self.xy_dict['Errors'].insert(Location_Errors.invalid_direction, "You cannot go that way.")
 
     @property
     def player_pos(self, value):
@@ -379,11 +379,6 @@ class location_manager:
     def player_pos(self, value):
         self.xy_dict['player_location'] = value
 
-    def reload(self):
-        tracker.update_tracker()
-        self.xy_dict['maps'] = tracker.tracker['maps']
-        self.xy_dict['quests'] = tracker.tracker['quests']
-
     def move(self, thing, direction):
         if isinstance(thing.inv, player_collection) and entity.inv.over_enc is True:
             return print(self.xy_dict['Errors'][Location_Errors.encumbered])
@@ -391,7 +386,7 @@ class location_manager:
         self.check_bounds(thing.location[Locate_Entity.map_name], direction, thing.location[Locate_Entity.x_coordinate], thing.location[Locate_Entity.y_coordinate])
 
     def teleport(self, thing, mapid, x, y):
-        if mapid in self.xy_dict['maps']:
+        if mapid in tracker.tracker['maps']:
             if isinstance(thing.inv, player_collection) and thing.inv.over_enc is True:
                 return print(self.xy_dict['Errors'][Location_Errors.encumbered])
             # Insert data collection from map
