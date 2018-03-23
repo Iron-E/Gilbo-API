@@ -386,7 +386,7 @@ class location_manager:
         self.check_bounds(thing.location[Locate_Entity.map_name], direction, thing.location[Locate_Entity.x_coordinate], thing.location[Locate_Entity.y_coordinate])
 
     def teleport(self, thing, mapid, x, y):
-        if mapid in tracker.tracker['maps']:
+        if mapid in tracker.update_tracker('matrix_map'):
             if isinstance(thing.inv, player_collection) and thing.inv.over_enc is True:
                 return print(self.xy_dict['Errors'][Location_Errors.encumbered])
             # Insert data collection from map
@@ -588,7 +588,7 @@ class battler_collection(item_collection):
             return self.on_entity
 
 
-class player_collection(vendor_collection, battler_collection):
+class player_collection(battler_collection, vendor_collection):
     def __init__(self, items, equipped):
         super().__init__(items, equipped)
 
@@ -656,7 +656,7 @@ class object_tracker:
 
         if spec_search is None:
             for key in globals():
-                self.categ_globals(globals()[key], key)
+                self.categ_globals(globals()[key], globals()[key])
 
                 if self.one_time_init != 1:
                     self.one_time_init = 1
@@ -664,7 +664,7 @@ class object_tracker:
             temp = []
 
             if not spec_search in globals():
-                raise KeyError('That class does not exist.')
+                raise NameError('Object Tracker: that class does not exist.')
 
             for key in globals():
                 if self.get_objects(globals()[key], spec_search) is not None:
