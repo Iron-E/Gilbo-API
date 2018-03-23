@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.4.0-F #
+# Gilbo RPG API -- Version 0.5.3 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -368,8 +368,8 @@ class location_manager:
     def __init__(self):
         self.xy_dict = {'Errors': []}
         self.xy_dict['Errors'].insert(Location_Errors.no_exist.value, "That place doesn't exist.")
-        self.xy_dict['Errors'].insert(Location_Errors.encumbered, "You're carrying too much.")
-        self.xy_dict['Errors'].insert(Location_Errors.invalid_direction, "You cannot go that way.")
+        self.xy_dict['Errors'].insert(Location_Errors.encumbered.value, "You're carrying too much.")
+        self.xy_dict['Errors'].insert(Location_Errors.invalid_direction.value, "You cannot go that way.")
 
     @property
     def player_pos(self, value):
@@ -684,3 +684,4 @@ class object_tracker:
 
 tracker = object_tracker()
 loc_man = location_manager()
+
