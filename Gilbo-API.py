@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.5.3 #
+# Gilbo RPG API -- Version 0.5.4 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -415,31 +415,31 @@ class location_manager:
 
     def detect_tile(self, til):
             self.value = ''
-            chk_plyr_pos.send()
+            # chk_plyr_pos.send()
 
-            if til == self.player_pos.layout[self.player_pos[Locate_Entity.y_coordinate], self.player_pos[Locate_Entity.x_coordinate]]:
-                self.value.join(Back.MAGENTA)
+            # if til == self.player_pos.layout[self.player_pos[Locate_Entity.y_coordinate], self.player_pos[Locate_Entity.x_coordinate]]:
+            #    self.value.join(Back.MAGENTA)
 
-            if til == Tiles.Grass:
-                self.value.join(Fore.GREEN + Style.BRIGHT + '\u26B6' + Style.RESET_ALL)
-            elif til == Tiles.Wall:
-                self.value.join(Fore.WHITE + Style.DIM + '\u26DD' + Style.RESET_ALL)
-            elif til == Tiles.Mountain:
-                self.value.join(Fore.YELLOW + '\u1A12' + Style.RESET_ALL)
-            elif til == Tiles.Cave:
-                self.value.join(Fore.YELLOW + '\u1A0A' + Style.RESET_ALL)
-            elif til == Tiles.Water:
-                self.value.join(Fore.CYAN + '\u2307' + Style.RESET_ALL)
-            elif til == Tiles.Building:
-                self.value.join(Fore.WHITE + '\u16A5' + Style.RESET_ALL)
-            elif til == Tiles.Lava:
-                self.value.join(Fore.RED + Style.BRIGHT + '\u26C6' + Style.RESET_ALL)
-            elif til == Tiles.Dirt:
-                self.value.join(Fore.YELLOW + Style.BRIGHT + '\u26C6' + Style.RESET_ALL)
-            elif til == Tiles.Ice:
-                self.value.join(Fore.CYAN + Style.BRIGHT + '\u26C6' + Style.RESET_ALL)
-            elif til == Tiles.Pit:
-                self.value.join(Fore.BLACK + Style.DIM + '\u25CF' + Style.RESET_ALL)
+            if til == Tiles.Grass.value:
+                self.value += Fore.GREEN + Style.BRIGHT + '\u26B6' + Style.RESET_ALL
+            elif til == Tiles.Wall.value:
+                self.value += Fore.WHITE + Style.DIM + '\u26DD' + Style.RESET_ALL
+            elif til == Tiles.Mountain.value:
+                self.value += Fore.YELLOW + '\u1A12' + Style.RESET_ALL
+            elif til == Tiles.Cave.value:
+                self.value += Fore.YELLOW + '\u1A0A' + Style.RESET_ALL
+            elif til == Tiles.Water.value:
+                self.value += Fore.CYAN + '\u2307' + Style.RESET_ALL
+            elif til == Tiles.Building.value:
+                self.value += Fore.WHITE + '\u16A5' + Style.RESET_ALL
+            elif til == Tiles.Lava.value:
+                self.value += Fore.RED + Style.BRIGHT + '\u26C6' + Style.RESET_ALL
+            elif til == Tiles.Dirt.value:
+                self.value += Fore.YELLOW + Style.BRIGHT + '\u26C6' + Style.RESET_ALL
+            elif til == Tiles.Ice.value:
+                self.value += Fore.CYAN + Style.BRIGHT + '\u26C6' + Style.RESET_ALL
+            elif til == Tiles.Pit.value:
+                self.value += Fore.BLACK + Style.DIM + '\u25CF' + Style.RESET_ALL
 
             return self.value
 
@@ -684,4 +684,3 @@ class object_tracker:
 
 tracker = object_tracker()
 loc_man = location_manager()
-
