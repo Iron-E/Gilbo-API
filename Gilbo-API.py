@@ -651,14 +651,32 @@ class object_tracker:
         elif isinstance(globl, quest):
             self.track_dict['quests'].append(ref_added); return
 
-    def update_tracker(self):
+    def update_tracker(self, spec_search=None):
         self.empty_tracker()
 
-        for key in globals():
-            self.categ_globals(globals()[key], globals()[key])
+        if spec_search is None:
+            for key in globals():
+                self.categ_globals(globals()[key], key)
 
-        if self.one_time_init != 1:
-            self.one_time_init = 1
+                if self.one_time_init != 1:
+                    self.one_time_init = 1
+        else:
+            temp = []
+
+            if not spec_search in globals():
+                raise KeyError('That class does not exist.')
+
+            for key in globals():
+                if self.get_objects(globals()[key], spec_search) is not None:
+                    temp.append(self.get_objects(globals()[key], spec_search))
+
+            return temp
+
+    def get_objects(self, globl, obj_type):
+        if isinstance(globl, obj_type):
+            return globl
+        else:
+            return None
 
     @property
     def tracker(self):
