@@ -661,16 +661,16 @@ class object_tracker:
                 if self.one_time_init != 1:
                     self.one_time_init = 1
         else:
-            temp = []
+            store_names = {}
 
-            if not spec_search in globals():
-                raise NameError('Object Tracker: that class does not exist.')
+            # if not spec_search in globals():
+            #    raise NameError('Object Tracker: that class does not exist.')
 
             for key in globals():
                 if self.get_objects(globals()[key], spec_search) is not None:
-                    temp.append(self.get_objects(globals()[key], spec_search))
+                    store_names[str(key)] = self.get_objects(globals()[key], spec_search)
 
-            return temp
+            return store_names
 
     def get_objects(self, globl, obj_type):
         if isinstance(globl, obj_type):
