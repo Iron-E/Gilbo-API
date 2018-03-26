@@ -418,7 +418,7 @@ class location_manager:
             # chk_plyr_pos.send()
 
             # if til == self.player_pos.layout[self.player_pos[Locate_Entity.y_coordinate], self.player_pos[Locate_Entity.x_coordinate]]:
-            #    self.value.join(Back.MAGENTA)
+            #    self.value += Back.MAGENTA
 
             if til == Tiles.Grass.value:
                 self.value += Fore.GREEN + Style.BRIGHT + '\u26B6' + Style.RESET_ALL
@@ -663,8 +663,8 @@ class object_tracker:
         else:
             store_names = {}
 
-            # if not spec_search in globals():
-            #    raise NameError('Object Tracker: that class does not exist.')
+            if not spec_search in globals():
+                raise NameError('Object Tracker: that class does not exist.')
 
             for key in globals():
                 if self.get_objects(globals()[key], spec_search) is not None:
@@ -684,3 +684,7 @@ class object_tracker:
 
 tracker = object_tracker()
 loc_man = location_manager()
+
+test_map = matrix_map('eat ass')
+test_map.layout = np.array([[Tiles.Grass.value, Tiles.Grass.value, Tiles.Grass.value, Tiles.Grass.value], [Tiles.Grass.value, Tiles.Building.value, Tiles.Mountain.value, Tiles.Mountain.value]])
+loc_man.load_map(test_map, 4)
