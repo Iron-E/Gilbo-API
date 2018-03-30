@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.5.4 #
+# Gilbo RPG API -- Version 0.5.5 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -148,8 +148,12 @@ class player(battler):
     def __init__(self, name, location, x, y, inv, coin, stats):
         super().__init__(name, location, x, y, inv, coin, stats)
 
-    @chk_plyr_pos.connect
-    def get_location(self):
+        @chk_plyr_pos.connect
+        def handle_chk_plyr_pos(sender, **kwargs):
+            self.on_chk_plyr_pos(sender, **kwargs)
+        self.handle_chk_plyr_pos = handle_chk_plyr_pos
+
+    def on_chk_plyr_pos(self):
         loc_man.player_pos = self.location
 
 #
@@ -292,19 +296,23 @@ class player_stats(battler_stats):
     def __init__(self, hp, stren, armr, agil, pwr):
         super().__init__(hp, stren, armr, agil, pwr)
         self.calc_carry_cap()
+        self.stat_dict['overencumbered'] = False
 
-    overencumbered = False
+        def handle_item_obtained(sender, **kwargs):
+            self.on_item_obtained(sender, **kwargs)
+        self.handle_item_obtained = handle_item_obtained
+        item_obtained.connect(handle_item_obtained)
 
     def calc_carry_cap(self):
         self.stat_dict['carry_capacity'] = Enumerators.base_carry_cap + self.stat_dict['strength'] * Enumerators.carry_cap_modifier
 
     @property
-    def over_enc(self):
-        return self.overencumbered
+    def encumbered(self):
+        return self.stat_dict['overencumbered']
 
-    @over_enc.setter
-    def over_enc(self, value):
-        self.overencumbered = value
+    @encumbered.setter
+    def encumbered(self, value):
+        self.stat_dict['overencumbered'] = value
         # WRITE MORE HERE FOR WHAT OVERENCUMBENCE AFFECTS
 
     @property
@@ -316,17 +324,19 @@ class player_stats(battler_stats):
         self.stat_dict['strength'] = value
         self.calc_carry_cap()
 
-    @item_obtained.connect
-    def check_carry_weight(self, **kw):
-        self.total_weight = 0
+    # @item_obtained.connect
+    def on_item_obtained(self, sender, **kwargs):
+        total_weight = 0
 
-        for i in range(len(kw['item'])):
-            total_weight += kw['item'][i].weight
+        for i in range(len(kwargs['items'])):
+            total_weight += kwargs['items'][i].weight
 
-        if total_weight > self.calc_carry_cap():
-            self.over_enc = True
+        self.calc_carry_cap()
 
-        del self.total_weight
+        if total_weight > self.stat_dict['carry_capacity']:
+            self.encumbered = True
+
+        del total_weight
 
 #
 # Locations #
@@ -380,14 +390,14 @@ class location_manager:
         self.xy_dict['player_location'] = value
 
     def move(self, thing, direction):
-        if isinstance(thing.inv, player_collection) and entity.inv.over_enc is True:
+        if isinstance(thing.inv, player_collection) and entity.inv.encumbered is True:
             return print(self.xy_dict['Errors'][Location_Errors.encumbered])
         # Insert data collection from map
         self.check_bounds(thing.location[Locate_Entity.map_name], direction, thing.location[Locate_Entity.x_coordinate], thing.location[Locate_Entity.y_coordinate])
 
     def teleport(self, thing, mapid, x, y):
         if mapid in tracker.update_tracker('matrix_map'):
-            if isinstance(thing.inv, player_collection) and thing.inv.over_enc is True:
+            if isinstance(thing.inv, player_collection) and thing.inv.encumbered is True:
                 return print(self.xy_dict['Errors'][Location_Errors.encumbered])
             # Insert data collection from map
             return mapid.send_data(list(x, y))
@@ -532,11 +542,11 @@ class item_collection(ABC):
     def __init__(self, items=list()):
         self.items = items
 
-    def add_itm(self, itm, amnt=Enumerators.items_to_modify):
+    def add_item(self, itm, amnt=Enumerators.items_to_modify):
         for i in range(amnt):
             self.items.append(itm)
 
-    def rem_itm(self, itm, amnt=Enumerators.items_to_modify):
+    def rem_item(self, itm, amnt=Enumerators.items_to_modify):
         for i in range(amnt):
             if itm in self.items:
                 self.items.remove(itm)
@@ -557,8 +567,8 @@ class vendor_collection(item_collection):
         if item in self.items:
             for i in range(count):
                 if swapee.coin >= (item.value * count):
-                    swapee.inv.add_itm(item)
-                    self.rem_itm(item)
+                    swapee.inv.add_item(item)
+                    self.rem_item(item)
                     self.coin = item.value
                 else:
                     print(swapee.name + " ran out of money.")
@@ -573,14 +583,16 @@ class battler_collection(item_collection):
         self.Errors = "That didn't work."
 
     def equip(self, item):
-        if item in self.items and isinstance(item, equippable):
-            for i in range(len(self.equipped)):
-                if item.type is self.on_entity[i].type:
-                    del self.on_entity[i]
+        try:
+            if item in self.items:
+                for i in range(len(self.on_entity)):
+                    if item.__class__ == self.on_entity.__class__:
+                        del self.on_entity[i]
 
             self.on_entity.append(item)
             item_equipped.send(item=item)
-        else:
+
+        except AttributeError:
             print(self.Errors)
 
         @property
@@ -592,10 +604,10 @@ class player_collection(battler_collection, vendor_collection):
     def __init__(self, items, equipped):
         super().__init__(items, equipped)
 
-    def add_itm(self, itm, amnt=Enumerators.items_to_modify):
+    def add_item(self, itm, amnt=Enumerators.items_to_modify):
         for i in range(amnt):
             self.items.append(itm)
-            item_obtained.send(item=self.inventory())
+            item_obtained.send(self.inventory)
 
 #
 # Quests #
