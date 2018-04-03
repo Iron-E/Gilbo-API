@@ -10,13 +10,5 @@ jim_collection = G.player_collection([doodle], [doodle])
 jim_stats = G.player_stats(50, 100, 10, 30, 100)
 jim = G.player('Jimbo', test_map, 1, 2, jim_collection, 20, jim_stats)
 
-new_item = jim.collection.inventory[0].__class__.__mro__[2]('you', 'suck', 20, 20)
-print(jim.collection.inventory[0].__class__.__mro__)
-if G.item_weighted in jim.collection.inventory[0].__class__.__mro__:
-    print('true\n')
-else:
-    print('false\n')
-
-import inspect
 G.tracker.update_tracker(globals())
-print(G.tracker.tracker['entity'])
+G.tracker.writeout('object')
