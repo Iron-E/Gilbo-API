@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.5.7-A #
+# Gilbo RPG API -- Version 0.5.7-B #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -642,34 +642,42 @@ class object_tracker:
         else:
             self.track_dict = {}
 
-    def categ_globals(self, globl, ref_added):
+    def categ_globals(self, globl):
         # check for Gilbo-defined class parents
         try:
-            if entity.__class__ in globl.__mro__ or item_unweighted.__class__ in globl.__mro__ or battler_stats.__class__ in globl.__mro__ or matrix_map.__class__ in globl.__mro__ or attack.__class__ in globl.__mro__ or item_collection.__class__ in globl.__mro__ or quest.__class__ in globl.__mro__:
+            import inspect
+            if 'Gilbo' in str(inspect.getfile(globl.__class__)).split('\\')[-1]:
                 temp = []
-                print(globl.__mro__)
+                parents = inspect.getmro(globl.__class__)
 
-                for i in range(len(globl.__mro__)):
-                    temp.append(str(globl.__mro__[i]).split("'")[1])
-                    print(temp[i])
+                for i in range(len(parents)):
+                    temp_append = str(parents[i]).split("'")[1]
+                    try:
+                        temp_append = temp_append.split('.')[1]
+                    except IndexError:
+                        pass
+                    temp.append(temp_append)
+                    print(temp)
 
                 for i in range(len(temp)):
                     try:
-                        self.track_dict[temp[i]].append(ref_added)
+                        self.track_dict[temp[i]].append(globl)
                     except KeyError:
-                        self.track_dict.update({temp[i]: []})
-                        self.track_dict[temp[i]].append(ref_added)
+                        self.track_dict.update({temp[i]: [globl]})
 
                 del temp
         except AttributeError:
-            raise AttributeError(globl)
+            print('BROKEN ' + str(globl) + '\n')
+        except TypeError:
+            print('TYPE_ERROR: ' + str(globl) + '\n')
 
-    def update_tracker(self, spec_search=None):
+    def update_tracker(self, filename, spec_search=None):
         self.empty_tracker()
 
         if spec_search is None:
             for key in globals():
-                self.categ_globals(globals()[key], globals()[key])
+                import filename
+                self.categ_globals(filename.globals()[key])
 
             if self.one_time_init != 1:
                 self.one_time_init = 1
@@ -680,8 +688,8 @@ class object_tracker:
                 raise NameError('Object Tracker: that class does not exist.')
 
             for key in globals():
-                if self.get_objects(globals()[key], spec_search) is not None:
-                    store_names[str(key)] = self.get_objects(globals()[key], spec_search)
+                if self.get_objects(class_list, spec_search) is not None:
+                    store_names[str(key)] = self.get_objects(class_list[key], spec_search)
 
             return store_names
 
