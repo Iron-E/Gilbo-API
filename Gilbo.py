@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.5.7-C #
+# Gilbo RPG API -- Version 0.5.8 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -675,28 +675,37 @@ class object_tracker:
 
         if spec_search is None:
             for key in class_list:
-
                 self.categ_globals(class_list[key])
 
             if self.one_time_init != 1:
                 self.one_time_init = 1
         else:
-            store_names = {}
+            store_names = []
 
-            if spec_search not in globals():
-                raise NameError('Object Tracker: that class does not exist.')
-
-            for key in globals():
-                if self.get_objects(class_list, spec_search) is not None:
-                    store_names[str(key)] = self.get_objects(class_list[key], spec_search)
+            for key in class_list:
+                if self.get_objects(class_list[key], spec_search) is not None:
+                    store_names.append(class_list[key])
 
             return store_names
 
-    def get_objects(self, globl, obj_type):
-        if isinstance(globl, obj_type):
-            return globl
+    def get_objects(self, obj, obj_type):
+        if isinstance(obj, obj_type):
+            return 0
         else:
             return None
+
+    def read_write_data(self, data_set=[]):
+        for i in range(len(data_set)):
+            print(data_set[i])
+
+        print('\n')
+
+    def writeout(self, spec_search=None):
+        for i, j in self.tracker.items():
+            if spec_search is None:
+                self.read_write_data([i, j])
+            if spec_search is not None and i == spec_search:
+                self.read_write_data([i, j])
 
     @property
     def tracker(self):
