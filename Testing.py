@@ -18,5 +18,5 @@ else:
     print('false\n')
 
 import inspect
-G.tracker.update_tracker(inspect.getfile(inspect.currentframe()))
-print(G.tracker.tracker)
+G.tracker.update_tracker(globals())
+print(G.tracker.tracker['entity'])
