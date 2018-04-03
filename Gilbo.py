@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.5.6 #
+# Gilbo RPG API -- Version 0.5.8 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -91,7 +91,6 @@ class entity(ABC):
         self.entity_dict['location'][Locate_Entity.index_num] = location.layout[x, y]
 
 
-
 class NPC(entity):
     def __init__(self, name, location, x, y):
         super().__init__(name, location, x, y)
@@ -120,7 +119,7 @@ class vendor(entity):
         self.entity_dict['currency'] += value
 
     @property
-    def inv(self):
+    def collection(self):
         return self.entity_dict['inventory']
 
 
@@ -640,59 +639,78 @@ class object_tracker:
     def empty_tracker(self):
         if self.one_time_init != 0:
             self.track_dict.update((key, []) for key in self.track_dict)
+        else:
+            self.track_dict = {}
 
-    def categ_globals(self, globl, ref_added):
-        if isinstance(globl, entity):
-            self.track_dict['entities'].append(ref_added); return
+    def categ_globals(self, globl):
+        # check for Gilbo-defined class parents
+        try:
+            import inspect
+            if 'Gilbo' in str(inspect.getfile(globl.__class__)).split('\\')[-1]:
+                temp = []
+                parents = inspect.getmro(globl.__class__)
 
-        elif isinstance(globl, item_unweighted):
-            self.track_dict['items'].append(ref_added); return
+                for i in range(len(parents)):
+                    temp_append = str(parents[i]).split("'")[1]
+                    try:
+                        temp_append = temp_append.split('.')[1]
+                    except IndexError:
+                        pass
+                    temp.append(temp_append)
 
-        elif isinstance(globl, battler_stats):
-            self.track_dict['stat_lists'].append(ref_added); return
+                for i in range(len(temp)):
+                    try:
+                        self.track_dict[temp[i]].append(globl)
+                    except KeyError:
+                        self.track_dict.update({temp[i]: [globl]})
 
-        elif isinstance(globl, attack):
-            self.track_dict['attacks'].append(ref_added); return
+                del temp
+        # except AttributeError:
+        # print('BROKEN ' + str(globl) + '\n')
+        except TypeError:
+            pass
 
-        elif isinstance(globl, matrix_map):
-            self.track_dict['maps'].append(ref_added); return
-
-        elif isinstance(globl, item_collection):
-            self.track_dict['inventories'].append(ref_added); return
-
-        elif isinstance(globl, quest):
-            self.track_dict['quests'].append(ref_added); return
-
-    def update_tracker(self, spec_search=None):
+    def update_tracker(self, class_list, spec_search=None):
         self.empty_tracker()
 
         if spec_search is None:
-            for key in globals():
-                self.categ_globals(globals()[key], globals()[key])
+            for key in class_list:
+                self.categ_globals(class_list[key])
 
-                if self.one_time_init != 1:
-                    self.one_time_init = 1
+            if self.one_time_init != 1:
+                self.one_time_init = 1
         else:
-            store_names = {}
+            store_names = []
 
-            if not spec_search in globals():
-                raise NameError('Object Tracker: that class does not exist.')
-
-            for key in globals():
-                if self.get_objects(globals()[key], spec_search) is not None:
-                    store_names[str(key)] = self.get_objects(globals()[key], spec_search)
+            for key in class_list:
+                if self.get_objects(class_list[key], spec_search) is not None:
+                    store_names.append(class_list[key])
 
             return store_names
 
-    def get_objects(self, globl, obj_type):
-        if isinstance(globl, obj_type):
-            return globl
+    def get_objects(self, obj, obj_type):
+        if isinstance(obj, obj_type):
+            return 0
         else:
             return None
+
+    def read_write_data(self, data_set=[]):
+        for i in range(len(data_set)):
+            print(data_set[i])
+
+        print('\n')
+
+    def writeout(self, spec_search=None):
+        for i, j in self.tracker.items():
+            if spec_search is None:
+                self.read_write_data([i, j])
+            if spec_search is not None and i == spec_search:
+                self.read_write_data([i, j])
 
     @property
     def tracker(self):
         return self.track_dict
+
 
 tracker = object_tracker()
 loc_man = location_manager()
