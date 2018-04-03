@@ -17,5 +17,6 @@ if G.item_weighted in jim.collection.inventory[0].__class__.__mro__:
 else:
     print('false\n')
 
-G.tracker.update_tracker()
-# print(G.tracker.tracker['Gilbo.entity'])
+import inspect
+G.tracker.update_tracker(inspect.getfile(inspect.currentframe()))
+print(G.tracker.tracker)
