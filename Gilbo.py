@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.5.7-B #
+# Gilbo RPG API -- Version 0.5.7-C #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -657,7 +657,6 @@ class object_tracker:
                     except IndexError:
                         pass
                     temp.append(temp_append)
-                    print(temp)
 
                 for i in range(len(temp)):
                     try:
@@ -666,18 +665,18 @@ class object_tracker:
                         self.track_dict.update({temp[i]: [globl]})
 
                 del temp
-        except AttributeError:
-            print('BROKEN ' + str(globl) + '\n')
+        # except AttributeError:
+        # print('BROKEN ' + str(globl) + '\n')
         except TypeError:
-            print('TYPE_ERROR: ' + str(globl) + '\n')
+            pass
 
-    def update_tracker(self, filename, spec_search=None):
+    def update_tracker(self, class_list, spec_search=None):
         self.empty_tracker()
 
         if spec_search is None:
-            for key in globals():
-                import filename
-                self.categ_globals(filename.globals()[key])
+            for key in class_list:
+
+                self.categ_globals(class_list[key])
 
             if self.one_time_init != 1:
                 self.one_time_init = 1
