@@ -1,14 +1,12 @@
-# Gilbo RPG API -- Version 0.5.8 #
+# Gilbo RPG API -- Version 0.5.13 #
 
 from abc import ABC, abstractmethod
 from random import randint
-from time import sleep
 from enum import IntEnum, auto
 
 # 3rd Party Libraries
 import numpy as np
 from blinker import signal
-from colorama import Fore, Back, Style
 
 # ascii-table.com/ansi-escape-sequences.php
 
@@ -46,6 +44,7 @@ class Enumerators(IntEnum):
 
 
 def type(phrase, type_speed=.045, line_delay=.5):
+    from time import sleep
     for i in range(len(phrase)):
         print(phrase[i], end="", flush=True)
         sleep(type_speed)
@@ -395,13 +394,18 @@ class location_manager:
         self.check_bounds(thing.location[Locate_Entity.map_name], direction, thing.location[Locate_Entity.x_coordinate], thing.location[Locate_Entity.y_coordinate])
 
     def teleport(self, thing, mapid, x, y):
-        if mapid in tracker.update_tracker('matrix_map'):
-            if isinstance(thing.inv, player_collection) and thing.inv.encumbered is True:
-                return print(self.xy_dict['Errors'][Location_Errors.encumbered])
-            # Insert data collection from map
-            return mapid.send_data(list(x, y))
-        else:
-            return print(self.xy_dict['Errors'][Location_Errors.no_exist])
+        try:
+            if mapid in tracker.tracker['matrix_map']:
+                if isinstance(thing.inv, player_collection) and thing.inv.encumbered is True:
+                    return print(self.xy_dict['Errors'][Location_Errors.encumbered])
+                # Insert data collection from map
+                return mapid.send_data(list(x, y))
+            else:
+                return print(self.xy_dict['Errors'][Location_Errors.no_exist])
+        except AttributeError:
+            raise AttributeError("The object_tracker list doesn't exist.")
+        except KeyError:
+            raise AttributeError('You have not created any matrix_maps.')
 
     def check_bounds(self, mapid, direction, x, y):
         if direction is Directions.Up:
@@ -423,6 +427,7 @@ class location_manager:
             return print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
 
     def detect_tile(self, til):
+            from colorama import Fore, Back, Style
             self.value = ''
             # chk_plyr_pos.send()
 
@@ -641,6 +646,7 @@ class object_tracker:
             self.track_dict.update((key, []) for key in self.track_dict)
         else:
             self.track_dict = {}
+            self.one_time_init = 1
 
     def categ_globals(self, globl):
         # check for Gilbo-defined class parents
@@ -665,34 +671,35 @@ class object_tracker:
                         self.track_dict.update({temp[i]: [globl]})
 
                 del temp
-        # except AttributeError:
-        # print('BROKEN ' + str(globl) + '\n')
+
         except TypeError:
             pass
 
-    def update_tracker(self, class_list, spec_search=None):
+    def update_tracker(self, class_list=globals(), spec_search=None):
         self.empty_tracker()
 
         if spec_search is None:
             for key in class_list:
-                self.categ_globals(class_list[key])
+                if isinstance(class_list[key], list):
+                    for i in range(len(class_list[key])):
+                        self.categ_globals(class_list[key][i])
+                else:
+                    self.categ_globals(class_list[key])
 
-            if self.one_time_init != 1:
-                self.one_time_init = 1
         else:
             store_names = []
+            import inspect
 
             for key in class_list:
-                if self.get_objects(class_list[key], spec_search) is not None:
-                    store_names.append(class_list[key])
+                try:
+                    if 'Gilbo' in str(inspect.getfile(class_list[key].__class__)).split('\\')[-1]:
+                        if isinstance(class_list[key], spec_search):
+                            store_names.append(class_list[key])
+
+                except TypeError:
+                    pass
 
             return store_names
-
-    def get_objects(self, obj, obj_type):
-        if isinstance(obj, obj_type):
-            return 0
-        else:
-            return None
 
     def read_write_data(self, data_set=[]):
         for i in range(len(data_set)):
