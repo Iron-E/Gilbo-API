@@ -671,8 +671,7 @@ class object_tracker:
                         self.track_dict.update({temp[i]: [globl]})
 
                 del temp
-        # except AttributeError:
-        # print('BROKEN ' + str(globl) + '\n')
+
         except TypeError:
             pass
 
@@ -681,7 +680,11 @@ class object_tracker:
 
         if spec_search is None:
             for key in class_list:
-                self.categ_globals(class_list[key])
+                if isinstance(class_list[key], list):
+                    for i in range(len(class_list[key])):
+                        self.categ_globals(class_list[key][i])
+                else:
+                    self.categ_globals(class_list[key])
 
         else:
             store_names = []
