@@ -10,5 +10,6 @@ jim_collection = G.player_collection([doodle], [doodle])
 jim_stats = G.player_stats(50, 100, 10, 30, 100)
 jim = G.player('Jimbo', test_map, 1, 2, jim_collection, 20, jim_stats)
 
+print(G.tracker.update_tracker(globals(), G.entity))
 G.tracker.update_tracker(globals())
 G.tracker.writeout('object')
