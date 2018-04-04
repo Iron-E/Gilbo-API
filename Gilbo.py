@@ -1,14 +1,12 @@
-# Gilbo RPG API -- Version 0.5.9 #
+# Gilbo RPG API -- Version 0.5.10 #
 
 from abc import ABC, abstractmethod
 from random import randint
-from time import sleep
 from enum import IntEnum, auto
 
 # 3rd Party Libraries
 import numpy as np
 from blinker import signal
-from colorama import Fore, Back, Style
 
 # ascii-table.com/ansi-escape-sequences.php
 
@@ -46,6 +44,7 @@ class Enumerators(IntEnum):
 
 
 def type(phrase, type_speed=.045, line_delay=.5):
+    from time import sleep
     for i in range(len(phrase)):
         print(phrase[i], end="", flush=True)
         sleep(type_speed)
@@ -423,6 +422,7 @@ class location_manager:
             return print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
 
     def detect_tile(self, til):
+            from colorama import Fore, Back, Style
             self.value = ''
             # chk_plyr_pos.send()
 
