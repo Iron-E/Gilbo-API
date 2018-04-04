@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.5.10 #
+# Gilbo RPG API -- Version 0.5.8 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -394,13 +394,18 @@ class location_manager:
         self.check_bounds(thing.location[Locate_Entity.map_name], direction, thing.location[Locate_Entity.x_coordinate], thing.location[Locate_Entity.y_coordinate])
 
     def teleport(self, thing, mapid, x, y):
-        if mapid in tracker.update_tracker('matrix_map'):
-            if isinstance(thing.inv, player_collection) and thing.inv.encumbered is True:
-                return print(self.xy_dict['Errors'][Location_Errors.encumbered])
-            # Insert data collection from map
-            return mapid.send_data(list(x, y))
-        else:
-            return print(self.xy_dict['Errors'][Location_Errors.no_exist])
+        try:
+            if mapid in tracker.tracker['matrix_map']:
+                if isinstance(thing.inv, player_collection) and thing.inv.encumbered is True:
+                    return print(self.xy_dict['Errors'][Location_Errors.encumbered])
+                # Insert data collection from map
+                return mapid.send_data(list(x, y))
+            else:
+                return print(self.xy_dict['Errors'][Location_Errors.no_exist])
+        except AttributeError:
+            raise AttributeError("The object_tracker list doesn't exist.")
+        except KeyError:
+            raise AttributeError('You have not created any matrix_maps.')
 
     def check_bounds(self, mapid, direction, x, y):
         if direction is Directions.Up:
