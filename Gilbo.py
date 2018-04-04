@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.5.8 #
+# Gilbo RPG API -- Version 0.5.9 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -641,6 +641,7 @@ class object_tracker:
             self.track_dict.update((key, []) for key in self.track_dict)
         else:
             self.track_dict = {}
+            self.one_time_init = 1
 
     def categ_globals(self, globl):
         # check for Gilbo-defined class parents
@@ -670,29 +671,27 @@ class object_tracker:
         except TypeError:
             pass
 
-    def update_tracker(self, class_list, spec_search=None):
+    def update_tracker(self, class_list=globals(), spec_search=None):
         self.empty_tracker()
 
         if spec_search is None:
             for key in class_list:
                 self.categ_globals(class_list[key])
 
-            if self.one_time_init != 1:
-                self.one_time_init = 1
         else:
             store_names = []
+            import inspect
 
             for key in class_list:
-                if self.get_objects(class_list[key], spec_search) is not None:
-                    store_names.append(class_list[key])
+                try:
+                    if 'Gilbo' in str(inspect.getfile(class_list[key].__class__)).split('\\')[-1]:
+                        if isinstance(class_list[key], spec_search):
+                            store_names.append(class_list[key])
+
+                except TypeError:
+                    pass
 
             return store_names
-
-    def get_objects(self, obj, obj_type):
-        if isinstance(obj, obj_type):
-            return 0
-        else:
-            return None
 
     def read_write_data(self, data_set=[]):
         for i in range(len(data_set)):
