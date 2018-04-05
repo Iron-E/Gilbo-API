@@ -8,6 +8,7 @@ By using this API you agree to the [license](https://github.com/ajzett/Gilbo-API
 - [NumPy](https://github.com/scipy/scipy/blob/master/LICENSE.txt)*
 - [colorama](https://github.com/tartley/colorama/blob/master/LICENSE.txt)
 - Unicode (UTF-8) support (if you use the built-in graphics)
+
 *Must be downloaded separately.
 
 The dependencies are provided with Gilbo, but you _must_ agree to their licenses.
