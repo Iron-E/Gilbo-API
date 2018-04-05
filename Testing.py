@@ -11,6 +11,6 @@ jim = G.player('Jimbo', test_map, 1, 2, jim_collection, 20, jim_stats)
 
 G.loc_man.load_map(test_map, 4)
 
-print(G.tracker.update_tracker(globals(), G.entity))
 G.tracker.update_tracker(globals())
-G.tracker.writeout('entity')
+
+G.loc_man.move(jim, G.Directions.Left)

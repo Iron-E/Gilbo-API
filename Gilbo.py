@@ -390,10 +390,10 @@ class location_manager:
         self.xy_dict['player_location'] = val
 
     def move(self, thing, direction):
-        if isinstance(thing.inv, player_collection) and thing.stats.encumbered is True:
+        if isinstance(thing.stats, player_collection) and thing.stats.encumbered is True:
             return print(self.xy_dict['Errors'][Location_Errors.encumbered])
         # Insert data collection from map
-        self.check_bounds(thing.location[Locate_Entity.mapid], direction, thing.location[Locate_Entity.coordinates[Locate_Entity.x_cord]], thing.location[Locate_Entity.coordinates[Locate_Entity.y_cord]])
+        self.check_bounds(thing.location[Locate_Entity.mapid], direction, thing.location[Locate_Entity.coordinates])
 
     def teleport(self, thing, mapid, x, y):
         try:
@@ -409,15 +409,15 @@ class location_manager:
         except KeyError:
             raise AttributeError('You have not created any matrix_maps.')
 
-    def check_bounds(self, mapid, direction, x, y):
+    def check_bounds(self, mapid, direction, start_loc):
         if direction is Directions.Up:
-            new_place = list(x, y + 1)
+            new_place = [start_loc[Locate_Entity.y_cord] + 1, start_loc[Locate_Entity.x_cord]]
         elif direction is Directions.Down:
-            new_place = list(x, y - 1)
+            new_place = [start_loc[Locate_Entity.y_cord] - 1, start_loc[Locate_Entity.x_cord]]
         elif direction is Directions.Left:
-            new_place = list(x - 1, y)
+            new_place = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] - 1]
         elif direction is Directions.Right:
-            new_place = list(x + 1, y)
+            new_place = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] + 1]
         else:
             return print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
 
