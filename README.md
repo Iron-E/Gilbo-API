@@ -3,11 +3,13 @@ An API to design and create RPG text adventure games. Written in Python.
 
 By using this API you agree to the [license](https://github.com/ajzett/Gilbo-API/blob/master/LICENSE.md), and the licenses of the requirements.
 
-## Requirements
-- [blinker](https://github.com/jek/blinker/blob/master/LICENSE)
+## Dependencies
+- [django dispatch](https://github.com/django/django/blob/master/django/dispatch/license.txt)
 - [NumPy](https://github.com/scipy/scipy/blob/master/LICENSE.txt)
 - [colorama](https://github.com/tartley/colorama/blob/master/LICENSE.txt)
 - Unicode (UTF-8) support (if you use the built-in graphics)
+
+The dependencies are provided with Gilbo, but you _must_ agree to their licenses.
 
 ## Features 
 ### Player & NPC Management
