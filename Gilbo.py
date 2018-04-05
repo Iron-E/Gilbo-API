@@ -433,7 +433,6 @@ class location_manager:
             value = ''
 
             if player_til is True:
-                print("WE HAVE A MATCH")
                 value += Back.MAGENTA
 
             if til == Tiles.Grass.value:
@@ -468,7 +467,6 @@ class location_manager:
             for y in range(rows):
                 for x in range(clmns):
                     if ([y, x] == self.player_pos[Locate_Entity.coordinates]) and (mapid is self.player_pos[Locate_Entity.mapid]):
-                        print('if worked')
                         print(self.detect_tile(mapid.layout[y, x], True), end=' ')
                     else:
                         print(self.detect_tile(mapid.layout[y, x]), end=' ')
