@@ -1,6 +1,6 @@
 import Gilbo as G
 
-test_map = G.matrix_map('eat ass')
+test_map = G.matrix_map('tortelini')
 test_map.layout = G.np.array([[G.Tiles.Grass.value, G.Tiles.Grass.value, G.Tiles.Grass.value, G.Tiles.Grass.value], [G.Tiles.Grass.value, G.Tiles.Building.value, G.Tiles.Mountain.value, G.Tiles.Mountain.value]])
 
 smash = G.attack(100, 'You use your entire body to smash the opponent.')
