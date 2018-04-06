@@ -1,5 +1,13 @@
 import Gilbo as G
 
+
+class test_matrix_map(matrix_map):
+    def __init__(self, name):
+        super().__init__(name)
+
+    def send_data(self, tile):
+        pass
+
 test_map = G.matrix_map('tortelini')
 test_map.layout = G.np.array([[G.Tiles.Grass.value, G.Tiles.Grass.value, G.Tiles.Grass.value, G.Tiles.Grass.value], [G.Tiles.Grass.value, G.Tiles.Building.value, G.Tiles.Mountain.value, G.Tiles.Mountain.value]])
 

@@ -476,11 +476,10 @@ class location_manager:
 
 
 class matrix_map:
-    def __init__(self, name, entities=list()):
+    def __init__(self, name):
         self.map_dict = {}
         self.map_dict['map_id'] = name
         self.map_dict['map_layout'] = None
-        self.map_dict['entities'] = entities
 
     @abstractmethod
     def send_data(self, tile):
@@ -498,10 +497,6 @@ class matrix_map:
     def layout(self, value):
         assert isinstance(value, np.ndarray)
         self.map_dict['map_layout'] = value
-
-    @property
-    def entities(self):
-        return self.map_dict['entities']
 
 #
 # Battle Backend #
