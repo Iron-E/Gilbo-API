@@ -1,12 +1,13 @@
 import Gilbo as G
 
 
-class test_matrix_map(matrix_map):
+class test_matrix_map(G.matrix_map):
     def __init__(self, name):
         super().__init__(name)
 
     def send_data(self, tile):
         pass
+
 
 test_map = G.matrix_map('tortelini')
 test_map.layout = G.np.array([[G.Tiles.Grass.value, G.Tiles.Grass.value, G.Tiles.Grass.value, G.Tiles.Grass.value], [G.Tiles.Grass.value, G.Tiles.Building.value, G.Tiles.Mountain.value, G.Tiles.Mountain.value]])
@@ -21,4 +22,14 @@ G.loc_man.load_map(test_map, 4)
 
 G.tracker.update_tracker(globals())
 
-G.loc_man.move(jim, G.Directions.Left)
+
+usr_pick = input()
+
+if usr_pick == '0':
+    ego = input("how big is your ego")
+    G.tracker.save_data()
+else:
+    G.tracker.load_data()
+    print(ego)
+
+# G.loc_man.move(jim, G.Directions.Left)

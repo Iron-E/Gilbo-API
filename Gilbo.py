@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.6.0 #
+# Gilbo RPG API -- Version 0.7.0-A #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -10,7 +10,7 @@ sys.path.append('./dependencies')
 
 # 3rd Party Libraries
 import numpy as np
-from dispatcher import Signal, receiver
+from dispatcher import Signal
 
 # ascii-table.com/ansi-escape-sequences.php
 # https://docs.djangoproject.com/en/2.0/topics/signals/#django.contrib.auth.signals.Signal
@@ -648,7 +648,7 @@ class object_tracker:
             self.track_dict = {}
             self.one_time_init = 1
 
-    def categ_globals(self, globl):
+    def categ_list(self, globl):
         # check for Gilbo-defined class parents
         try:
             import inspect
@@ -682,9 +682,9 @@ class object_tracker:
             for key in class_list:
                 if isinstance(class_list[key], list):
                     for i in range(len(class_list[key])):
-                        self.categ_globals(class_list[key][i])
+                        self.categ_list(class_list[key][i])
                 else:
-                    self.categ_globals(class_list[key])
+                    self.categ_list(class_list[key])
 
         else:
             store_names = []
@@ -714,6 +714,39 @@ class object_tracker:
                 self.read_write_data([i, j])
             if spec_search is not None and i == spec_search:
                 self.read_write_data([i, j])
+
+    """
+    NEW SAVE SYSTEM – Completely Broken
+
+    def save_data(self):
+        temp = []
+        for key in self.tracker:
+            for i in range(len(self.tracker[key])):
+                if self.tracker[key][i] not in temp:
+                    temp.append(self.tracker[key][i])
+
+        import pickle
+        with open('sav.pickle', 'wb') as handle:
+            pickle.dump(temp, handle)
+            for i in range(len(temp)):
+                try:
+                    pickle.dump(temp[i], handle)
+                except AttributeError:
+                    pass
+
+        del temp
+
+    def load_data(self):
+        import pickle
+        with open('sav.pickle', 'rb') as handle:
+            temp = pickle.load(handle)
+            for i in range(len(temp)):
+                try:
+                    temp[i] = pickle.load(handle)
+                except AttributeError:
+                    pass
+
+    """
 
     @property
     def tracker(self):
