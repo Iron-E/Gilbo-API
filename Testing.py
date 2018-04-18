@@ -27,4 +27,4 @@ G.loc_man.load_map(test_map)
 
 # G.tracker.update_tracker(globals())
 
-G.loc_man.move(jim, G.Directions.Left)
+G.loc_man.move(jim, G.Directions.Up)

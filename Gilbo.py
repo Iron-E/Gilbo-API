@@ -72,7 +72,7 @@ class entity(ABC):
         self.entity_dict = {'location': []}
         self.entity_dict['name'] = name
         self.entity_dict.update({'location': [location]})
-        self.entity_dict['location'].append([x, y])
+        self.entity_dict['location'].append([y, x])
 
     @property
     def name(self):
@@ -396,9 +396,9 @@ class location_manager:
         if isinstance(thing.stats, player_collection) and thing.stats.encumbered is True:
             return print(self.xy_dict['Errors'][Location_Errors.encumbered])
         # Insert data collection from map
-        can_move = self.check_bounds(thing.location[Locate_Entity.mapid], direction, thing.location[Locate_Entity.coordinates])
-        if can_move[0] is True:
-            thing.set_loc(can_move[1][1], can_move[0])
+        new_loc = self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates])
+        if new_loc is not False:
+            thing.set_loc(new_loc[1], new_loc[0])
             self.load_map(thing.location[Locate_Entity.mapid])
         else:
             print('')
@@ -418,24 +418,24 @@ class location_manager:
             raise AttributeError('You have not created any matrix_maps.')
 
     def check_bounds(self, mapid, direction, start_loc):
-        if direction is Directions.Up:
-            new_place = [start_loc[Locate_Entity.y_cord] + 1, start_loc[Locate_Entity.x_cord]]
-        elif direction is Directions.Down:
+        if direction is Directions.Up.value:
             new_place = [start_loc[Locate_Entity.y_cord] - 1, start_loc[Locate_Entity.x_cord]]
-        elif direction is Directions.Left:
+        elif direction is Directions.Down.value:
+            new_place = [start_loc[Locate_Entity.y_cord] + 1, start_loc[Locate_Entity.x_cord]]
+        elif direction is Directions.Left.value:
             new_place = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] - 1]
-        elif direction is Directions.Right:
+        elif direction is Directions.Right.value:
             new_place = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] + 1]
-        else:
-            return print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
 
         try:
             mapid.layout[new_place]
 
             if mapid.send_data(tuple(new_place)) is True:
-                return (True, new_place)
+                print(new_place)
+                return new_place
             else:
                 return False
+
         except IndexError:
             return print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
 
