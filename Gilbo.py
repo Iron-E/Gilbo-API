@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.7.0-A #
+# Gilbo RPG API -- Version 0.7.0-B #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -6,7 +6,7 @@ from enum import IntEnum, auto
 
 # Allow Gilbo to see Dependencies
 import sys
-sys.path.append('./dependencies')
+sys.path.append('.deps')
 
 # 3rd Party Libraries
 import numpy as np
@@ -715,38 +715,26 @@ class object_tracker:
             if spec_search is not None and i == spec_search:
                 self.read_write_data([i, j])
 
-    """
-    NEW SAVE SYSTEM – Completely Broken
-
     def save_data(self):
-        temp = []
-        for key in self.tracker:
-            for i in range(len(self.tracker[key])):
-                if self.tracker[key][i] not in temp:
-                    temp.append(self.tracker[key][i])
+        keys = list(tracker.tracker.keys())
+        values = list(tracker.tracker.values())
 
-        import pickle
         with open('sav.pickle', 'wb') as handle:
-            pickle.dump(temp, handle)
-            for i in range(len(temp)):
-                try:
-                    pickle.dump(temp[i], handle)
-                except AttributeError:
-                    pass
+            handle.truncate(0)
+            import dill as pickle
+            pickle.dump((keys, values), handle)
 
-        del temp
+        del keys, values
 
-    def load_data(self):
-        import pickle
+    def load_data(self, obj_list):
         with open('sav.pickle', 'rb') as handle:
-            temp = pickle.load(handle)
-            for i in range(len(temp)):
+            import dill as pickle
+            keys, values = pickle.load(handle)
+            for i in range(len(keys)):
                 try:
-                    temp[i] = pickle.load(handle)
-                except AttributeError:
-                    pass
-
-    """
+                    obj_list.update({keys[i]: values[i]})
+                except IndexError:
+                    print('There were more objects to load than values.')
 
     @property
     def tracker(self):

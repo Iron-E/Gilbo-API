@@ -21,15 +21,14 @@ jim = G.player('Jimbo', test_map, 1, 2, jim_collection, 20, jim_stats)
 G.loc_man.load_map(test_map, 4)
 
 G.tracker.update_tracker(globals())
+G.tracker.writeout()
 
 
 usr_pick = input()
 
 if usr_pick == '0':
-    ego = input("how big is your ego")
     G.tracker.save_data()
 else:
     G.tracker.load_data()
-    print(ego)
 
 # G.loc_man.move(jim, G.Directions.Left)
