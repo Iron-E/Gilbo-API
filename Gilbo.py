@@ -397,7 +397,7 @@ class location_manager:
             return print(self.xy_dict['Errors'][Location_Errors.encumbered])
         # Insert data collection from map
         if self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates]) is not False:
-            thing.set_loc(self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates]))
+            thing.set_loc(self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], True))
             self.load_map(thing.location[Locate_Entity.mapid])
 
     def teleport(self, thing, mapid, x, y):
@@ -414,7 +414,7 @@ class location_manager:
         except KeyError:
             raise AttributeError('You have not created any matrix_maps.')
 
-    def check_bounds(self, mapid, direction, start_loc):
+    def check_bounds(self, mapid, direction, start_loc, print_errors=False):
         if direction is Directions.Up.value:
             new_loc = [start_loc[Locate_Entity.y_cord] - 1, start_loc[Locate_Entity.x_cord]]
         elif direction is Directions.Down.value:
@@ -427,13 +427,23 @@ class location_manager:
         try:
             mapid.layout[new_loc[Locate_Entity.y_cord], new_loc[Locate_Entity.x_cord]]
 
+            for i in new_loc:
+                if i < 0:
+                    if print_errors is True:
+                        print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
+
+                    return start_loc
+
             if mapid.send_data(tuple(new_loc)) is True:
                 return new_loc
             else:
                 return False
 
         except IndexError:
-            return print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
+            if print_errors is True:
+                print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
+
+            return start_loc
 
     def detect_tile(self, til, player_til=False):
             from colorama import Fore, Back, Style
