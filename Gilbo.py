@@ -675,7 +675,7 @@ class object_tracker:
         except TypeError:
             pass
 
-    def update_tracker(self, class_list=globals(), spec_search=None):
+    def update_tracker(self, class_list, spec_search=None):
         self.empty_tracker()
 
         if spec_search is None:
@@ -712,12 +712,12 @@ class object_tracker:
         for i, j in self.tracker.items():
             if spec_search is None:
                 self.read_write_data([i, j])
-            if spec_search is not None and i == spec_search:
+            elif spec_search is not None and str(i) == spec_search:
                 self.read_write_data([i, j])
 
-    def save_data(self):
-        keys = list(tracker.tracker.keys())
-        values = list(tracker.tracker.values())
+    def save_data(self, obj_list):
+        keys = list(obj_list.keys())
+        values = list(obj_list.values())
 
         with open('sav.pickle', 'wb') as handle:
             handle.truncate(0)
