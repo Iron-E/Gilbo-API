@@ -86,7 +86,10 @@ class entity(ABC):
     def location(self):
         return self.entity_dict['location']
 
-    def set_loc(self, location, x, y):
+    def set_loc(self, x, y, location=None):
+        if location is None:
+            location = self.location[Locate_Entity.mapid.value]
+
         self.entity_dict['location'][Locate_Entity.mapid.value] = location
         self.entity_dict['location'][Locate_Entity.coordinates.value] = [y, x]
 
@@ -393,7 +396,12 @@ class location_manager:
         if isinstance(thing.stats, player_collection) and thing.stats.encumbered is True:
             return print(self.xy_dict['Errors'][Location_Errors.encumbered])
         # Insert data collection from map
-        self.check_bounds(thing.location[Locate_Entity.mapid], direction, thing.location[Locate_Entity.coordinates])
+        can_move = self.check_bounds(thing.location[Locate_Entity.mapid], direction, thing.location[Locate_Entity.coordinates])
+        if can_move[0] is True:
+            thing.set_loc(can_move[1][1], can_move[0])
+            self.load_map(thing.location[Locate_Entity.mapid])
+        else:
+            print('')
 
     def teleport(self, thing, mapid, x, y):
         try:
@@ -401,7 +409,7 @@ class location_manager:
                 if isinstance(thing.inv, player_collection) and thing.stats.encumbered is True:
                     return print(self.xy_dict['Errors'][Location_Errors.encumbered])
                 # Insert data collection from map
-                return mapid.send_data(list(x, y))
+                return mapid.send_data(tuple(y, x))
             else:
                 return print(self.xy_dict['Errors'][Location_Errors.no_exist])
         except AttributeError:
@@ -424,7 +432,10 @@ class location_manager:
         try:
             mapid.layout[new_place]
 
-            return mapid.send_data(new_place)
+            if mapid.send_data(tuple(new_place)) is True:
+                return (True, new_place)
+            else:
+                return False
         except IndexError:
             return print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
 
@@ -458,21 +469,20 @@ class location_manager:
 
             return value
 
-    def load_map(self, mapid, clmns, rows=None):
-        if rows is None:
-            rows = len(mapid.layout)
+    def load_map(self, mapid):
+        pub_chk_pos.send(sender=self)
 
-        try:
-            pub_chk_pos.send(sender=self)
-            for y in range(rows):
-                for x in range(clmns):
-                    if ([y, x] == self.player_pos[Locate_Entity.coordinates]) and (mapid is self.player_pos[Locate_Entity.mapid]):
-                        print(self.detect_tile(mapid.layout[y, x], True), end=' ')
-                    else:
-                        print(self.detect_tile(mapid.layout[y, x]), end=' ')
-                print()
-        except IndexError:
-            print(self.xy_dict['Errors'][Location_Errors.no_exist])
+        clmns = mapid.layout.shape[1]
+        rows = mapid.layout.shape[0]
+
+        for y in range(rows):
+            for x in range(clmns):
+                if ([y, x] == self.player_pos[Locate_Entity.coordinates]) and (mapid is self.player_pos[Locate_Entity.mapid]):
+                    print(self.detect_tile(mapid.layout[y, x], True), end=' ')
+                else:
+                    print(self.detect_tile(mapid.layout[y, x]), end=' ')
+
+            print()
 
 
 class matrix_map:
