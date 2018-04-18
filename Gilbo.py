@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.7.0-B #
+# Gilbo RPG API -- Version 0.7.0-F #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -86,12 +86,12 @@ class entity(ABC):
     def location(self):
         return self.entity_dict['location']
 
-    def set_loc(self, x, y, location=None):
+    def set_loc(self, cord, location=None):
         if location is None:
             location = self.location[Locate_Entity.mapid.value]
 
         self.entity_dict['location'][Locate_Entity.mapid.value] = location
-        self.entity_dict['location'][Locate_Entity.coordinates.value] = [y, x]
+        self.entity_dict['location'][Locate_Entity.coordinates.value] = cord
 
 
 class NPC(entity):
@@ -396,12 +396,9 @@ class location_manager:
         if isinstance(thing.stats, player_collection) and thing.stats.encumbered is True:
             return print(self.xy_dict['Errors'][Location_Errors.encumbered])
         # Insert data collection from map
-        new_loc = self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates])
-        if new_loc is not False:
-            thing.set_loc(new_loc[1], new_loc[0])
+        if self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates]) is not False:
+            thing.set_loc(self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates]))
             self.load_map(thing.location[Locate_Entity.mapid])
-        else:
-            print('')
 
     def teleport(self, thing, mapid, x, y):
         try:
@@ -419,20 +416,19 @@ class location_manager:
 
     def check_bounds(self, mapid, direction, start_loc):
         if direction is Directions.Up.value:
-            new_place = [start_loc[Locate_Entity.y_cord] - 1, start_loc[Locate_Entity.x_cord]]
+            new_loc = [start_loc[Locate_Entity.y_cord] - 1, start_loc[Locate_Entity.x_cord]]
         elif direction is Directions.Down.value:
-            new_place = [start_loc[Locate_Entity.y_cord] + 1, start_loc[Locate_Entity.x_cord]]
+            new_loc = [start_loc[Locate_Entity.y_cord] + 1, start_loc[Locate_Entity.x_cord]]
         elif direction is Directions.Left.value:
-            new_place = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] - 1]
+            new_loc = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] - 1]
         elif direction is Directions.Right.value:
-            new_place = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] + 1]
+            new_loc = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] + 1]
 
         try:
-            mapid.layout[new_place]
+            mapid.layout[new_loc[Locate_Entity.y_cord], new_loc[Locate_Entity.x_cord]]
 
-            if mapid.send_data(tuple(new_place)) is True:
-                print(new_place)
-                return new_place
+            if mapid.send_data(tuple(new_loc)) is True:
+                return new_loc
             else:
                 return False
 
