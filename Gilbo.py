@@ -469,11 +469,14 @@ class location_manager:
 
             return value
 
-    def load_map(self, mapid):
+    def load_map(self, mapid, rows=None, clmns=None):
         pub_chk_pos.send(sender=self)
 
-        clmns = mapid.layout.shape[1]
-        rows = mapid.layout.shape[0]
+        if clmns is None:
+            clmns = mapid.layout.shape[1]
+
+        if rows is None:
+            rows = mapid.layout.shape[0]
 
         for y in range(rows):
             for x in range(clmns):
