@@ -398,6 +398,8 @@ class location_manager:
         # Insert data collection from map
         if self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates]) is not False:
             thing.set_loc(self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], True))
+            import os
+            os.system('cls' if os.name == 'nt' else 'clear')
             self.load_map(thing.location[Locate_Entity.mapid])
 
     def teleport(self, thing, mapid, x, y):
