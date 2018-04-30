@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.7.0 #
+# Gilbo RPG API -- Version 0.7.1 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -46,13 +46,18 @@ class Enumerators(IntEnum):
 #
 
 
-def type(phrase, type_speed=.045, line_delay=.5):
+def write(phrase, type_speed=.040, line_delay=.5):
     from time import sleep
     for i in range(len(phrase)):
         print(phrase[i], end="", flush=True)
         sleep(type_speed)
 
     sleep(line_delay)
+    print('', end=' ')
+
+def clr_console():
+    import os
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 
 #
@@ -139,9 +144,9 @@ class battler(vendor):
     @property
     def attacks(self):
         try:
-            for i in range(len(self.inv.equipped)):
-                if isinstance(self.inv.equipped[i], weapon):
-                    return self.inv.equipped[i]
+            for i in range(len(self.collection.equipped)):
+                if isinstance(self.collection.equipped[i], weapon):
+                    return self.collection.equipped[i]
         except AttributeError:
             print(self.Error_Incorrect_Inventory)
 
@@ -383,7 +388,20 @@ class location_manager:
         self.xy_dict['Errors'].append("You're carrying too much.")
         self.xy_dict['Errors'].append("You cannot go that way.")
         self.xy_dict['player_location'] = []
+        self.xy_dict['auto_load'] = True
         self.xy_dict['current_map'] = None
+
+    @property
+    def auto_load_map(self):
+        return self.xy_dict['auto_load']
+
+    @auto_load_map.setter
+    def auto_load_map(self, value):
+        # Allows user to turn off map loading for certain sections of the game
+        if value is True or value is False:
+            self.xy_dict['auto_load'] = value
+        else:
+            raise TypeError('Value must be True or False.')
 
     @property
     def player_pos(self):
@@ -393,6 +411,14 @@ class location_manager:
     def player_pos(self, val):
         self.xy_dict['player_location'] = val
 
+    def load_if_player(self):
+        if self.auto_load_map is True:
+            pub_chk_pos.send(sender=self)
+            if self.xy_dict['current_map'] is self.player_pos[Locate_Entity.mapid]:
+                self.load_map(self.player_pos[Locate_Entity.mapid])
+        else:
+            clr_console()
+
     def move(self, thing, direction):
         # Test for encumberence
         if isinstance(thing.stats, player_collection) and thing.stats.encumbered is True:
@@ -401,22 +427,20 @@ class location_manager:
         if self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], False) is not False:
             thing.set_loc(self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], True if isinstance(thing, player) else False, True))
             # Check to see if the map needs to be reloaded
-            if self.xy_dict['current_map'] is mapid:
-                self.load_map(thing.location[Locate_Entity.mapid])
+            self.load_if_player()
 
     def teleport(self, thing, mapid, x, y):
         # Wrap around try just in case the map is mispelled or does not yet exist
         try:
-            if isinstance(thing.inv, player_collection) and thing.stats.encumbered is True:
+            if isinstance(thing, player) and thing.stats.encumbered is True:
                 # Print error if the player is encumbered
                 return print(self.xy_dict['Errors'][Location_Errors.encumbered])
-                # Insert data collection from map
-                if isinstance(thing, player):
-                    # Writeout extra details because the entity is a player
-                    if mapid.send_data(tuple(y, x), True) is True:
-                        thing.set_loc([y, x], mapid)
-            else:
-                return print(self.xy_dict['Errors'][Location_Errors.no_exist])
+            # Insert data collection from map
+            # Writeout extra details because the entity is a player
+            if mapid.send_data((y, x), True if isinstance(thing, player) else False) is True:
+                thing.set_loc([y, x], mapid)
+                self.load_map(self.player_pos[Locate_Entity.mapid])
+
         except NameError:
             raise NameError('That map does not exist.')
 
@@ -489,6 +513,8 @@ class location_manager:
             return value
 
     def load_map(self, mapid, rows=None, clmns=None):
+        clr_console()
+
         # Get player position through event
         pub_chk_pos.send(sender=self)
 
@@ -623,7 +649,7 @@ class vendor_collection(item_collection):
         if item in self.items:
             for i in range(count):
                 if swapee.coin >= (item.value * count):
-                    swapee.inv.add_item(item)
+                    swapee.collection.add_item(item)
                     self.rem_item(item)
                     self.coin = item.value
                 else:
@@ -663,7 +689,7 @@ class player_collection(battler_collection, vendor_collection):
         for i in range(amnt):
             self.items.append(itm)
 
-        pub_item_obtained.send(sender=self, itms=self.inventory)
+        pub_item_obtained.send(sender=self, itms=self.collectionentory)
 
 #
 # Quests #
