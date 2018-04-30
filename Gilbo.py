@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.7.1 #
+# Gilbo RPG API -- Version 0.8.0 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -411,10 +411,10 @@ class location_manager:
     def player_pos(self, val):
         self.xy_dict['player_location'] = val
 
-    def load_if_player(self):
+    def load_if_player(self, thing):
         if self.auto_load_map is True:
             pub_chk_pos.send(sender=self)
-            if self.xy_dict['current_map'] is self.player_pos[Locate_Entity.mapid]:
+            if isinstance(thing, player):
                 self.load_map(self.player_pos[Locate_Entity.mapid])
         else:
             clr_console()
@@ -424,10 +424,10 @@ class location_manager:
         if isinstance(thing.stats, player_collection) and thing.stats.encumbered is True:
             return print(self.xy_dict['Errors'][Location_Errors.encumbered])
         # Insert data collection from map
-        if self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], False) is not False:
-            thing.set_loc(self.check_bounds(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], True if isinstance(thing, player) else False, True))
+        if self.chk_boundary(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], False) is not False:
+            thing.set_loc(self.chk_boundary(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], True if isinstance(thing, player) else False, True))
             # Check to see if the map needs to be reloaded
-            self.load_if_player()
+            self.load_if_player(thing)
 
     def teleport(self, thing, mapid, x, y):
         # Wrap around try just in case the map is mispelled or does not yet exist
@@ -439,12 +439,12 @@ class location_manager:
             # Writeout extra details because the entity is a player
             if mapid.send_data((y, x), True if isinstance(thing, player) else False) is True:
                 thing.set_loc([y, x], mapid)
-                self.load_map(self.player_pos[Locate_Entity.mapid])
+                self.load_if_player(thing)
 
         except NameError:
             raise NameError('That map does not exist.')
 
-    def check_bounds(self, mapid, direction, start_loc, is_player, print_errors=False):
+    def chk_boundary(self, mapid, direction, start_loc, is_player, print_errors=False):
         # Update coordinates for direction
         if direction is Directions.Up.value:
             new_loc = [start_loc[Locate_Entity.y_cord] - 1, start_loc[Locate_Entity.x_cord]]
@@ -562,6 +562,13 @@ class matrix_map:
         #     if player is True:
         #         print('A wide river halts your progress down this path.')
         #     return False
+
+    def chk_tile_val(self, tile, to_match):
+            if self.layout[tile[Locate_Entity.y_cord], tile[Locate_Entity.x_cord]] == to_match:
+                return True
+            else:
+                return False
+
 
     @property
     def id(self):
