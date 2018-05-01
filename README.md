@@ -43,7 +43,7 @@ The location manager defaults to working with Numpy-array-based maps and works b
 - [ ] Battle other players over LAN. Not really sure about this one.
 
 ### Modification / Structure
-- Creative Commons License and Object-oriented design makes modification and redistribution easy.
-- All objects (inventories, attack lists, stat lists, etc) are created independantly and then an *entity* is defined as having them. See [documentation](https://github.com/ajzett/Gilbo-API/blob/master/DOCUMENTATION.md) for more.
+- Creative Commons License and Object-oriented design allows for easy utilization or modification, and permits redistribution.
 
 # Changelogs
+- None until release
