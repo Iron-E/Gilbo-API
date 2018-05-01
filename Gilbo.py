@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.6.0 #
+# Gilbo RPG API -- Version 0.8.0 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -6,11 +6,11 @@ from enum import IntEnum, auto
 
 # Allow Gilbo to see Dependencies
 import sys
-sys.path.append('./dependencies')
+sys.path.append('.deps')
 
 # 3rd Party Libraries
 import numpy as np
-from dispatcher import Signal, receiver
+from dispatcher import Signal
 
 # ascii-table.com/ansi-escape-sequences.php
 # https://docs.djangoproject.com/en/2.0/topics/signals/#django.contrib.auth.signals.Signal
@@ -46,13 +46,18 @@ class Enumerators(IntEnum):
 #
 
 
-def type(phrase, type_speed=.045, line_delay=.5):
+def write(phrase, type_speed=.040, line_delay=.5):
     from time import sleep
     for i in range(len(phrase)):
         print(phrase[i], end="", flush=True)
         sleep(type_speed)
 
     sleep(line_delay)
+    print('', end=' ')
+
+def clr_console():
+    import os
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 
 #
@@ -72,7 +77,7 @@ class entity(ABC):
         self.entity_dict = {'location': []}
         self.entity_dict['name'] = name
         self.entity_dict.update({'location': [location]})
-        self.entity_dict['location'].append([x, y])
+        self.entity_dict['location'].append([y, x])
 
     @property
     def name(self):
@@ -86,9 +91,12 @@ class entity(ABC):
     def location(self):
         return self.entity_dict['location']
 
-    def set_loc(self, location, x, y):
+    def set_loc(self, cord, location=None):
+        if location is None:
+            location = self.location[Locate_Entity.mapid.value]
+
         self.entity_dict['location'][Locate_Entity.mapid.value] = location
-        self.entity_dict['location'][Locate_Entity.coordinates.value] = [y, x]
+        self.entity_dict['location'][Locate_Entity.coordinates.value] = cord
 
 
 class NPC(entity):
@@ -136,9 +144,9 @@ class battler(vendor):
     @property
     def attacks(self):
         try:
-            for i in range(len(self.inv.equipped)):
-                if isinstance(self.inv.equipped[i], weapon):
-                    return self.inv.equipped[i]
+            for i in range(len(self.collection.equipped)):
+                if isinstance(self.collection.equipped[i], weapon):
+                    return self.collection.equipped[i]
         except AttributeError:
             print(self.Error_Incorrect_Inventory)
 
@@ -380,6 +388,20 @@ class location_manager:
         self.xy_dict['Errors'].append("You're carrying too much.")
         self.xy_dict['Errors'].append("You cannot go that way.")
         self.xy_dict['player_location'] = []
+        self.xy_dict['auto_load'] = True
+        self.xy_dict['current_map'] = None
+
+    @property
+    def auto_load_map(self):
+        return self.xy_dict['auto_load']
+
+    @auto_load_map.setter
+    def auto_load_map(self, value):
+        # Allows user to turn off map loading for certain sections of the game
+        if value is True or value is False:
+            self.xy_dict['auto_load'] = value
+        else:
+            raise TypeError('Value must be True or False.')
 
     @property
     def player_pos(self):
@@ -389,52 +411,84 @@ class location_manager:
     def player_pos(self, val):
         self.xy_dict['player_location'] = val
 
+    def load_if_player(self, thing):
+        if self.auto_load_map is True:
+            pub_chk_pos.send(sender=self)
+            if isinstance(thing, player):
+                self.load_map(self.player_pos[Locate_Entity.mapid])
+        else:
+            clr_console()
+
     def move(self, thing, direction):
-        if isinstance(thing.inv, player_collection) and thing.stats.encumbered is True:
+        # Test for encumberence
+        if isinstance(thing.stats, player_collection) and thing.stats.encumbered is True:
             return print(self.xy_dict['Errors'][Location_Errors.encumbered])
         # Insert data collection from map
-        self.check_bounds(thing.location[Locate_Entity.mapid], direction, thing.location[Locate_Entity.coordinates[Locate_Entity.x_cord]], thing.location[Locate_Entity.coordinates[Locate_Entity.y_cord]])
+        if self.chk_boundary(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], False) is not False:
+            thing.set_loc(self.chk_boundary(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], True if isinstance(thing, player) else False, True))
+            # Check to see if the map needs to be reloaded
+            self.load_if_player(thing)
 
     def teleport(self, thing, mapid, x, y):
+        # Wrap around try just in case the map is mispelled or does not yet exist
         try:
-            if mapid in tracker.tracker['matrix_map']:
-                if isinstance(thing.inv, player_collection) and thing.stats.encumbered is True:
-                    return print(self.xy_dict['Errors'][Location_Errors.encumbered])
-                # Insert data collection from map
-                return mapid.send_data(list(x, y))
+            if isinstance(thing, player) and thing.stats.encumbered is True:
+                # Print error if the player is encumbered
+                return print(self.xy_dict['Errors'][Location_Errors.encumbered])
+            # Insert data collection from map
+            # Writeout extra details because the entity is a player
+            if mapid.send_data((y, x), True if isinstance(thing, player) else False) is True:
+                thing.set_loc([y, x], mapid)
+                self.load_if_player(thing)
+
+        except NameError:
+            raise NameError('That map does not exist.')
+
+    def chk_boundary(self, mapid, direction, start_loc, is_player, print_errors=False):
+        # Update coordinates for direction
+        if direction is Directions.Up.value:
+            new_loc = [start_loc[Locate_Entity.y_cord] - 1, start_loc[Locate_Entity.x_cord]]
+        elif direction is Directions.Down.value:
+            new_loc = [start_loc[Locate_Entity.y_cord] + 1, start_loc[Locate_Entity.x_cord]]
+        elif direction is Directions.Left.value:
+            new_loc = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] - 1]
+        elif direction is Directions.Right.value:
+            new_loc = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] + 1]
+
+        try:
+            # Test if new coordinate is out of bounds
+            mapid.layout[new_loc[Locate_Entity.y_cord], new_loc[Locate_Entity.x_cord]]
+
+            # Check if new coordinate is negative
+            for i in new_loc:
+                if i < 0:
+                    if print_errors is True:
+                        print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
+
+                    return start_loc
+
+            # Check against the mapid's send_data method to see what it wants the location manager to do
+            if mapid.send_data(tuple(new_loc), True if is_player is True else False) is True:
+                return new_loc
             else:
-                return print(self.xy_dict['Errors'][Location_Errors.no_exist])
-        except AttributeError:
-            raise AttributeError("The object_tracker list doesn't exist.")
-        except KeyError:
-            raise AttributeError('You have not created any matrix_maps.')
+                return False
 
-    def check_bounds(self, mapid, direction, x, y):
-        if direction is Directions.Up:
-            new_place = list(x, y + 1)
-        elif direction is Directions.Down:
-            new_place = list(x, y - 1)
-        elif direction is Directions.Left:
-            new_place = list(x - 1, y)
-        elif direction is Directions.Right:
-            new_place = list(x + 1, y)
-        else:
-            return print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
-
-        try:
-            mapid.layout[new_place]
-
-            return mapid.send_data(new_place)
         except IndexError:
-            return print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
+            if print_errors is True:
+                # Tell the user that it cannot move that way
+                print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
+
+            return start_loc
 
     def detect_tile(self, til, player_til=False):
             from colorama import Fore, Back, Style
             value = ''
 
+            # Set the background color to magenta to signify that the player is there
             if player_til is True:
                 value += Back.MAGENTA
 
+            # Set unicode value of character based on Enum value
             if til == Tiles.Grass.value:
                 value += Fore.GREEN + Style.BRIGHT + '\u26B6' + Style.RESET_ALL
             elif til == Tiles.Wall.value:
@@ -458,33 +512,63 @@ class location_manager:
 
             return value
 
-    def load_map(self, mapid, clmns, rows=None):
-        if rows is None:
-            rows = len(mapid.layout)
+    def load_map(self, mapid, rows=None, clmns=None):
+        clr_console()
 
-        try:
-            pub_chk_pos.send(sender=self)
-            for y in range(rows):
-                for x in range(clmns):
-                    if ([y, x] == self.player_pos[Locate_Entity.coordinates]) and (mapid is self.player_pos[Locate_Entity.mapid]):
-                        print(self.detect_tile(mapid.layout[y, x], True), end=' ')
-                    else:
-                        print(self.detect_tile(mapid.layout[y, x]), end=' ')
-                print()
-        except IndexError:
-            print(self.xy_dict['Errors'][Location_Errors.no_exist])
+        # Get player position through event
+        pub_chk_pos.send(sender=self)
+
+        # Auto generate columns and rows if they are not provided
+        if clmns is None:
+            clmns = mapid.layout.shape[1]
+
+        if rows is None:
+            rows = mapid.layout.shape[0]
+
+        # Loop through rows and columns to send each one to the detect_tile method
+        for y in range(rows):
+            for x in range(clmns):
+                # Test for player position against tile
+                if ([y, x] == self.player_pos[Locate_Entity.coordinates]) and (mapid is self.player_pos[Locate_Entity.mapid]):
+                    print(self.detect_tile(mapid.layout[y, x], True), end=' ')
+                else:
+                    print(self.detect_tile(mapid.layout[y, x]), end=' ')
+
+            print()
+
+        # Update the current mapid
+        self.xy_dict['current_map'] = mapid
 
 
 class matrix_map:
-    def __init__(self, name, entities=list()):
+    def __init__(self, name):
         self.map_dict = {}
         self.map_dict['map_id'] = name
         self.map_dict['map_layout'] = None
-        self.map_dict['entities'] = entities
 
     @abstractmethod
-    def send_data(self, tile):
+    def send_data(self, til, plyr=False):
         raise NotImplementedError('Please define this method.')
+        # TEMPLATE #
+        #
+        # import os
+        # os.system('cls' if os.name == 'nt' else 'clear')
+        #
+        # if til == [0, 1]:
+        #     if plyr is True:
+        #         print('You walk forward, and see a massive tree. You step closer.')
+        #     return True
+        # elif til == [0, 2]:
+        #     if player is True:
+        #         print('A wide river halts your progress down this path.')
+        #     return False
+
+    def chk_tile_val(self, tile, to_match):
+            if self.layout[tile[Locate_Entity.y_cord], tile[Locate_Entity.x_cord]] == to_match:
+                return True
+            else:
+                return False
+
 
     @property
     def id(self):
@@ -498,10 +582,6 @@ class matrix_map:
     def layout(self, value):
         assert isinstance(value, np.ndarray)
         self.map_dict['map_layout'] = value
-
-    @property
-    def entities(self):
-        return self.map_dict['entities']
 
 #
 # Battle Backend #
@@ -576,7 +656,7 @@ class vendor_collection(item_collection):
         if item in self.items:
             for i in range(count):
                 if swapee.coin >= (item.value * count):
-                    swapee.inv.add_item(item)
+                    swapee.collection.add_item(item)
                     self.rem_item(item)
                     self.coin = item.value
                 else:
@@ -616,7 +696,7 @@ class player_collection(battler_collection, vendor_collection):
         for i in range(amnt):
             self.items.append(itm)
 
-        pub_item_obtained.send(sender=self, itms=self.inventory)
+        pub_item_obtained.send(sender=self, itms=self.collectionentory)
 
 #
 # Quests #
@@ -653,7 +733,7 @@ class object_tracker:
             self.track_dict = {}
             self.one_time_init = 1
 
-    def categ_globals(self, globl):
+    def categ_list(self, globl):
         # check for Gilbo-defined class parents
         try:
             import inspect
@@ -661,6 +741,7 @@ class object_tracker:
                 temp = []
                 parents = inspect.getmro(globl.__class__)
 
+                # Append list of matched objects to temporary list
                 for i in range(len(parents)):
                     temp_append = str(parents[i]).split("'")[1]
                     try:
@@ -669,6 +750,7 @@ class object_tracker:
                         pass
                     temp.append(temp_append)
 
+                # Append globals that match the object to list
                 for i in range(len(temp)):
                     try:
                         self.track_dict[temp[i]].append(globl)
@@ -680,24 +762,27 @@ class object_tracker:
         except TypeError:
             pass
 
-    def update_tracker(self, class_list=globals(), spec_search=None):
+    def update_tracker(self, class_list, spec_search=None):
         self.empty_tracker()
 
+        # Check if user wants to search for a specific item
         if spec_search is None:
             for key in class_list:
                 if isinstance(class_list[key], list):
                     for i in range(len(class_list[key])):
-                        self.categ_globals(class_list[key][i])
+                        self.categ_list(class_list[key][i])
                 else:
-                    self.categ_globals(class_list[key])
+                    self.categ_list(class_list[key])
 
         else:
+            # If the user wants to search for something specifically, begin another process
             store_names = []
             import inspect
 
             for key in class_list:
                 try:
                     if 'Gilbo' in str(inspect.getfile(class_list[key].__class__)).split('\\')[-1]:
+                        # Find instances of the searched term
                         if isinstance(class_list[key], spec_search):
                             store_names.append(class_list[key])
 
@@ -717,8 +802,29 @@ class object_tracker:
         for i, j in self.tracker.items():
             if spec_search is None:
                 self.read_write_data([i, j])
-            if spec_search is not None and i == spec_search:
+            elif spec_search is not None and str(i) == spec_search:
                 self.read_write_data([i, j])
+
+    def save_data(self, obj_list):
+        keys = list(obj_list.keys())
+        values = list(obj_list.values())
+
+        with open('sav.pickle', 'wb') as handle:
+            handle.truncate(0)
+            import dill as pickle
+            pickle.dump((keys, values), handle)
+
+        del keys, values
+
+    def load_data(self, obj_list):
+        with open('sav.pickle', 'rb') as handle:
+            import dill as pickle
+            keys, values = pickle.load(handle)
+            for i in range(len(keys)):
+                try:
+                    obj_list.update({keys[i]: values[i]})
+                except IndexError:
+                    print('There were more objects to load than values.')
 
     @property
     def tracker(self):
