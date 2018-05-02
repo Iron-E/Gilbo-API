@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.8.0-A #
+# Gilbo RPG API -- Version 0.8.0 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -21,6 +21,7 @@ from dispatcher import Signal
 
 # Inventory-related
 pub_item_obtained = Signal(providing_args=["itms"])
+pub_stat_change = Signal(providing_args=["changes"])
 
 # Entity-position-related
 pub_chk_pos = Signal()
@@ -213,18 +214,30 @@ class item_weighted(item_unweighted):
 
 
 class equippable(item_weighted):
-    def __init__(self, name, dscrpt, weight, val):
+    def __init__(self, name, dscrpt, weight, val, [hp, stren, armr, agil, pwr]):
         super().__init__(name, dscrpt, weight, val)
         self.item_dict['type'] = Item_Types.basic_equippable
+        self.item_dict['stat_change'] = [hp, stren, armr, agil, pwr]
+
+    def set_stats(self):
+        pub_stat_change(sender=self, changes=self.item_dict['stat_change'])
+
+    def return_stat(self):
+        try:
+            for i in range(len(self.item_dict['stat_change'])):
+                self.item_dict['stat_change'][i] = self.item_dict['stat_change'][i] * -1
+        except TypeError:
+            raise TypeError('An item in stat_change was not a number.')
+
+        pub_stat_change(sender=self, changes=self.item_dict['stat_change'])
 
     # The API users will have to define their own equip effect
 
 
 class weapon(equippable):
-    def __init__(self, name, dscrpt, weight, val, dmg, linked_attacks=list()):
-        super().__init__(name, dscrpt, weight, val)
+    def __init__(self, name, dscrpt, weight, val, dmg, linked_attacks, [hp, stren, armr, agil, pwr]):
+        super().__init__(name, dscrpt, weight, val, [hp, stren, armr, agil, pwr])
         self.item_dict['type'] = Item_Types.weapon
-        self.item_dict['wpn_dmg'] = dmg
         self.item_dict['linked_attack_list'] = linked_attacks
 
         @property
@@ -233,17 +246,20 @@ class weapon(equippable):
 
 
 class armor(equippable):
-    def __init__(self, name, dscrpt, weight, val, armr):
-        super().__init__(name, dscrpt, weight, val)
+    def __init__(self, name, dscrpt, weight, val, [hp, stren, armr, agil, pwr]):
+        super().__init__(name, dscrpt, weight, val, [hp, stren, armr, agil, pwr])
         self.item_dict['type'] = Item_Types.armor
-        self.item_dict['wpn_dmg'] = armr
 
 
-class heal_item(item_weighted):
-    def __init__(self, name, dscrpt, weight, val, heal_amnt):
-        super().__init__(name, dscrpt, weight, val)
-        self.item_dict['heal_amount'] = heal_amnt
+class buff_item(item_weighted):
+    def __init__(self, name, dscrpt, weight, val, [hp, stren, armr, agil, pwr], effect_time):
+        super().__init__(name, dscrpt, weight, val, [hp, stren, armr, agil, pwr])
         self.item_dict['type'] = Item_Types.basic_item
+        self.item_dict['effect_time']
+
+    @property
+    def duration(self):
+        return self.item_dict['effect_time']
 
 #
 # Entity Stats #
@@ -258,6 +274,11 @@ class battler_stats:
         self.stat_dict['armor'] = armr
         self.stat_dict['agility'] = agil
         self.stat_dict['power'] = pwr
+
+        def handle_stat_change(sender, **kwargs):
+            self.sub_stat_change(sender, **kwargs)
+        self.handle_stat_change = handle_stat_change
+        pub_stat_change.connect(handle_stat_change)
 
     @property
     def health(self):
@@ -299,29 +320,23 @@ class battler_stats:
     def power(self, value):
         self.stat_dict['power'] = value
 
+    def sub_stat_change(self, sender, **kwargs):
+        self.health = self.health + kwargs['changes'][0]
+        self.stren = self.stren + kwargs['changes'][1]
+        self.armor = self.armor + kwargs['changes'][2]
+        self.agility = self.agility + kwargs['changes'][3]
+        self.power = self.power + kwargs['changes'][4]
+
+
 
 class player_stats(battler_stats):
     def __init__(self, hp, stren, armr, agil, pwr):
         super().__init__(hp, stren, armr, agil, pwr)
-        self.calc_carry_cap()
-        self.stat_dict['overencumbered'] = False
 
         def handle_item_obtained(sender, **kwargs):
             self.sub_item_obtained(sender, **kwargs)
         self.handle_item_obtained = handle_item_obtained
         pub_item_obtained.connect(handle_item_obtained)
-
-    def calc_carry_cap(self):
-        self.stat_dict['carry_capacity'] = Enumerators.base_carry_cap + self.stat_dict['strength'] * Enumerators.carry_cap_modifier
-
-    @property
-    def encumbered(self):
-        return self.stat_dict['overencumbered']
-
-    @encumbered.setter
-    def encumbered(self, value):
-        self.stat_dict['overencumbered'] = value
-        # WRITE MORE HERE FOR WHAT OVERENCUMBENCE AFFECTS
 
     @property
     def stren(self):
@@ -331,19 +346,6 @@ class player_stats(battler_stats):
     def stren(self, value):
         self.stat_dict['strength'] = value
         self.calc_carry_cap()
-
-    def sub_item_obtained(self, sender, **kwargs):
-        total_weight = 0
-
-        for i in range(len(kwargs['items'])):
-            total_weight += kwargs['items'][i].weight
-
-        self.calc_carry_cap()
-
-        if total_weight > self.stat_dict['carry_capacity']:
-            self.encumbered = True
-
-        del total_weight
 
 #
 # Locations #
@@ -363,8 +365,7 @@ class Directions(IntEnum):
 
 class Location_Errors(IntEnum):
     no_exist = 0
-    encumbered = 1
-    invalid_direction = 2
+    invalid_direction = 1
 
 
 class Tiles(IntEnum):
@@ -420,9 +421,6 @@ class location_manager:
             clr_console()
 
     def move(self, thing, direction):
-        # Test for encumberence
-        if isinstance(thing.stats, player_collection) and thing.stats.encumbered is True:
-            return print(self.xy_dict['Errors'][Location_Errors.encumbered])
         # Insert data collection from map
         if self.chk_boundary(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], False) is not False:
             thing.set_loc(self.chk_boundary(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], True if isinstance(thing, player) else False, True))
@@ -432,11 +430,7 @@ class location_manager:
     def teleport(self, thing, mapid, x, y):
         # Wrap around try just in case the map is mispelled or does not yet exist
         try:
-            if isinstance(thing, player) and thing.stats.encumbered is True:
-                # Print error if the player is encumbered
-                return print(self.xy_dict['Errors'][Location_Errors.encumbered])
-            # Insert data collection from map
-            # Writeout extra details because the entity is a player
+            # Insert data collection from map, and writeout extra details if the entity is a player
             if mapid.send_data((y, x), True if isinstance(thing, player) else False) is True:
                 thing.set_loc([y, x], mapid)
                 self.load_if_player(thing)
@@ -676,9 +670,11 @@ class battler_collection(item_collection):
             if item in self.items:
                 for i in range(len(self.on_entity)):
                     if item.__class__ == self.on_entity.__class__:
+                        self.on_entity[i].return_stat()
                         del self.on_entity[i]
 
             self.on_entity.append(item)
+            item.set_stats()
 
         except AttributeError:
             print(self.Errors)
