@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.8.0 #
+# Gilbo RPG API -- Version 0.8.0-A #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -521,7 +521,6 @@ class location_manager:
         # Auto generate columns and rows if they are not provided
         if clmns is None:
             clmns = mapid.layout.shape[1]
-
         if rows is None:
             rows = mapid.layout.shape[0]
 
@@ -540,7 +539,7 @@ class location_manager:
         self.xy_dict['current_map'] = mapid
 
 
-class matrix_map:
+class matrix_map(ABC):
     def __init__(self, name):
         self.map_dict = {}
         self.map_dict['map_id'] = name
@@ -562,6 +561,7 @@ class matrix_map:
         #     if player is True:
         #         print('A wide river halts your progress down this path.')
         #     return False
+
 
     def chk_tile_val(self, tile, to_match):
             if self.layout[tile[Locate_Entity.y_cord], tile[Locate_Entity.x_cord]] == to_match:
@@ -703,11 +703,31 @@ class player_collection(battler_collection, vendor_collection):
 #
 
 
-class quest:
+# In progress
+class quest(ABC):
     def __init__(self, name):
-        # Placeholder
-        self.name = name
-        pass
+        self.quest_dict['name'] = name
+        self.quest_dict['current_stage'] = None
+        # Not sure if this part of the dictionary is necessary
+        # self.quest_dict['stages'] = []
+
+    @property
+    def stage(self, stage):
+        return self.quest_dict['current_stage']
+
+    @stage.setter
+    @abstractmethod
+    def stage(self, stage):
+        raise NotImplementedError('Please define this method.')
+        """
+        Here the user will implement anything they require in order to get their quest to function as desired.
+
+        Some possibilities include checking for items in the iventory: subscribe to the pub_item_obtained event and check the player's inventory for items. Check if a player has stepped
+        onto a tile by writing a quest.stage method into the matrix_map class's send_data method. Or, make NPCs say certain things by creating an if statement to check if a quest has a certain stage.
+        """
+        # TEMPLATE #
+        # WIP
+
 
 
 #
