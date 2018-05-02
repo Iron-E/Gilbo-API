@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.8.0 #
+# Gilbo RPG API -- Version 0.8.1 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -321,11 +321,14 @@ class battler_stats:
         self.stat_dict['power'] = value
 
     def sub_stat_change(self, sender, **kwargs):
-        self.health = self.health + kwargs['changes'][0]
-        self.stren = self.stren + kwargs['changes'][1]
-        self.armor = self.armor + kwargs['changes'][2]
-        self.agility = self.agility + kwargs['changes'][3]
-        self.power = self.power + kwargs['changes'][4]
+        try:
+            self.health = self.health + kwargs['changes'][0]
+            self.stren = self.stren + kwargs['changes'][1]
+            self.armor = self.armor + kwargs['changes'][2]
+            self.agility = self.agility + kwargs['changes'][3]
+            self.power = self.power + kwargs['changes'][4]
+        except TypeError:
+            raise TypeError('An item in stat_change was not a number.')
 
 
 
