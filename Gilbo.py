@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.9.4 #
+# Gilbo RPG API -- Version 0.9.5 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -49,12 +49,21 @@ class Enumerators(IntEnum):
 
 def write(phrase, type_speed=.040, line_delay=.5):
     from time import sleep
-    for i in range(len(phrase)):
-        print(phrase[i], end="", flush=True)
-        sleep(type_speed)
+    if isinstance(phrase, list):
+        for i in phrase:
+            for j in range(len(phrase[i]))
+                print(phrase[i][j], end="", flush=True)
+                sleep(type_speed)
 
-    sleep(line_delay)
-    print('', end=' ')
+            sleep(line_delay)
+            print('', end=' ')
+    else:
+        for i in range(len(phrase)):
+            print(phrase[i], end="", flush=True)
+            sleep(type_speed)
+
+        sleep(line_delay)
+        print('', end=' ')
 
 def clr_console():
     import os
@@ -108,7 +117,7 @@ class NPC(entity):
     def add_dialogue(self, diag_name, diag_content):
         self.dialogue_dict[diag_name] = diag_content
 
-    def type_dialogue(self, diag_name):
+    def say(self, diag_name):
         for i in range(len(self.dialogue_dict[diag_name])):
             write(self.dialogue_dict[diag_name][i])
 
@@ -315,20 +324,6 @@ class battler_stats:
         except TypeError:
             raise TypeError('An item in stat_change was not a number.')
 
-
-
-class player_stats(battler_stats):
-    def __init__(self, hp, stren, armr, agil, pwr):
-        super().__init__(hp, stren, armr, agil, pwr)
-
-    @property
-    def stren(self):
-        return self.stat_dict['strength']
-
-    @stren.setter
-    def stren(self, value):
-        self.stat_dict['strength'] = value
-        self.calc_carry_cap()
 
 #
 # Locations #
