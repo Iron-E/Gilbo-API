@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.9.0 #
+# Gilbo RPG API -- Version 0.9.1 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -668,8 +668,8 @@ class battler_collection(item_collection):
             print(self.Errors)
 
         def move_item(self, itm, movee):
-        if self.rem_item(itm) is True:
-            movee.collection.add_item(itm)
+            if self.rem_item(itm) is True:
+                movee.collection.add_item(itm)
 
         @property
         def equipped(self):
