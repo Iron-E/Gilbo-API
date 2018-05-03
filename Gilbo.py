@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.9.6 #
+# Gilbo RPG API -- Version 0.8.0-A #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -51,7 +51,7 @@ def write(phrase, type_speed=.040, line_delay=.5):
     from time import sleep
     if isinstance(phrase, list):
         for i in phrase:
-            for j in range(len(phrase[i]))
+            for j in range(len(phrase[i])):
                 print(phrase[i][j], end="", flush=True)
                 sleep(type_speed)
 
@@ -84,8 +84,7 @@ class Locate_Entity(IntEnum):
 
 class entity(ABC):
     def __init__(self, name, location, x, y):
-        self.entity_dict['name'] = name
-        self.entity_dict = {'location': []}
+        self.entity_dict = {'name': name}
         self.entity_dict.update({'location': [location]})
         self.entity_dict['location'].append([y, x])
 
