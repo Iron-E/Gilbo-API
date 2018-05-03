@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.8.4 #
+# Gilbo RPG API -- Version 0.9.0 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -321,11 +321,6 @@ class player_stats(battler_stats):
     def __init__(self, hp, stren, armr, agil, pwr):
         super().__init__(hp, stren, armr, agil, pwr)
 
-        def handle_item_obtained(sender, **kwargs):
-            self.sub_item_obtained(sender, **kwargs)
-        self.handle_item_obtained = handle_item_obtained
-        pub_item_obtained.connect(handle_item_obtained)
-
     @property
     def stren(self):
         return self.stat_dict['strength']
@@ -619,10 +614,12 @@ class item_collection(ABC):
 
     def rem_item(self, itm, amnt=Enumerators.items_to_modify):
         for i in range(amnt):
-            if itm in self.items:
+            try:
                 self.items.remove(itm)
-            else:
+                return True
+            except ValueError:
                 print("There is/are no more " + itm.name + " to use, sell, or buy.")
+                return False
 
     @property
     def inventory(self):
@@ -634,13 +631,16 @@ class vendor_collection(item_collection):
         super().__init__(items)
         self.Error_No_Exist = "That item doesn't exist in this inventory."
 
-    def swap_item(self, item, swapee, count=1):
-        if item in self.items:
+    def swap_item(self, itm, swapee, count=1):
+        if itm in self.items:
             for i in range(count):
-                if swapee.coin >= (item.value * count):
-                    swapee.collection.add_item(item)
-                    self.rem_item(item)
-                    self.coin = item.value
+                if swapee.coin >= (itm.value * count):
+                    # Swap items
+                    swapee.collection.add_item(itm)
+                    self.rem_item(itm)
+                    # Swap coin
+                    swapee.coin = (itm.value * -1)
+                    self.coin = itm.value
                 else:
                     print(swapee.name + " ran out of money.")
         else:
@@ -653,19 +653,23 @@ class battler_collection(item_collection):
         self.on_entity = equipped
         self.Errors = "That didn't work."
 
-    def equip(self, item):
+    def equip(self, itm):
         try:
-            if item in self.items:
+            if itm in self.items:
                 for i in range(len(self.on_entity)):
-                    if item.__class__ == self.on_entity.__class__:
+                    if itm.__class__ == self.on_entity.__class__:
                         self.on_entity[i].return_stat()
                         del self.on_entity[i]
 
-            self.on_entity.append(item)
-            item.set_stats()
+            self.on_entity.append(itm)
+            itm.set_stats()
 
         except AttributeError:
             print(self.Errors)
+
+        def move_item(self, itm, movee):
+        if self.rem_item(itm) is True:
+            movee.collection.add_item(itm)
 
         @property
         def equipped(self):
@@ -680,7 +684,7 @@ class player_collection(battler_collection, vendor_collection):
         for i in range(amnt):
             self.items.append(itm)
 
-        pub_item_obtained.send(sender=self, itms=self.collectionentory)
+        pub_item_obtained.send(sender=self, itms=self.items)
 
 #
 # Quests #
