@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.9.5 #
+# Gilbo RPG API -- Version 0.9.6 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -115,7 +115,7 @@ class NPC(entity):
         self.dialogue_dict = {}
 
     def add_dialogue(self, diag_name, diag_content):
-        self.dialogue_dict[diag_name] = diag_content
+        self.dialogue_dict.update({diag_name: diag_content})
 
     def say(self, diag_name):
         for i in range(len(self.dialogue_dict[diag_name])):
