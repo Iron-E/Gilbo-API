@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.9.2 #
+# Gilbo RPG API -- Version 0.9.3 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -110,7 +110,7 @@ class NPC(entity):
 
     def type_dialogue(self, diag_name):
         for i in range(len(self.dialogue_dict[diag_name])):
-            type(self.dialogue_dict[diag_name][i])
+            write(self.dialogue_dict[diag_name][i])
 
 
 class vendor(entity):
