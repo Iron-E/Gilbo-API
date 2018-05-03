@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.8.1 #
+# Gilbo RPG API -- Version 0.8.2 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -177,47 +177,28 @@ class Item_Types(IntEnum):
     armor = auto()
 
 
-class item_unweighted:
-    def __init__(self, name, dscrpt):
+class item:
+    def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0):
         self.item_dict = {}
         self.item_dict['type'] = Item_Types.basic_item
         self.item_dict['name'] = name
         self.item_dict['description'] = dscrpt
+        self.item_dict['value'] = val
+        if hp != 0:
+            self.item_dict['stat_change'] = [hp, stren, armr, agil, pwr]
 
     @property
     def type(self):
         return self.item_dict['type']
-
-    @property
-    def name(self):
-        return self.item_dict['name']
-
-    @property
-    def dscrpt(self):
-        return self.item_dict['description']
-
-
-class item_weighted(item_unweighted):
-    def __init__(self, name, dscrpt, weight, val):
-        super().__init__(name, dscrpt)
-        self.item_dict['type'] = Item_Types.basic_item
-        self.item_dict['carry_weight'] = weight
-        self.item_dict['value'] = val
-
-    @property
-    def weight(self):
-        return self.item_dict['carry_weight']
-
     @property
     def value(self):
         return self.item_dict['value']
-
-
-class equippable(item_weighted):
-    def __init__(self, name, dscrpt, weight, val, [hp, stren, armr, agil, pwr]):
-        super().__init__(name, dscrpt, weight, val)
-        self.item_dict['type'] = Item_Types.basic_equippable
-        self.item_dict['stat_change'] = [hp, stren, armr, agil, pwr]
+    @property
+    def name(self):
+        return self.item_dict['name']
+    @property
+    def dscrpt(self):
+        return self.item_dict['description']
 
     def set_stats(self):
         pub_stat_change(sender=self, changes=self.item_dict['stat_change'])
@@ -231,12 +212,16 @@ class equippable(item_weighted):
 
         pub_stat_change(sender=self, changes=self.item_dict['stat_change'])
 
-    # The API users will have to define their own equip effect
+
+class equippable(item):
+    def __init__(self, name, dscrpt, val, hp, stren, armr, agil, pwr):
+        super().__init__(name, dscrpt, weight, val)
+        self.item_dict['type'] = Item_Types.basic_equippable
 
 
 class weapon(equippable):
-    def __init__(self, name, dscrpt, weight, val, dmg, linked_attacks, [hp, stren, armr, agil, pwr]):
-        super().__init__(name, dscrpt, weight, val, [hp, stren, armr, agil, pwr])
+    def __init__(self, name, dscrpt, val, dmg, linked_attacks, hp, stren, armr, agil, pwr):
+        super().__init__(name, dscrpt, weight, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.weapon
         self.item_dict['linked_attack_list'] = linked_attacks
 
@@ -246,14 +231,14 @@ class weapon(equippable):
 
 
 class armor(equippable):
-    def __init__(self, name, dscrpt, weight, val, [hp, stren, armr, agil, pwr]):
-        super().__init__(name, dscrpt, weight, val, [hp, stren, armr, agil, pwr])
+    def __init__(self, name, dscrpt, val, hp, stren, armr, agil, pwr):
+        super().__init__(name, dscrpt, weight, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.armor
 
 
-class buff_item(item_weighted):
-    def __init__(self, name, dscrpt, weight, val, [hp, stren, armr, agil, pwr], effect_time):
-        super().__init__(name, dscrpt, weight, val, [hp, stren, armr, agil, pwr])
+class buff_item(item):
+    def __init__(self, name, dscrpt, val, hp, stren, armr, agil, pwr, effect_time):
+        super().__init__(name, dscrpt, weight, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.basic_item
         self.item_dict['effect_time']
 
