@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.8.2 #
+# Gilbo RPG API -- Version 0.8.3 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -214,13 +214,13 @@ class item:
 
 
 class equippable(item):
-    def __init__(self, name, dscrpt, val, hp, stren, armr, agil, pwr):
-        super().__init__(name, dscrpt, weight, val)
+    def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0):
+        super().__init__(name, dscrpt, weight, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.basic_equippable
 
 
 class weapon(equippable):
-    def __init__(self, name, dscrpt, val, dmg, linked_attacks, hp, stren, armr, agil, pwr):
+    def __init__(self, name, dscrpt, val, dmg, linked_attacks, hp=0, stren=0, armr=0, agil=0, pwr=0):
         super().__init__(name, dscrpt, weight, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.weapon
         self.item_dict['linked_attack_list'] = linked_attacks
@@ -231,13 +231,13 @@ class weapon(equippable):
 
 
 class armor(equippable):
-    def __init__(self, name, dscrpt, val, hp, stren, armr, agil, pwr):
+    def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0):
         super().__init__(name, dscrpt, weight, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.armor
 
 
 class buff_item(item):
-    def __init__(self, name, dscrpt, val, hp, stren, armr, agil, pwr, effect_time):
+    def __init__(self, name, dscrpt, val, effect_time, hp=0, stren=0, armr=0, agil=0, pwr=0):
         super().__init__(name, dscrpt, weight, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.basic_item
         self.item_dict['effect_time']
