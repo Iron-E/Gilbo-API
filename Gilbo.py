@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.9.1 #
+# Gilbo RPG API -- Version 0.9.2 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -75,8 +75,8 @@ class Locate_Entity(IntEnum):
 
 class entity(ABC):
     def __init__(self, name, location, x, y):
-        self.entity_dict = {'location': []}
         self.entity_dict['name'] = name
+        self.entity_dict = {'location': []}
         self.entity_dict.update({'location': [location]})
         self.entity_dict['location'].append([y, x])
 
@@ -201,7 +201,7 @@ class item:
         return self.item_dict['description']
 
     def set_stats(self):
-        pub_stat_change(sender=self, changes=self.item_dict['stat_change'])
+        pub_stat_change.send(sender=self, changes=self.item_dict['stat_change'])
 
     def return_stat(self):
         try:
@@ -210,7 +210,7 @@ class item:
         except TypeError:
             raise TypeError('An item in stat_change was not a number.')
 
-        pub_stat_change(sender=self, changes=self.item_dict['stat_change'])
+        pub_stat_change.send(sender=self, changes=self.item_dict['stat_change'])
 
 
 class equippable(item):
