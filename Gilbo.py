@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.9 #
+# Gilbo RPG API -- Version 0.10.10 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -273,7 +273,7 @@ class battler_stats:
     def __init__(self, hp, stren, armr, agil, pwr):
         self.stat_dict = {}
         self.stat_dict['hp'] = hp
-        self.stat_dict['current_hp'] = hp
+        self.stat_dict['max_hp'] = hp
         self.stat_dict['strength'] = stren
         self.stat_dict['armor'] = armr
         self.stat_dict['agility'] = agil
@@ -285,17 +285,20 @@ class battler_stats:
         pub_stat_change.connect(handle_stat_change)
 
     @property
-    def current_hp(self):
-        return self.stat_dict['current_hp']
-
-    @property
     def health(self):
         return self.stat_dict['hp']
-
 
     @health.setter
     def health(self, value):
         self.stat_dict['hp'] = value
+
+    @property
+    def max_health(self):
+        return self.stat_dict['max_hp']
+        
+    @max_health.setter
+    def max_hp(self, value):
+        self.stat_dict['max_hp'] = value
 
     @property
     def stren(self):
@@ -316,7 +319,7 @@ class battler_stats:
     @property
     def agility(self):
         return self.stat_dict['agility']
-
+        
     @agility.setter
     def agility(self, value):
         self.stat_dict['agility'] = value
@@ -332,6 +335,7 @@ class battler_stats:
     def sub_stat_change(self, sender, **kwargs):
         try:
             self.health = self.health + kwargs['changes'][0]
+            self.health = self.max_health + kwargs['changes'][0]
             self.stren = self.stren + kwargs['changes'][1]
             self.armor = self.armor + kwargs['changes'][2]
             self.agility = self.agility + kwargs['changes'][3]
