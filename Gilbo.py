@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.6 #
+# Gilbo RPG API -- Version 0.10.2 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -152,7 +152,6 @@ class battler(vendor):
     def __init__(self, name, location, x, y, inv, coin, stats):
         super().__init__(name, location, x, y, inv, coin)
         self.entity_dict['stats'] = stats
-        self.Error_Incorrect_Inventory = 'Incorrect inventory class.'
 
     @property
     def stats(self):
