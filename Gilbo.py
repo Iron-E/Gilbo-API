@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.2 #
+# Gilbo RPG API -- Version 0.10.3 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -522,7 +522,7 @@ class location_manager:
         self.xy_dict['current_map'] = mapid
 
 
-class matrix_map(ABC):
+class array_map(ABC):
     def __init__(self, name):
         self.map_dict = {}
         self.map_dict['map_id'] = name
@@ -637,7 +637,7 @@ class vendor_collection(item_collection):
         super().__init__(items)
         self.Error_No_Exist = "That item doesn't exist in this inventory."
 
-    def swap_item(self, itm, swapee, count=1):
+    def swap_item(self, swapee, itm, count=1):
         if itm in self.items:
             for i in range(count):
                 if swapee.coin >= (itm.value * count):
@@ -717,7 +717,7 @@ class quest(ABC):
         Here the user will implement anything they require in order to get their quest to function as desired.
 
         Some possibilities include checking for items in the iventory: subscribe to the pub_item_obtained event and check the player's inventory for items. Check if a player has stepped
-        onto a tile by writing a quest.stage method into the matrix_map class's send_data method. Or, make NPCs say certain things by creating an if statement to check if a quest has a certain stage.
+        onto a tile by writing a quest.stage method into the array_map class's send_data method. Or, make NPCs say certain things by creating an if statement to check if a quest has a certain stage.
         """
         # TEMPLATE #
         # WIP
