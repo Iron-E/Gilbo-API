@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.5 #
+# Gilbo RPG API -- Version 0.10.6 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -164,8 +164,8 @@ class battler(vendor):
             for i in range(len(self.collection.equipped)):
                 if isinstance(self.collection.equipped[i], weapon):
                     return self.collection.equipped[i]
-        except AttributeError:
-            print(self.Error_Incorrect_Inventory)
+        except AttributeError as e:
+            debug_info(e, 'The battler must use a battler_collection for an inventory.', True)
 
 
 class player(battler):
