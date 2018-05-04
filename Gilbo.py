@@ -162,7 +162,7 @@ class battler(vendor):
         try:
             for i in range(len(self.collection.equipped)):
                 if isinstance(self.collection.equipped[i], weapon):
-                    return self.collection.equipped[i]
+                    return self.collection.equipped[i].attacks
         except AttributeError as e:
             debug_info(e, 'The battler must use a battler_collection for an inventory.', True)
 
