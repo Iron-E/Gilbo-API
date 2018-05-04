@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.8 #
+# Gilbo RPG API -- Version 0.10.9 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -273,6 +273,7 @@ class battler_stats:
     def __init__(self, hp, stren, armr, agil, pwr):
         self.stat_dict = {}
         self.stat_dict['hp'] = hp
+        self.stat_dict['current_hp'] = hp
         self.stat_dict['strength'] = stren
         self.stat_dict['armor'] = armr
         self.stat_dict['agility'] = agil
@@ -284,8 +285,13 @@ class battler_stats:
         pub_stat_change.connect(handle_stat_change)
 
     @property
+    def current_hp(self):
+        return self.stat_dict['current_hp']
+
+    @property
     def health(self):
         return self.stat_dict['hp']
+
 
     @health.setter
     def health(self, value):
