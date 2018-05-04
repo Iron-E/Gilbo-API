@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.2 #
+# Gilbo RPG API -- Version 0.10.12 #
 
 from abc import ABC, abstractmethod
 from random import randint
