@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.10 #
+# Gilbo RPG API -- Version 0.10.2 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -194,8 +194,7 @@ class Item_Types(IntEnum):
 
 class item:
     def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0):
-        self.item_dict = {}
-        self.item_dict['type'] = Item_Types.basic_item
+        self.item_dict = {'type': Item_Types.basic_item}
         self.item_dict['name'] = name
         self.item_dict['description'] = dscrpt
         self.item_dict['value'] = val
@@ -271,8 +270,7 @@ class buff_item(item):
 
 class battler_stats:
     def __init__(self, hp, stren, armr, agil, pwr):
-        self.stat_dict = {}
-        self.stat_dict['hp'] = hp
+        self.stat_dict = {'hp': hp}
         self.stat_dict['max_hp'] = hp
         self.stat_dict['strength'] = stren
         self.stat_dict['armor'] = armr
@@ -295,7 +293,7 @@ class battler_stats:
     @property
     def max_health(self):
         return self.stat_dict['max_hp']
-        
+
     @max_health.setter
     def max_hp(self, value):
         self.stat_dict['max_hp'] = value
@@ -319,7 +317,7 @@ class battler_stats:
     @property
     def agility(self):
         return self.stat_dict['agility']
-        
+
     @agility.setter
     def agility(self, value):
         self.stat_dict['agility'] = value
@@ -385,7 +383,6 @@ class location_manager:
         self.xy_dict['Errors'].append("That place doesn't exist.")
         self.xy_dict['Errors'].append("You're carrying too much.")
         self.xy_dict['Errors'].append("You cannot go that way.")
-        self.xy_dict['player_location'] = []
         self.xy_dict['auto_load'] = True
         self.xy_dict['current_map'] = None
 
@@ -532,8 +529,7 @@ class location_manager:
 
 class array_map(ABC):
     def __init__(self, name):
-        self.map_dict = {}
-        self.map_dict['map_id'] = name
+        self.map_dict = {'map_id': name}
         self.map_dict['map_layout'] = None
 
     @abstractmethod
@@ -581,8 +577,7 @@ class array_map(ABC):
 
 class attack:
     def __init__(self, dmg, dscrpt, count=Enumerators.times_attacking):
-        self.attack_dict = {}
-        self.attack_dict['dmg'] = dmg
+        self.attack_dict = {'dmg': dmg}
         self.attack_dict['description'] = dscrpt
         self.attack_dict['hit_count'] = count
 
@@ -667,7 +662,7 @@ class battler_collection(item_collection):
         self.on_entity = equipped
         self.Errors = "That didn't work."
 
-        if len(x) > 0:
+        if len(self.on_entity) > 0:
             for i in range(len(self.on_entity)):
                 self.on_entity[i].set_stats()
 
