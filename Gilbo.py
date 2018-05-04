@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.2 #
+# Gilbo RPG API -- Version 0.10.5 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -657,6 +657,10 @@ class battler_collection(item_collection):
         super().__init__(items)
         self.on_entity = equipped
         self.Errors = "That didn't work."
+
+        if len(x) > 0:
+            for i in range(len(self.on_entity)):
+                self.on_entity[i].set_stats()
 
     def equip(self, itm):
         try:
