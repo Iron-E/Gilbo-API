@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.0 #
+# Gilbo RPG API -- Version 0.9.7 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -71,10 +71,10 @@ def clr_console():
 
 def debug_info(err, more_info, display=False):
     if display is True:
-        print("An exception occured. See 'log.txt' for details.")
+        print(str(more_info), end="See 'log.txt' for details.")
 
-    from datetime import datetime
     with open('log.txt', 'ab') as handle:
+        from datetime import datetime
         print(str(datetime.now()), end=':\n', file=handle)
         print(str(err), file=handle)
         print(str(more_info), end='\n\n', file=handle)
