@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.8.0 #
+# Gilbo RPG API -- Version 0.10.3 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -21,6 +21,7 @@ from dispatcher import Signal
 
 # Inventory-related
 pub_item_obtained = Signal(providing_args=["itms"])
+pub_stat_change = Signal(providing_args=["changes"])
 
 # Entity-position-related
 pub_chk_pos = Signal()
@@ -48,17 +49,35 @@ class Enumerators(IntEnum):
 
 def write(phrase, type_speed=.040, line_delay=.5):
     from time import sleep
-    for i in range(len(phrase)):
-        print(phrase[i], end="", flush=True)
-        sleep(type_speed)
+    if isinstance(phrase, list):
+        for i in phrase:
+            for j in range(len(phrase[i])):
+                print(phrase[i][j], end="", flush=True)
+                sleep(type_speed)
 
-    sleep(line_delay)
-    print('', end=' ')
+            sleep(line_delay)
+            print('', end=' ')
+    else:
+        for i in range(len(phrase)):
+            print(phrase[i], end="", flush=True)
+            sleep(type_speed)
+
+        sleep(line_delay)
+        print('', end=' ')
 
 def clr_console():
     import os
     os.system('cls' if os.name == 'nt' else 'clear')
 
+def debug_info(err, more_info, display=False):
+    if display is True:
+        print(str(more_info), end="See 'log.txt' for details.")
+
+    with open('log.txt', 'ab') as handle:
+        from datetime import datetime
+        print(str(datetime.now()), end=':\n', file=handle)
+        print(str(err), file=handle)
+        print(str(more_info), end='\n\n', file=handle)
 
 #
 # Abstract class from which all enemies, NPCs, and players are derived. #
@@ -74,8 +93,7 @@ class Locate_Entity(IntEnum):
 
 class entity(ABC):
     def __init__(self, name, location, x, y):
-        self.entity_dict = {'location': []}
-        self.entity_dict['name'] = name
+        self.entity_dict = {'name': name}
         self.entity_dict.update({'location': [location]})
         self.entity_dict['location'].append([y, x])
 
@@ -105,11 +123,11 @@ class NPC(entity):
         self.dialogue_dict = {}
 
     def add_dialogue(self, diag_name, diag_content):
-        self.dialogue_dict[diag_name] = diag_content
+        self.dialogue_dict.update({diag_name: diag_content})
 
-    def type_dialogue(self, diag_name):
+    def say(self, diag_name):
         for i in range(len(self.dialogue_dict[diag_name])):
-            type(self.dialogue_dict[diag_name][i])
+            write(self.dialogue_dict[diag_name][i])
 
 
 class vendor(entity):
@@ -176,55 +194,55 @@ class Item_Types(IntEnum):
     armor = auto()
 
 
-class item_unweighted:
-    def __init__(self, name, dscrpt):
+class item:
+    def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0):
         self.item_dict = {}
         self.item_dict['type'] = Item_Types.basic_item
         self.item_dict['name'] = name
         self.item_dict['description'] = dscrpt
+        self.item_dict['value'] = val
+        if hp != 0:
+            self.item_dict['stat_change'] = [hp, stren, armr, agil, pwr]
 
     @property
     def type(self):
         return self.item_dict['type']
-
+    @property
+    def value(self):
+        return self.item_dict['value']
     @property
     def name(self):
         return self.item_dict['name']
-
     @property
     def dscrpt(self):
         return self.item_dict['description']
 
+    def set_stats(self):
+        pub_stat_change.send(sender=self, changes=self.item_dict['stat_change'])
 
-class item_weighted(item_unweighted):
-    def __init__(self, name, dscrpt, weight, val):
-        super().__init__(name, dscrpt)
-        self.item_dict['type'] = Item_Types.basic_item
-        self.item_dict['carry_weight'] = weight
-        self.item_dict['value'] = val
-
-    @property
-    def weight(self):
-        return self.item_dict['carry_weight']
-
-    @property
-    def value(self):
-        return self.item_dict['value']
+    def return_stat(self):
+        try:
+            for i in range(len(self.item_dict['stat_change'])):
+                self.item_dict['stat_change'][i] = self.item_dict['stat_change'][i] * -1
+        except TypeError as e:
+            # raise TypeError('An item in stat_change was not a number.')
+            debug_info(e, 'An item in stat_change was not a number', True)
+            pass
 
 
-class equippable(item_weighted):
-    def __init__(self, name, dscrpt, weight, val):
-        super().__init__(name, dscrpt, weight, val)
+        pub_stat_change.send(sender=self, changes=self.item_dict['stat_change'])
+
+
+class equippable(item):
+    def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0):
+        super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.basic_equippable
-
-    # The API users will have to define their own equip effect
 
 
 class weapon(equippable):
-    def __init__(self, name, dscrpt, weight, val, dmg, linked_attacks=list()):
-        super().__init__(name, dscrpt, weight, val)
+    def __init__(self, name, dscrpt, val, dmg, linked_attacks, hp=0, stren=0, armr=0, agil=0, pwr=0):
+        super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.weapon
-        self.item_dict['wpn_dmg'] = dmg
         self.item_dict['linked_attack_list'] = linked_attacks
 
         @property
@@ -233,17 +251,20 @@ class weapon(equippable):
 
 
 class armor(equippable):
-    def __init__(self, name, dscrpt, weight, val, armr):
-        super().__init__(name, dscrpt, weight, val)
+    def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0):
+        super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.armor
-        self.item_dict['wpn_dmg'] = armr
 
 
-class heal_item(item_weighted):
-    def __init__(self, name, dscrpt, weight, val, heal_amnt):
-        super().__init__(name, dscrpt, weight, val)
-        self.item_dict['heal_amount'] = heal_amnt
+class buff_item(item):
+    def __init__(self, name, dscrpt, val, effect_time, hp=0, stren=0, armr=0, agil=0, pwr=0):
+        super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.basic_item
+        self.item_dict['effect_time']
+
+    @property
+    def duration(self):
+        return self.item_dict['effect_time']
 
 #
 # Entity Stats #
@@ -258,6 +279,11 @@ class battler_stats:
         self.stat_dict['armor'] = armr
         self.stat_dict['agility'] = agil
         self.stat_dict['power'] = pwr
+
+        def handle_stat_change(sender, **kwargs):
+            self.sub_stat_change(sender, **kwargs)
+        self.handle_stat_change = handle_stat_change
+        pub_stat_change.connect(handle_stat_change)
 
     @property
     def health(self):
@@ -299,51 +325,16 @@ class battler_stats:
     def power(self, value):
         self.stat_dict['power'] = value
 
+    def sub_stat_change(self, sender, **kwargs):
+        try:
+            self.health = self.health + kwargs['changes'][0]
+            self.stren = self.stren + kwargs['changes'][1]
+            self.armor = self.armor + kwargs['changes'][2]
+            self.agility = self.agility + kwargs['changes'][3]
+            self.power = self.power + kwargs['changes'][4]
+        except TypeError:
+            debug_info(e, 'An item in stat_change was not a number.', True)
 
-class player_stats(battler_stats):
-    def __init__(self, hp, stren, armr, agil, pwr):
-        super().__init__(hp, stren, armr, agil, pwr)
-        self.calc_carry_cap()
-        self.stat_dict['overencumbered'] = False
-
-        def handle_item_obtained(sender, **kwargs):
-            self.sub_item_obtained(sender, **kwargs)
-        self.handle_item_obtained = handle_item_obtained
-        pub_item_obtained.connect(handle_item_obtained)
-
-    def calc_carry_cap(self):
-        self.stat_dict['carry_capacity'] = Enumerators.base_carry_cap + self.stat_dict['strength'] * Enumerators.carry_cap_modifier
-
-    @property
-    def encumbered(self):
-        return self.stat_dict['overencumbered']
-
-    @encumbered.setter
-    def encumbered(self, value):
-        self.stat_dict['overencumbered'] = value
-        # WRITE MORE HERE FOR WHAT OVERENCUMBENCE AFFECTS
-
-    @property
-    def stren(self):
-        return self.stat_dict['strength']
-
-    @stren.setter
-    def stren(self, value):
-        self.stat_dict['strength'] = value
-        self.calc_carry_cap()
-
-    def sub_item_obtained(self, sender, **kwargs):
-        total_weight = 0
-
-        for i in range(len(kwargs['items'])):
-            total_weight += kwargs['items'][i].weight
-
-        self.calc_carry_cap()
-
-        if total_weight > self.stat_dict['carry_capacity']:
-            self.encumbered = True
-
-        del total_weight
 
 #
 # Locations #
@@ -363,8 +354,7 @@ class Directions(IntEnum):
 
 class Location_Errors(IntEnum):
     no_exist = 0
-    encumbered = 1
-    invalid_direction = 2
+    invalid_direction = 1
 
 
 class Tiles(IntEnum):
@@ -420,9 +410,6 @@ class location_manager:
             clr_console()
 
     def move(self, thing, direction):
-        # Test for encumberence
-        if isinstance(thing.stats, player_collection) and thing.stats.encumbered is True:
-            return print(self.xy_dict['Errors'][Location_Errors.encumbered])
         # Insert data collection from map
         if self.chk_boundary(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], False) is not False:
             thing.set_loc(self.chk_boundary(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], True if isinstance(thing, player) else False, True))
@@ -432,17 +419,13 @@ class location_manager:
     def teleport(self, thing, mapid, x, y):
         # Wrap around try just in case the map is mispelled or does not yet exist
         try:
-            if isinstance(thing, player) and thing.stats.encumbered is True:
-                # Print error if the player is encumbered
-                return print(self.xy_dict['Errors'][Location_Errors.encumbered])
-            # Insert data collection from map
-            # Writeout extra details because the entity is a player
+            # Insert data collection from map, and writeout extra details if the entity is a player
             if mapid.send_data((y, x), True if isinstance(thing, player) else False) is True:
                 thing.set_loc([y, x], mapid)
                 self.load_if_player(thing)
 
         except NameError:
-            raise NameError('That map does not exist.')
+            debug_info(e, 'That map does not exist', True)
 
     def chk_boundary(self, mapid, direction, start_loc, is_player, print_errors=False):
         # Update coordinates for direction
@@ -521,7 +504,6 @@ class location_manager:
         # Auto generate columns and rows if they are not provided
         if clmns is None:
             clmns = mapid.layout.shape[1]
-
         if rows is None:
             rows = mapid.layout.shape[0]
 
@@ -540,7 +522,7 @@ class location_manager:
         self.xy_dict['current_map'] = mapid
 
 
-class matrix_map:
+class array_map(ABC):
     def __init__(self, name):
         self.map_dict = {}
         self.map_dict['map_id'] = name
@@ -562,6 +544,7 @@ class matrix_map:
         #     if player is True:
         #         print('A wide river halts your progress down this path.')
         #     return False
+
 
     def chk_tile_val(self, tile, to_match):
             if self.layout[tile[Locate_Entity.y_cord], tile[Locate_Entity.x_cord]] == to_match:
@@ -637,10 +620,12 @@ class item_collection(ABC):
 
     def rem_item(self, itm, amnt=Enumerators.items_to_modify):
         for i in range(amnt):
-            if itm in self.items:
+            try:
                 self.items.remove(itm)
-            else:
+                return True
+            except ValueError:
                 print("There is/are no more " + itm.name + " to use, sell, or buy.")
+                return False
 
     @property
     def inventory(self):
@@ -652,13 +637,16 @@ class vendor_collection(item_collection):
         super().__init__(items)
         self.Error_No_Exist = "That item doesn't exist in this inventory."
 
-    def swap_item(self, item, swapee, count=1):
-        if item in self.items:
+    def swap_item(self, swapee, itm, count=1):
+        if itm in self.items:
             for i in range(count):
-                if swapee.coin >= (item.value * count):
-                    swapee.collection.add_item(item)
-                    self.rem_item(item)
-                    self.coin = item.value
+                if swapee.coin >= (itm.value * count):
+                    # Swap items
+                    swapee.collection.add_item(itm)
+                    self.rem_item(itm)
+                    # Swap coin
+                    swapee.coin = (itm.value * -1)
+                    self.coin = itm.value
                 else:
                     print(swapee.name + " ran out of money.")
         else:
@@ -671,17 +659,23 @@ class battler_collection(item_collection):
         self.on_entity = equipped
         self.Errors = "That didn't work."
 
-    def equip(self, item):
+    def equip(self, itm):
         try:
-            if item in self.items:
+            if itm in self.items:
                 for i in range(len(self.on_entity)):
-                    if item.__class__ == self.on_entity.__class__:
+                    if itm.__class__ == self.on_entity.__class__:
+                        self.on_entity[i].return_stat()
                         del self.on_entity[i]
 
-            self.on_entity.append(item)
+            self.on_entity.append(itm)
+            itm.set_stats()
 
         except AttributeError:
             print(self.Errors)
+
+        def move_item(self, itm, movee):
+            if self.rem_item(itm) is True:
+                movee.collection.add_item(itm)
 
         @property
         def equipped(self):
@@ -696,18 +690,38 @@ class player_collection(battler_collection, vendor_collection):
         for i in range(amnt):
             self.items.append(itm)
 
-        pub_item_obtained.send(sender=self, itms=self.collectionentory)
+        pub_item_obtained.send(sender=self, itms=self.items)
 
 #
 # Quests #
 #
 
 
-class quest:
+# In progress
+class quest(ABC):
     def __init__(self, name):
-        # Placeholder
-        self.name = name
-        pass
+        self.quest_dict['name'] = name
+        self.quest_dict['current_stage'] = None
+        # Not sure if this part of the dictionary is necessary
+        # self.quest_dict['stages'] = []
+
+    @property
+    def stage(self, stage):
+        return self.quest_dict['current_stage']
+
+    @stage.setter
+    @abstractmethod
+    def stage(self, stage):
+        raise NotImplementedError('Please define this method.')
+        """
+        Here the user will implement anything they require in order to get their quest to function as desired.
+
+        Some possibilities include checking for items in the iventory: subscribe to the pub_item_obtained event and check the player's inventory for items. Check if a player has stepped
+        onto a tile by writing a quest.stage method into the array_map class's send_data method. Or, make NPCs say certain things by creating an if statement to check if a quest has a certain stage.
+        """
+        # TEMPLATE #
+        # WIP
+
 
 
 #
@@ -824,7 +838,7 @@ class object_tracker:
                 try:
                     obj_list.update({keys[i]: values[i]})
                 except IndexError:
-                    print('There were more objects to load than values.')
+                    debug_info(e, 'There was more data to load than exists now', True)
 
     @property
     def tracker(self):
