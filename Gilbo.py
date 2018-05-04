@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.3 #
+# Gilbo RPG API -- Version 0.10.4 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -503,9 +503,9 @@ class location_manager:
 
         # Auto generate columns and rows if they are not provided
         if clmns is None:
-            clmns = mapid.layout.shape[1]
+            clmns = mapid.layout.shape[Locate_Entity.x_cord]
         if rows is None:
-            rows = mapid.layout.shape[0]
+            rows = mapid.layout.shape[Locate_Entity.y_cord]
 
         # Loop through rows and columns to send each one to the detect_tile method
         for y in range(rows):
