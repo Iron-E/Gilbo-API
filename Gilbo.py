@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.4 #
+# Gilbo RPG API -- Version 0.10.2 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -50,7 +50,7 @@ class Enumerators(IntEnum):
 def write(phrase, type_speed=.040, line_delay=.5):
     from time import sleep
     if isinstance(phrase, list):
-        for i in phrase:
+        for i in range(len(phrase)):
             for j in range(len(phrase[i])):
                 print(phrase[i][j], end="", flush=True)
                 sleep(type_speed)
@@ -126,8 +126,7 @@ class NPC(entity):
         self.dialogue_dict.update({diag_name: diag_content})
 
     def say(self, diag_name):
-        for i in range(len(self.dialogue_dict[diag_name])):
-            write(self.dialogue_dict[diag_name][i])
+            write(self.dialogue_dict[diag_name])
 
 
 class vendor(entity):
