@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.9.7 #
+# Gilbo RPG API -- Version 0.10.0 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -69,6 +69,15 @@ def clr_console():
     import os
     os.system('cls' if os.name == 'nt' else 'clear')
 
+def debug_info(err, more_info, display=False):
+    if display is True:
+        print("An exception occured. See 'log.txt' for details.")
+
+    from datetime import datetime
+    with open('log.txt', 'ab') as handle:
+        print(str(datetime.now()), end=':\n', file=handle)
+        print(str(err), file=handle)
+        print(str(more_info), end='\n\n', file=handle)
 
 #
 # Abstract class from which all enemies, NPCs, and players are derived. #
@@ -215,8 +224,11 @@ class item:
         try:
             for i in range(len(self.item_dict['stat_change'])):
                 self.item_dict['stat_change'][i] = self.item_dict['stat_change'][i] * -1
-        except TypeError:
-            raise TypeError('An item in stat_change was not a number.')
+        except TypeError as e:
+            # raise TypeError('An item in stat_change was not a number.')
+            debug_info(e, 'An item in stat_change was not a number', True)
+            pass
+
 
         pub_stat_change.send(sender=self, changes=self.item_dict['stat_change'])
 
@@ -321,7 +333,7 @@ class battler_stats:
             self.agility = self.agility + kwargs['changes'][3]
             self.power = self.power + kwargs['changes'][4]
         except TypeError:
-            raise TypeError('An item in stat_change was not a number.')
+            debug_info(e, 'An item in stat_change was not a number.', True)
 
 
 #
@@ -413,7 +425,7 @@ class location_manager:
                 self.load_if_player(thing)
 
         except NameError:
-            raise NameError('That map does not exist.')
+            debug_info(e, 'That map does not exist', True)
 
     def chk_boundary(self, mapid, direction, start_loc, is_player, print_errors=False):
         # Update coordinates for direction
@@ -826,7 +838,7 @@ class object_tracker:
                 try:
                     obj_list.update({keys[i]: values[i]})
                 except IndexError:
-                    print('There were more objects to load than values.')
+                    debug_info(e, 'There was more data to load than exists now', True)
 
     @property
     def tracker(self):
