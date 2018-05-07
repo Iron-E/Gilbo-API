@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.11.1 #
+# Gilbo RPG API -- Version 0.11.2 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -145,6 +145,11 @@ class battler(vendor):
         super().__init__(name, location, x, y, inv)
         self.entity_dict['stats'] = stats
 
+        def handle_stat_change(sender, **kwargs):
+            self.sub_stat_change(sender, **kwargs)
+        self.handle_stat_change = handle_stat_change
+        pub_stat_change.connect(handle_stat_change)
+
     @property
     def stats(self):
         return self.entity_dict['stats']
@@ -158,10 +163,22 @@ class battler(vendor):
         except AttributeError as e:
             debug_info(e, 'The battler must use a battler_collection for an inventory.', True)
 
+    def sub_stat_change(self, sender, **kwargs):
+        if sender is self.collection:
+            try:
+                self.stats.health = self.stats.health + kwargs['changes'][0]
+                self.stats.health = self.stats.max_health + kwargs['changes'][0]
+                self.stats.stren = self.stats.stren + kwargs['changes'][1]
+                self.stats.armor = self.stats.armor + kwargs['changes'][2]
+                self.stats.agility = self.stats.agility + kwargs['changes'][3]
+                self.stats.power = self.stats.power + kwargs['changes'][4]
+            except TypeError:
+                debug_info(e, 'An item in stat_change was not a number.', True)
+
 
 class player(battler):
-    def __init__(self, name, location, x, y, inv, coin, stats):
-        super().__init__(name, location, x, y, inv, coin, stats)
+    def __init__(self, name, location, x, y, inv, stats):
+        super().__init__(name, location, x, y, inv, stats)
 
         def handle_chk_pos(sender, **kwargs):
             self.sub_chk_pos(sender, **kwargs)
@@ -185,47 +202,38 @@ class Item_Types(IntEnum):
 
 
 class item:
-    def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0):
+    def __init__(self, name, dscrpt, val):
         self.item_dict = {'type': Item_Types.basic_item}
         self.item_dict['name'] = name
         self.item_dict['description'] = dscrpt
         self.item_dict['value'] = val
-        if hp != 0:
-            self.item_dict['stat_change'] = [hp, stren, armr, agil, pwr]
 
     @property
     def type(self):
         return self.item_dict['type']
+
     @property
     def value(self):
         return self.item_dict['value']
+
     @property
     def name(self):
         return self.item_dict['name']
+
     @property
     def dscrpt(self):
         return self.item_dict['description']
 
-    def set_stats(self):
-        pub_stat_change.send(sender=self, changes=self.item_dict['stat_change'])
-
-    def return_stat(self):
-        try:
-            for i in range(len(self.item_dict['stat_change'])):
-                self.item_dict['stat_change'][i] = self.item_dict['stat_change'][i] * -1
-        except TypeError as e:
-            # raise TypeError('An item in stat_change was not a number.')
-            debug_info(e, 'An item in stat_change was not a number', True)
-            pass
-
-
-        pub_stat_change.send(sender=self, changes=self.item_dict['stat_change'])
-
 
 class equippable(item):
     def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0):
-        super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
+        super().__init__(name, dscrpt, val)
         self.item_dict['type'] = Item_Types.basic_equippable
+        self.item_dict['stat_change'] = [hp, stren, armr, agil, pwr]
+
+    @property
+    def stat_changes(self):
+        return self.item_dict['stat_change']
 
 
 class weapon(equippable):
@@ -268,11 +276,6 @@ class battler_stats:
         self.stat_dict['armor'] = armr
         self.stat_dict['agility'] = agil
         self.stat_dict['power'] = pwr
-
-        def handle_stat_change(sender, **kwargs):
-            self.sub_stat_change(sender, **kwargs)
-        self.handle_stat_change = handle_stat_change
-        pub_stat_change.connect(handle_stat_change)
 
     @property
     def health(self):
@@ -321,17 +324,6 @@ class battler_stats:
     @power.setter
     def power(self, value):
         self.stat_dict['power'] = value
-
-    def sub_stat_change(self, sender, **kwargs):
-        try:
-            self.health = self.health + kwargs['changes'][0]
-            self.health = self.max_health + kwargs['changes'][0]
-            self.stren = self.stren + kwargs['changes'][1]
-            self.armor = self.armor + kwargs['changes'][2]
-            self.agility = self.agility + kwargs['changes'][3]
-            self.power = self.power + kwargs['changes'][4]
-        except TypeError:
-            debug_info(e, 'An item in stat_change was not a number.', True)
 
 
 #
@@ -664,31 +656,40 @@ class battler_collection(item_collection):
         self.collect_dict['on_entity'] = equipped
         self.collect_dict['Errors'] = "Couldn't equip item."
 
-        if len(self.on_entity) > 0:
-            for i in range(len(self.on_entity)):
-                self.on_entity[i].set_stats()
+        if len(self.equipped) > 0:
+            self.update_stats(self.item_stats)
+
+    @property
+    def equipped(self):
+        return self.collect_dict['on_entity']
+
+    @property
+    def item_stats(self):
+        temp = [0, 0, 0, 0, 0]
+        for i in range(len(self.equipped)):
+            temp = [temp[j] + self.equipped[i].stat_changes[j] for j in range(len(temp))]
+
+        return temp
+
+    def update_stats(self, stat_list):
+        pub_stat_change.send(sender=self, changes=self.item_stats)
 
     def equip(self, itm):
         try:
             if itm in self.items:
-                for i in range(len(self.on_entity)):
-                    if itm.__class__ == self.on_entity.__class__:
-                        self.on_entity[i].return_stat()
-                        del self.on_entity[i]
+                for i in range(len(self.equipped)):
+                    if itm.__class__ == self.equipped[i].__class__:
+                        del self.equipped[i]
 
-            self.on_entity.append(itm)
-            itm.set_stats()
+            self.equipped.append(itm)
+            self.update_stats(self.item_stats)
 
         except AttributeError:
-            print(self.Errors)
+            print(self.collect_dict['Errors'])
 
-        def move_item(self, itm, movee):
-            if self.rem_item(itm) is True:
-                movee.collection.add_item(itm)
-
-        @property
-        def equipped(self):
-            return self.on_entity
+    def move_item(self, itm, movee):
+        if self.rem_item(itm) is True:
+            movee.collection.add_item(itm)
 
 
 class player_collection(battler_collection, vendor_collection):
