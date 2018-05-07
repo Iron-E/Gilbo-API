@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.11.4 #
+# Gilbo RPG API -- Version 0.11.5 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -601,6 +601,7 @@ class item_collection(ABC):
     def __init__(self, coin, items=list()):
         self.collect_dict = {'collection': items}
         self.collect_dict['currency'] = coin
+        self.collect_dict['Error_No_Exist'] = "That item doesn't exist in this inventory."
 
     def add_item(self, itm, amnt=Enumerators.items_to_modify):
         for i in range(amnt):
@@ -612,7 +613,7 @@ class item_collection(ABC):
                 self.items.remove(itm)
                 return True
             except ValueError:
-                print("There is/are no more " + itm.name + " to use, sell, or buy.")
+                print(f"There is/are no more {itm.name} to use, sell, or buy.")
                 return False
 
     @property
@@ -632,7 +633,6 @@ class item_collection(ABC):
 class vendor_collection(item_collection):
     def __init__(self, coin, items=list()):
         super().__init__(coin, items)
-        self.collect_dict['Error_No_Exist'] = "That item doesn't exist in this inventory."
 
     def swap_item(self, swapee, itm, count=Enumerators.items_to_modify):
         if itm in self.items:
@@ -645,7 +645,7 @@ class vendor_collection(item_collection):
                     swapee.collection.coin = (itm.value * -1)
                     self.coin = itm.value
                 else:
-                    print(swapee.name + " ran out of money.")
+                    print(f"{swapee.name} ran out of money.")
         else:
             self.collect_dict['Error_No_Exist']
 
@@ -681,8 +681,10 @@ class battler_collection(item_collection):
                     if itm.__class__ == self.equipped[i].__class__:
                         del self.equipped[i]
 
-            self.equipped.append(itm)
-            self.update_stats()
+                self.equipped.append(itm)
+                self.update_stats()
+            else:
+                print(self.collect_dict['Error_No_Exist'])
 
         except AttributeError:
             print(self.collect_dict['Errors'])
