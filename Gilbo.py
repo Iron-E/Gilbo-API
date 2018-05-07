@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.15 #
+# Gilbo RPG API -- Version 0.10.16 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -628,11 +628,11 @@ class item_collection(ABC):
 
     @property
     def coin(self):
-        return self.entity_dict['currency']
+        return self.collect_dict['currency']
 
     @coin.setter
     def coin(self, value):
-        self.entity_dict['currency'] += value
+        self.collect_dict['currency'] += value
 
 
 class vendor_collection(item_collection):
