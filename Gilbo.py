@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.11.2 #
+# Gilbo RPG API -- Version 0.11.3 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -657,7 +657,7 @@ class battler_collection(item_collection):
         self.collect_dict['Errors'] = "Couldn't equip item."
 
         if len(self.equipped) > 0:
-            self.update_stats(self.item_stats)
+            self.update_stats()
 
     @property
     def equipped(self):
@@ -671,7 +671,7 @@ class battler_collection(item_collection):
 
         return temp
 
-    def update_stats(self, stat_list):
+    def update_stats(self):
         pub_stat_change.send(sender=self, changes=self.item_stats)
 
     def equip(self, itm):
