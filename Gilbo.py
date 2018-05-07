@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.13 #
+# Gilbo RPG API -- Version 0.10.14 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -35,8 +35,6 @@ class Enumerators(IntEnum):
     # Stat enums
     base_carry_cap = 100
     carry_cap_modifier = 2
-    # Inventory enums
-    items_to_modify = 1
     # Attack enums
     base_ammo_cost = 1
     times_attacking = 1
@@ -617,11 +615,11 @@ class item_collection(ABC):
     def __init__(self, items=list()):
         self.collect_dict = {'collection': items}
 
-    def add_item(self, itm, amnt=Enumerators.items_to_modify):
+    def add_item(self, itm, amnt=1):
         for i in range(amnt):
             self.items.append(itm)
 
-    def rem_item(self, itm, amnt=Enumerators.items_to_modify):
+    def rem_item(self, itm, amnt=1):
         for i in range(amnt):
             try:
                 self.items.remove(itm)
@@ -693,7 +691,7 @@ class player_collection(battler_collection, vendor_collection):
     def __init__(self, items, equipped):
         super().__init__(items, equipped)
 
-    def add_item(self, itm, amnt=Enumerators.items_to_modify):
+    def add_item(self, itm, amnt=1):
         for i in range(amnt):
             self.items.append(itm)
 
