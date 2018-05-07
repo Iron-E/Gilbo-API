@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.16 #
+# Gilbo RPG API -- Version 0.11.0 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -37,6 +37,7 @@ class Enumerators(IntEnum):
     carry_cap_modifier = 2
     # Inventory enums
     items_to_modify = 1
+    infinite_coin = -1
     # Attack enums
     base_ammo_cost = 1
     times_attacking = 1
@@ -632,7 +633,8 @@ class item_collection(ABC):
 
     @coin.setter
     def coin(self, value):
-        self.collect_dict['currency'] += value
+        if self.coin != Enumerators.infinite_coin:
+            self.collect_dict['currency'] += value
 
 
 class vendor_collection(item_collection):
@@ -643,7 +645,7 @@ class vendor_collection(item_collection):
     def swap_item(self, swapee, itm, count=Enumerators.items_to_modify):
         if itm in self.items:
             for i in range(count):
-                if swapee.collection.coin >= (itm.value * count):
+                if (swapee.collection.coin >= (itm.value * count)) or swapee.collection.coin == Enumerators.infinite_coin:
                     # Swap items
                     swapee.collection.add_item(itm)
                     self.rem_item(itm)
