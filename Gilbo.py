@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.14 #
+# Gilbo RPG API -- Version 0.10.15 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -35,6 +35,8 @@ class Enumerators(IntEnum):
     # Stat enums
     base_carry_cap = 100
     carry_cap_modifier = 2
+    # Inventory enums
+    items_to_modify = 1
     # Attack enums
     base_ammo_cost = 1
     times_attacking = 1
@@ -128,18 +130,9 @@ class NPC(entity):
 
 
 class vendor(entity):
-    def __init__(self, name, location, x, y, inv, coin):
+    def __init__(self, name, location, x, y, inv):
         super().__init__(name, location, x, y)
         self.entity_dict['inventory'] = inv
-        self.entity_dict['currency'] = coin
-
-    @property
-    def coin(self):
-        return self.entity_dict['currency']
-
-    @coin.setter
-    def coin(self, value):
-        self.entity_dict['currency'] += value
 
     @property
     def collection(self):
@@ -147,8 +140,8 @@ class vendor(entity):
 
 
 class battler(vendor):
-    def __init__(self, name, location, x, y, inv, coin, stats):
-        super().__init__(name, location, x, y, inv, coin)
+    def __init__(self, name, location, x, y, inv, stats):
+        super().__init__(name, location, x, y, inv)
         self.entity_dict['stats'] = stats
 
     @property
@@ -612,14 +605,15 @@ class ranged_attack(attack):
 
 
 class item_collection(ABC):
-    def __init__(self, items=list()):
+    def __init__(self, coin, items=list()):
         self.collect_dict = {'collection': items}
+        self.collect_dict['currency'] = coin
 
-    def add_item(self, itm, amnt=1):
+    def add_item(self, itm, amnt=Enumerators.items_to_modify):
         for i in range(amnt):
             self.items.append(itm)
 
-    def rem_item(self, itm, amnt=1):
+    def rem_item(self, itm, amnt=Enumerators.items_to_modify):
         for i in range(amnt):
             try:
                 self.items.remove(itm)
@@ -632,21 +626,29 @@ class item_collection(ABC):
     def items(self):
         return self.collect_dict['collection']
 
+    @property
+    def coin(self):
+        return self.entity_dict['currency']
+
+    @coin.setter
+    def coin(self, value):
+        self.entity_dict['currency'] += value
+
 
 class vendor_collection(item_collection):
-    def __init__(self, items):
-        super().__init__(items)
+    def __init__(self, coin, items=list()):
+        super().__init__(coin, items)
         self.Error_No_Exist = "That item doesn't exist in this inventory."
 
-    def swap_item(self, swapee, itm, count=1):
+    def swap_item(self, swapee, itm, count=Enumerators.items_to_modify):
         if itm in self.items:
             for i in range(count):
-                if swapee.coin >= (itm.value * count):
+                if swapee.collection.coin >= (itm.value * count):
                     # Swap items
                     swapee.collection.add_item(itm)
                     self.rem_item(itm)
                     # Swap coin
-                    swapee.coin = (itm.value * -1)
+                    swapee.collection.coin = (itm.value * -1)
                     self.coin = itm.value
                 else:
                     print(swapee.name + " ran out of money.")
@@ -655,8 +657,8 @@ class vendor_collection(item_collection):
 
 
 class battler_collection(item_collection):
-    def __init__(self, items, equipped=list()):
-        super().__init__(items)
+    def __init__(self, coin, items, equipped=list()):
+        super().__init__(coin, items)
         self.on_entity = equipped
         self.Errors = "That didn't work."
 
@@ -688,10 +690,10 @@ class battler_collection(item_collection):
 
 
 class player_collection(battler_collection, vendor_collection):
-    def __init__(self, items, equipped):
-        super().__init__(items, equipped)
+    def __init__(self, coin, items, equipped=list()):
+        super().__init__(coin, items, equipped)
 
-    def add_item(self, itm, amnt=1):
+    def add_item(self, itm, amnt=Enumerators.items_to_modify):
         for i in range(amnt):
             self.items.append(itm)
 
