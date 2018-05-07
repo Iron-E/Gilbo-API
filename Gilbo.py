@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.11.0 #
+# Gilbo RPG API -- Version 0.11.1 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -640,7 +640,7 @@ class item_collection(ABC):
 class vendor_collection(item_collection):
     def __init__(self, coin, items=list()):
         super().__init__(coin, items)
-        self.Error_No_Exist = "That item doesn't exist in this inventory."
+        self.collect_dict['Error_No_Exist'] = "That item doesn't exist in this inventory."
 
     def swap_item(self, swapee, itm, count=Enumerators.items_to_modify):
         if itm in self.items:
@@ -655,14 +655,14 @@ class vendor_collection(item_collection):
                 else:
                     print(swapee.name + " ran out of money.")
         else:
-            print(self.Error_No_Exist)
+            self.collect_dict['Error_No_Exist']
 
 
 class battler_collection(item_collection):
     def __init__(self, coin, items, equipped=list()):
         super().__init__(coin, items)
-        self.on_entity = equipped
-        self.Errors = "That didn't work."
+        self.collect_dict['on_entity'] = equipped
+        self.collect_dict['Errors'] = "Couldn't equip item."
 
         if len(self.on_entity) > 0:
             for i in range(len(self.on_entity)):
