@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.11.3 #
+# Gilbo RPG API -- Version 0.11.4 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -682,7 +682,7 @@ class battler_collection(item_collection):
                         del self.equipped[i]
 
             self.equipped.append(itm)
-            self.update_stats(self.item_stats)
+            self.update_stats()
 
         except AttributeError:
             print(self.collect_dict['Errors'])
