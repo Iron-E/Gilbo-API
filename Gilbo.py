@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.10.12 #
+# Gilbo RPG API -- Version 0.10.13 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -615,7 +615,7 @@ class ranged_attack(attack):
 
 class item_collection(ABC):
     def __init__(self, items=list()):
-        self.items = items
+        self.collect_dict = {'collection': items}
 
     def add_item(self, itm, amnt=Enumerators.items_to_modify):
         for i in range(amnt):
@@ -631,8 +631,8 @@ class item_collection(ABC):
                 return False
 
     @property
-    def inventory(self):
-        return self.items
+    def items(self):
+        return self.collect_dict['collection']
 
 
 class vendor_collection(item_collection):
