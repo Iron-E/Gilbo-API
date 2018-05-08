@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.6 #
+# Gilbo RPG API -- Version 0.12.7 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -754,7 +754,7 @@ class battle_manager:
     def __init__(self):
         self.battle_dict = {'turn_counter': 0}
 
-        self.battle_dict['effect_dict']['active_effect_enemy'] = False
+        self.battle_dict['effect_dict'] = {'active_effect_enemy': False}
         self.battle_dict['effect_dict']['active_effect_player'] = False
 
         self.battle_dict['effect_dict']['reverse_effect_enemy'] = []
@@ -974,3 +974,4 @@ class object_tracker:
 
 tracker = object_tracker()
 loc_man = location_manager()
+bat_man = battle_manager()
