@@ -163,12 +163,12 @@ class battler(vendor):
     def sub_stat_change(self, sender, **kwargs):
         if sender is self.collection:
             try:
-                self.stats.health = self.stats.health + kwargs['changes'][0]
-                self.stats.health = self.stats.max_health + kwargs['changes'][0]
-                self.stats.stren = self.stats.stren + kwargs['changes'][1]
-                self.stats.armor = self.stats.armor + kwargs['changes'][2]
-                self.stats.agility = self.stats.agility + kwargs['changes'][3]
-                self.stats.power = self.stats.power + kwargs['changes'][4]
+                self.stats.health = self.stats.health + kwargs['changes'][Stat_Sheet.health]
+                self.stats.health = self.stats.max_health + kwargs['changes'][Stat_Sheet.health]
+                self.stats.stren = self.stats.stren + kwargs['changes'][Stat_Sheet.strength]
+                self.stats.armor = self.stats.armor + kwargs['changes'][Stat_Sheet.armor]
+                self.stats.agility = self.stats.agility + kwargs['changes'][Stat_Sheet.agility]
+                self.stats.power = self.stats.power + kwargs['changes'][Stat_Sheet.power]
             except TypeError:
                 debug_info(e, 'An item in stat_change was not a number.', True)
 
@@ -176,6 +176,8 @@ class battler(vendor):
 class player(battler):
     def __init__(self, name, location, x, y, inv, stats):
         super().__init__(name, location, x, y, inv, stats)
+
+        self.entity_dict['quest_list'] = []
 
         def handle_chk_pos(sender, **kwargs):
             self.sub_chk_pos(sender, **kwargs)
@@ -263,6 +265,13 @@ class buff_item(item):
 #
 # Entity Stats #
 #
+
+class Stat_Sheet(IntEnum):
+    health = auto()
+    strength = auto()
+    armor = auto()
+    agility = auto()
+    power = auto()
 
 
 class battler_stats:
@@ -744,9 +753,12 @@ class Turn(IntEnum):
 class battle_manager:
     def __init__(self):
         self.battle_dict = {'turn_counter': 0}
-        self.battle_dict['turn_counter'] = 0
-        self.battle_dict['effect_dict'] = {'active_effect': False}
-        self.battle_dict['effect_dict']['turn_effect_end'] = None
+
+        self.battle_dict['effect_dict']['active_effect_enemy'] = False
+        self.battle_dict['effect_dict']['active_effect_player'] = False
+
+        self.battle_dict['effect_dict']['reverse_effect_enemy'] = []
+        self.battle_dict['effect_dict']['reverse_effect_player'] = []
 
     def calc_agility(self, agi):
         e = 2.71828182845904523536028747135266249775724709369995
@@ -763,27 +775,83 @@ class battle_manager:
             else:
                 self.battle_dict['turn_counter'] = Turn.Attack
 
-    def determine_active_effect(self):
-        pass
+    def clean_active_effect(self):
+        for i in self.battle_dict['effect_dict']['reverse_effect_player']:
+            if i[0] < self.battle_dict['turn_counter']:
+                del i
+
+        for i in self.battle_dict['effect_dict']['reverse_effect_enemy']:
+            if i[0] < self.battle_dict['turn_counter']:
+                del i
+
+    def determine_active_effect(self, plyr, enemy):
+        if (self.battle_dict['effect_dict']['active_effect_player'] is True) or (self.battle_dict['effect_dict']['active_effect_enemy'] is True):
+            if self.battle_dict['effect_dict']['active_effect_player'] is True:
+                for i in self.battle_dict['effect_dict']['reverse_effect_player']:
+                    if self.battle_dict['turn_counter'] == i[0]:
+                        self.use_item_stat(plyr, i[0])
+
+                if self.battle_dict['effect_dict']['reverse_effect_player'] = []:
+                    self.battle_dict['effect_dict']['active_effect_player'] = False
+
+            if self.battle_dict['effect_dict']['active_effect_enemy'] is True:
+                for i in self.battle_dict['effect_dict']['reverse_effect_enemy']:
+                    if self.battle_dict['turn_counter'] == i[0]:
+                        self.use_item_stat(plyr, i[0])
+                if self.battle_dict['effect_dict']['reverse_effect_enemy'] = []:
+                    self.battle_dict['effect_dict']['active_effect_enemy'] = False
+
+            self.clean_active_effect()
+
+
+    def reverse_item_stat(self, stat_list):
+        for i in range(len(stat_list)):
+            stat_list = stat_list[i] * -1
+
+        return stat_list
+
+    def calc_queue(self, thing, itm):
+        try:
+            if itm.duration > 0:
+                 if isinstance(thing, player):
+                     self.battle_dict['effect_dict']['active_effect_player'] = True
+                     self.battle_dict['effect_dict']['active_effect_player'].append([itm.stat_changes, itm.duration])
+                     self.battle_dict['effect_dict']['active_effect_player'].sort()
+                 else:
+                     self.battle_dict['effect_dict']['active_effect_enemy'] = True
+                     self.battle_dict['effect_dict']['active_effect_enemy'].append([itm.duration, itm.stat_changes])
+                     self.battle_dict['effect_dict']['active_effect_enemy'].sort()
+
+        except AttributeError:
+            debug_info(e, 'An incorrect object type was used as type buff_item in battle_manager.use_item().')
+
+    def use_item_stat(self, thing, stat_list):
+        if itm.stat_changes[i] > 0:
+            if i == Stat_Sheet.health:
+                thing.stats.health = thing.stats.health + itm.stat_changes[i]
+            elif i == Stat_Sheet.strength:
+                thing.stats.stren = thing.stats.stren + itm.stat_changes[i]
+            elif i == Stat_Sheet.armor:
+                thing.stats.armor = thing.stats.armor + itm.stat_changes[i]
+            elif i == Stat_Sheet.agility:
+                thing.stats.agility = thing.stats.agility + itm.stat_changes[i]
+            elif i == Stat_Sheet.power:
+                thing.stats.power = thing.stats.power + itm.stat_changes[i]
 
     def use_item(self, thing, itm):
         if itm.stat_changes != [0, 0, 0, 0, 0]:
-            try:
-                self.battle_dict['effect_dict']['turn_effect_end'] = self.battle_dict['turn_counter'] + itm.duration
-                self.battle_dict['effect_dict']['active_effect'] = True
-            except AttributeError:
-                debug_info(e, 'An incorrect object type was used as type buff_item in battle_manager.use_item().')
-
-        for i in range(len(itm.stat_changes)):
-            if itm.stat_changes[i] > 0:
-                pass
-            elif itm.stat_changes[i] == -1:
-                pass
+            self.calc_queue(thing, itm)
+            self.use_item_stat(thing, itm.stat_changes)
 
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
 
         while (plyr.stats.health > 0) and (enemy.stats.health > 0):
+            self.determine_active_effect(plyr, enemy)
+
+            if spec_effect is not None:
+                spec_effect()
+
             self.battle_dict['turn_counter'] += 1
 
             if self.battle_dict['turn_counter'] == 0:
