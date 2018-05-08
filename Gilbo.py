@@ -245,6 +245,16 @@ class armor(equippable):
         self.item_dict['type'] = Item_Types.armor
 
 
+class heal_item(item):
+    def __init__(self, name, dscrpt, val, hp=0):
+        super().__init__(name, dscrpt, val, hp)
+        self.item_dict['heal_amount'] = hp
+
+    @property
+    def heal_amnt(self):
+        return self.item_dict['heal_amount']
+
+
 class buff_item(equippable):
     def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0, effect_time=1):
         super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
@@ -764,6 +774,7 @@ class Turn(IntEnum):
     Attack = 0
     Defend = 1
 
+
 class Enemy_Choices(IntEnum):
     Attack = 0
     Item = 1
@@ -771,6 +782,7 @@ class Enemy_Choices(IntEnum):
 
 class battle_manager:
     def __init__(self):
+        self.e = 2.7182
         self.battle_dict = {'turn_counter': 0, 'total_turns': 0}
 
         self.battle_dict['effect_dict'] = {'active_effect_enemy': False}
@@ -779,9 +791,10 @@ class battle_manager:
         self.battle_dict['effect_dict']['reverse_effect_enemy'] = []
         self.battle_dict['effect_dict']['reverse_effect_player'] = []
 
+        self.battle_manager['ai'] = {'used_item': 0}
+
     def calc_agility(self, agi):
-        e = 2.71828182845904523536028747135266249775724709369995
-        return (200) / (1 + (e ^ ((-1 / 30) * agi))) - 100
+        return (150) / (1 + (self.e ^ ((-1 / 30) * agi))) - 75
 
     def determine_first_turn(self, plyr, enemy):
         if plyr.stats.power > enemy.stats.power:
@@ -860,8 +873,16 @@ class battle_manager:
         # if itm.stat_changes != [0, 0, 0, 0, 0]:
         # Add above check to the item list generator
         try:
-            self.calc_queue(thing, itm)
-            self.use_item_stat(thing, itm.stat_changes)
+            # Add specific instructions for healing items
+            if isinstance(itm, heal_item):
+                if thing.stats.health + itm.heal_amnt > thing.stats.max_health:
+                    thing.stats.health = thing.stats.max_health
+                else:
+                    thing.stats.health += itm.heal_amnt
+            else:
+                self.calc_queue(thing, itm)
+                self.use_item_stat(thing, itm.stat_changes)
+
         except ValueError:
             print(f"This item does not exist in {thing.name}'s inventory.")
 
@@ -872,6 +893,32 @@ class battle_manager:
                 temp_enemy_choices.append(1)
 
         return temp_enemy_choices
+
+    def chance_item(self, enemy):
+        temp_items = []
+        for i in enemy.collection.items:
+            if isinstance(i, buff_item):
+                temp_items.append(i)
+
+        buff_items_in_temp = [isinstance(i, buff_item) for i in temp_items]
+
+        if (temp_items != []) and (True in buff_items_in_temp):
+            return (100) / (1 + (self.e ^ ((-1 / 2) * self.battle_dict['ai']['used_item']))) - 50
+        elif (temp_items != []):
+            self.chance_heal(enemy)
+        else:
+            return 0
+
+    def chance_heal(self, enemy):
+        temp_items = []
+        for i in enemy.collection.items:
+            if isinstance(i, heal_item):
+                temp_items.append(i)
+
+        if temp_items != []:
+            return 2 ^ (((enemy.stats.max_health - enemy.stats.health) / 100) / 15)
+        else:
+            return 0
 
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
@@ -893,10 +940,40 @@ class battle_manager:
             self.battle_dict['total_turns'] += 1
 
             # Check if player is attacking or defending
-            if self.battle_dict['turn_counter'] == Turn.Attack:
+            while self.battle_dict['turn_counter'] == Turn.Attack:
                 pass
-            elif self.battle_dict['turn_counter'] == Turn.Defend:
-                enemy_choice = randint(1, self.enumerate_enemy_choices(enemy))
+            while self.battle_dict['turn_counter'] == Turn.Defend:
+                enemy_choice = randint(1, 100)
+                # Test if enemy uses item
+                if enemy_choice <= self.chance_item(enemy):
+                    # Use item
+                    enemy_choice = randint(1, 100)
+                    if enemy_choice <= self.chance_heal(enemy):
+                        # Use healing item
+                        for heal in enemy.collection.items:
+                            if enemy.health + heal.heal_amnt <= enemy.max_health:
+                                write(f"{enemy.name} used a {heal.name}, and regained {heal.heal_amnt} health.")
+                                self.use_item(enemy, heal)
+                                break
+
+                        # Create list of healing items and sort them based on how effective they are
+                        temp_heal_list = [(heal.heal_amnt, heal) for heal in enemy.collection.items]
+                        temp_heal_list.sort()
+
+                        # Use item and display its use
+                        write(f"{enemy.name} used a {temp_heal_list[1][1].name} and regained {enemy.max_health - enemy.health} health.")
+                        self.use_item(enemy, temp_heal_list[0][1])
+
+                        # Finish up
+                        del temp_heal_list
+                        break
+                    else:
+                        write("")
+                        pass
+
+                else:
+                    # Attack
+                    pass
 
 
 #

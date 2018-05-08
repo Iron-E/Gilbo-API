@@ -9,6 +9,7 @@ class test_matrix_map(G.array_map):
     def send_data(self, tile, plyr=False):
         return True
 
+
 # Test maps
 test1 = test_matrix_map('tortelini')
 test2 = test_matrix_map('tortelini')
@@ -19,11 +20,12 @@ test2.layout = G.np.array([[G.Tiles.Cave, G.Tiles.Water, G.Tiles.Building, G.Til
 smash = G.attack(100, 'You use your entire body to smash the opponent.')
 doodle = G.weapon('Wackadoodle', 'A mysterious doodle of some kind. Wacky.', 5, 100, [smash], 5)
 diddle = G.weapon('Wackadoodle', 'A mysterious doodle of some kind. Wacky.', 5, 100, [smash], 5)
-jim_collection = G.player_collection(20, [doodle], [])
-bim_collection = G.player_collection([doodle], [doodle])
+jim_collection = G.player_collection(20, [doodle], [doodle])
+bim_collection = G.player_collection(20, [doodle], [doodle])
 jim_stats = G.battler_stats(50, 100, 10, 30, 100)
+bim_stats = G.battler_stats(50, 100, 10, 30, 100)
 jim = G.player('Jimbo', test1, 2, 1, jim_collection, jim_stats)
-bim = G.player('Jimbo', test1, 2, 1, bim_collection, jim_stats)
+bim = G.player('Jimbo', test1, 2, 1, bim_collection, bim_stats)
 
 G.loc_man.load_map(test1)
 
