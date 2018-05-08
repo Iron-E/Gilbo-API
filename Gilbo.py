@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.12 #
+# Gilbo RPG API -- Version 0.12.13 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -754,9 +754,6 @@ class quest(ABC):
         Some possibilities include checking for items in the iventory: subscribe to the pub_item_obtained event and check the player's inventory for items. Check if a player has stepped
         onto a tile by writing a quest.stage method into the array_map class's send_data method. Or, make NPCs say certain things by creating an if statement to check if a quest has a certain stage.
         """
-        # TEMPLATE #
-        # WIP
-
 
 
 #
@@ -777,9 +774,11 @@ class battle_manager:
         self.battle_dict['effect_dict']['reverse_effect_enemy'] = []
         self.battle_dict['effect_dict']['reverse_effect_player'] = []
 
+
     def calc_agility(self, agi):
         e = 2.71828182845904523536028747135266249775724709369995
         return (200)/(1+(e^((-1/30)*agi))) - 100
+
 
     def determine_first_turn(self, plyr, enemy):
         if plyr.stats.power > enemy.stats.power:
@@ -791,6 +790,7 @@ class battle_manager:
                 self.battle_dict['turn_counter'] = Turn.Defend
             else:
                 self.battle_dict['turn_counter'] = Turn.Attack
+
 
     def clean_active_effect(self):
         temp = self.battle_dict['effect_dict']['reverse_effect_player']
@@ -810,6 +810,7 @@ class battle_manager:
         temp = self.battle_dict['effect_dict']['reverse_effect_enemy']
 
         del temp
+
 
     def refresh_active_effect(self, plyr, enemy):
         if (self.battle_dict['effect_dict']['active_effect_player'] is True) or (self.battle_dict['effect_dict']['active_effect_enemy'] is True):
@@ -837,7 +838,6 @@ class battle_manager:
 
         return [invert(i) for i in stat_list]
 
-        return stat_list
 
     def calc_queue(self, thing, itm):
         try:
@@ -854,6 +854,7 @@ class battle_manager:
         except AttributeError as e:
             debug_info(e, 'An incorrect object type was used as type buff_item in battle_manager.use_item().')
 
+
     def use_item_stat(self, thing, stat_changes):
         thing.stats.stat_list = stat_changes
 
@@ -866,6 +867,7 @@ class battle_manager:
             self.use_item_stat(thing, itm.stat_changes)
         except ValueError:
             print(f"This item does not exist in {thing.name}'s inventory.")
+
 
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
@@ -886,9 +888,9 @@ class battle_manager:
             self.battle_dict['total_turns'] += 1
 
             # Check if player is attacking or defending
-            if self.battle_dict['turn_counter'] == Turns.Attack:
+            if self.battle_dict['turn_counter'] == Turn.Attack:
                 pass
-            elif self.battle_dict['turn_counter'] == Turns.Defend:
+            elif self.battle_dict['turn_counter'] == Turn.Defend:
                 pass
 
 #
