@@ -155,9 +155,9 @@ class battler(vendor):
     @property
     def attacks(self):
         try:
-            for i in range(len(self.collection.equipped)):
-                if isinstance(self.collection.equipped[i], weapon):
-                    return self.collection.equipped[i].attacks
+            for itm in self.collection.equipped:
+                if isinstance(itm, weapon):
+                    return itm.linked_attacks
         except AttributeError as e:
             debug_info(e, 'The battler must use a battler_collection for an inventory.', True)
 
@@ -234,9 +234,9 @@ class weapon(equippable):
         self.item_dict['type'] = Item_Types.weapon
         self.item_dict['linked_attack_list'] = linked_attacks
 
-        @property
-        def attacks(self):
-            return self.item_dict['linked_attack_list']
+    @property
+    def linked_attacks(self):
+        return self.item_dict['linked_attack_list']
 
 
 class armor(equippable):
@@ -674,7 +674,7 @@ class vendor_collection(item_collection):
 
 
 class battler_collection(item_collection):
-    def __init__(self, coin, items, equipped=list()):
+    def __init__(self, coin, items, equipped):
         super().__init__(coin, items)
         self.collect_dict['on_entity'] = equipped
         self.collect_dict['Errors'] = "Couldn't equip item."
@@ -718,7 +718,7 @@ class battler_collection(item_collection):
 
 
 class player_collection(battler_collection, vendor_collection):
-    def __init__(self, coin, items, equipped=list()):
+    def __init__(self, coin, items, equipped):
         super().__init__(coin, items, equipped)
 
     def add_item(self, itm, amnt=Enumerators.items_to_modify):
@@ -763,6 +763,10 @@ class quest(ABC):
 class Turn(IntEnum):
     Attack = 0
     Defend = 1
+
+class Enemy_Choices(IntEnum):
+    Attack = 0
+    Item = 1
 
 
 class battle_manager:
@@ -861,6 +865,14 @@ class battle_manager:
         except ValueError:
             print(f"This item does not exist in {thing.name}'s inventory.")
 
+    def enumerate_enemy_choices(self, enemy):
+        temp_enemy_choices = [0 for i in range(len(enemy.attacks))]
+        for itm in enemy.collection.items:
+            if isinstance(itm, buff_item):
+                temp_enemy_choices.append(1)
+
+        return temp_enemy_choices
+
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
 
@@ -884,7 +896,7 @@ class battle_manager:
             if self.battle_dict['turn_counter'] == Turn.Attack:
                 pass
             elif self.battle_dict['turn_counter'] == Turn.Defend:
-                pass
+                enemy_choice = randint(1, self.enumerate_enemy_choices(enemy))
 
 
 #
