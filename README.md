@@ -23,11 +23,11 @@ By using Gilbo's dependencies, you agree to their licenses.
 ## Features 
 ### Player & NPC Management
 - [x] Create entities (NPCs, Players, Vendors, etc.)
-- [x] Define an item list for an entity.
-- [x] Define stat lists for an entity.
+- [x] Define an item list for an entity
+- [x] Define stat lists for an entity
 - [x] Basic Save & Load data
 - [x] Gear based progression system
-- [ ] Battle entities.
+- [ ] Battle entities
 
 ### Quests & Staging
 - [x] Quests have multiple stages
