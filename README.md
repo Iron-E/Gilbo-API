@@ -26,12 +26,13 @@ By using Gilbo's dependencies, you agree to their licenses.
 - [x] Define an item list for an entity.
 - [x] Define stat lists for an entity.
 - [x] Basic Save & Load data
-- [ ] Gear based progression system
+- [x] Gear based progression system
+- [ ] Battle entities.
 
 ### Quests & Staging
-- [ ] Quests have multiple stages
-- [ ] Begin quests based on events (picking up items, killing entities)
-- [ ] Quest completion rewards
+- [x] Quests have multiple stages
+- [x] Begin quests based on events (picking up items, killing entities)
+- [x] Quest completion rewards
 
 ### Locations
 The location manager defaults to working with Numpy-array-based maps and works by increasing or decreasing the player's "position" on said map, which triggers a function that reads what is on that tile. However, it can be easily modified to use other 2D, or even 3D libraries to manage a location. See [documentation](https://github.com/ajzett/Gilbo-API/blob/master/DOCUMENTATION.md) for more. 
