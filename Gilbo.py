@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.3 #
+# Gilbo RPG API -- Version 0.12.1 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -267,11 +267,11 @@ class buff_item(item):
 #
 
 class Stat_Sheet(IntEnum):
-    health = auto()
-    strength = auto()
-    armor = auto()
-    agility = auto()
-    power = auto()
+    health = 0
+    strength = 1
+    armor = 2
+    agility = 3
+    power = 4
 
 
 class battler_stats:
