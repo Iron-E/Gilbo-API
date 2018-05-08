@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.9 #
+# Gilbo RPG API -- Version 0.12.10 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -822,8 +822,10 @@ class battle_manager:
 
 
     def reverse_item_stat(self, stat_list):
-        for i in range(len(stat_list)):
-            stat_list = stat_list[i] * -1
+        def invert(val):
+            return val * -1
+
+        return [invert(i) for i in stat_list]
 
         return stat_list
 
@@ -832,12 +834,12 @@ class battle_manager:
             if itm.duration > 0:
                  if isinstance(thing, player):
                      self.battle_dict['effect_dict']['active_effect_player'] = True
-                     self.battle_dict['effect_dict']['active_effect_player'].append([self.reverse_item_stat(itm.stat_changes), itm.duration])
-                     self.battle_dict['effect_dict']['active_effect_player'].sort()
+                     self.battle_dict['effect_dict']['reverse_effect_player'].append([self.reverse_item_stat(itm.stat_changes), itm.duration])
+                     self.battle_dict['effect_dict']['reverse_effect_player'].sort()
                  else:
                      self.battle_dict['effect_dict']['active_effect_enemy'] = True
-                     self.battle_dict['effect_dict']['active_effect_enemy'].append([self.reverse_item_stat(itm.stat_changes), itm.duration])
-                     self.battle_dict['effect_dict']['active_effect_enemy'].sort()
+                     self.battle_dict['effect_dict']['reverse_effect_enemy'].append([self.reverse_item_stat(itm.stat_changes), itm.duration])
+                     self.battle_dict['effect_dict']['reverse_effect_enemy'].sort()
 
         except AttributeError as e:
             debug_info(e, 'An incorrect object type was used as type buff_item in battle_manager.use_item().')
