@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.11 #
+# Gilbo RPG API -- Version 0.12.12 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -769,7 +769,7 @@ class Turn(IntEnum):
 
 class battle_manager:
     def __init__(self):
-        self.battle_dict = {'turn_counter': 0}
+        self.battle_dict = {'turn_counter': 0, 'total_turns': 0}
 
         self.battle_dict['effect_dict'] = {'active_effect_enemy': False}
         self.battle_dict['effect_dict']['active_effect_player'] = False
@@ -783,9 +783,9 @@ class battle_manager:
 
     def determine_first_turn(self, plyr, enemy):
         if plyr.stats.power > enemy.stats.power:
-            self.battle_dict['turn_counter'] = Turn.Attack
+            self.battle_dict['total_turns'] = Turn.Attack
         elif plyr.stats.power < enemy.stats.power:
-            self.battle_dict['turn_counter'] = Turn.Defend
+            self.battle_dict['total_turns'] = Turn.Defend
         elif plyr.stats.power == enemy.stats.power:
             if plyr.stats.agility < enemy.stats.agility:
                 self.battle_dict['turn_counter'] = Turn.Defend
@@ -793,15 +793,25 @@ class battle_manager:
                 self.battle_dict['turn_counter'] = Turn.Attack
 
     def clean_active_effect(self):
-        for i in self.battle_dict['effect_dict']['reverse_effect_player']:
-            if i[0] < self.battle_dict['turn_counter']:
-                del i
+        temp = self.battle_dict['effect_dict']['reverse_effect_player']
+
+        for i in range(len(self.battle_dict['effect_dict']['reverse_effect_player'])):
+            if temp[i][0] > self.battle_dict['total_turns']:
+                del temp[i]
+
+        self.battle_dict['effect_dict']['reverse_effect_player'] = temp
+
+        temp = self.battle_dict['effect_dict']['reverse_effect_player']
 
         for i in self.battle_dict['effect_dict']['reverse_effect_enemy']:
-            if i[0] < self.battle_dict['turn_counter']:
-                del i
+            if temp[i][0] > self.battle_dict['total_turns']:
+                del temp[i]
 
-    def determine_active_effect(self, plyr, enemy):
+        temp = self.battle_dict['effect_dict']['reverse_effect_enemy']
+
+        del temp
+
+    def refresh_active_effect(self, plyr, enemy):
         if (self.battle_dict['effect_dict']['active_effect_player'] is True) or (self.battle_dict['effect_dict']['active_effect_enemy'] is True):
             if self.battle_dict['effect_dict']['active_effect_player'] is True:
                 for i in self.battle_dict['effect_dict']['reverse_effect_player']:
@@ -849,24 +859,36 @@ class battle_manager:
 
 
     def use_item(self, thing, itm):
-        if itm.stat_changes != [0, 0, 0, 0, 0]:
+        # if itm.stat_changes != [0, 0, 0, 0, 0]:
+        # Add above check to the item list generator
+        try:
             self.calc_queue(thing, itm)
             self.use_item_stat(thing, itm.stat_changes)
+        except ValueError:
+            print(f"This item does not exist in {thing.name}'s inventory.")
 
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
 
         while (plyr.stats.health > 0) and (enemy.stats.health > 0):
-            self.determine_active_effect(plyr, enemy)
+            # Allow player to read before clearing screen
+            input()
+            clr_console()
 
+            # Check to make sure no effects are active that shouldn't be
+            self.refresh_active_effect(plyr, enemy)
+
+            # Run the spec_effect if there is one specified
             if spec_effect is not None:
                 spec_effect()
 
-            self.battle_dict['turn_counter'] += 1
+            # Increase turn counter
+            self.battle_dict['total_turns'] += 1
 
-            if self.battle_dict['turn_counter'] == 0:
+            # Check if player is attacking or defending
+            if self.battle_dict['turn_counter'] == Turns.Attack:
                 pass
-            elif self.battle_dict['turn_counter'] == 1:
+            elif self.battle_dict['turn_counter'] == Turns.Defend:
                 pass
 
 #
