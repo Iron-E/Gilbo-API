@@ -1,7 +1,6 @@
-# Gilbo RPG API -- Version 0.12.14 #
+# Gilbo RPG API -- Version 0.12.15 #
 
 from abc import ABC, abstractmethod
-from random import randint
 from enum import IntEnum, auto
 
 # Allow Gilbo to see Dependencies
@@ -872,6 +871,7 @@ class battle_manager:
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
 
+        from random import randint
         while (plyr.stats.health > 0) and (enemy.stats.health > 0):
             # Allow player to read before clearing screen
             input()
