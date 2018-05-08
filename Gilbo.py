@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.11.5 #
+# Gilbo RPG API -- Version 0.12.0 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -32,9 +32,6 @@ pub_chk_pos = Signal()
 
 
 class Enumerators(IntEnum):
-    # Stat enums
-    base_carry_cap = 100
-    carry_cap_modifier = 2
     # Inventory enums
     items_to_modify = 1
     infinite_coin = -1
@@ -332,14 +329,14 @@ class battler_stats:
 
 
 class Directions(IntEnum):
-    Up = 11
-    Up_Left = 12
+    Up_Left = 11
+    Up = 12
     Up_Right = 13
-    Left = 22
-    Right = 33
-    Down = 41
-    Down_Left = 42
-    Down_Right = 43
+    Left = 21
+    Right = 23
+    Down_Left = 31
+    Down = 32
+    Down_Right = 33
 
 
 class Location_Errors(IntEnum):
@@ -740,8 +737,34 @@ class quest(ABC):
 # Battle System #
 #
 
+class Turn(IntEnum):
+    Attack = 0
+    Defend = 1
+
 class battle_manager:
-    pass
+    def __init__(self):
+        self.battle_dict = {'turn_counter': 0}
+
+    def calc_agility(self, agi):
+        e = 2.71828182845904523536028747135266249775724709369995
+        return (200)/(1+(e^((-1/30)val))) - 100
+
+    def determine_first_turn(self, plyr, enemy):
+        if plyr.stats.pwr > enemy.stats.pwr:
+            self.battle_dict['turn_counter'] = Turn.Attack
+        elif plyr.stats.pwr < enemy.stats.pwr:
+            self.battle_dict['turn_counter'] = Turn.Defend
+        elif plyr.stats.pwr == enemy.stats.pwr:
+            if plyr.stats.agility < enemy.stats.agility:
+                self.battle_dict['turn_counter'] = Turn.Defend
+            else:
+                self.battle_dict['turn_counter'] = Turn.Attack
+
+    def battle(self, plyr, enemy, spec_effect=None):
+        self.determine_first_turn(plyr, enemy)
+
+        while (plyr.stats.health > 0) and (enemy.stats.health > 0):
+            pass
 
 
 #
