@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.15 #
+# Gilbo RPG API -- Version 0.12.19 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
