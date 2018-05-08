@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.1 #
+# Gilbo RPG API -- Version 0.12.3 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -791,14 +791,14 @@ class battle_manager:
                     if self.battle_dict['turn_counter'] == i[0]:
                         self.use_item_stat(plyr, i[0])
 
-                if self.battle_dict['effect_dict']['reverse_effect_player'] = []:
+                if self.battle_dict['effect_dict']['reverse_effect_player'] == []:
                     self.battle_dict['effect_dict']['active_effect_player'] = False
 
             if self.battle_dict['effect_dict']['active_effect_enemy'] is True:
                 for i in self.battle_dict['effect_dict']['reverse_effect_enemy']:
                     if self.battle_dict['turn_counter'] == i[0]:
                         self.use_item_stat(plyr, i[0])
-                if self.battle_dict['effect_dict']['reverse_effect_enemy'] = []:
+                if self.battle_dict['effect_dict']['reverse_effect_enemy'] == []:
                     self.battle_dict['effect_dict']['active_effect_enemy'] = False
 
             self.clean_active_effect()
