@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.0 #
+# Gilbo RPG API -- Version 0.12.1 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -69,7 +69,7 @@ def clr_console():
 
 def debug_info(err, more_info, display=False):
     if display is True:
-        print(str(more_info), end="See 'log.txt' for details.")
+        print(str(more_info), end=" See 'log.txt' for details.")
 
     with open('log.txt', 'ab') as handle:
         from datetime import datetime
@@ -744,10 +744,13 @@ class Turn(IntEnum):
 class battle_manager:
     def __init__(self):
         self.battle_dict = {'turn_counter': 0}
+        self.battle_dict['turn_counter'] = 0
+        self.battle_dict['effect_dict'] = {'active_effect': False}
+        self.battle_dict['effect_dict']['turn_effect_end'] = None
 
     def calc_agility(self, agi):
         e = 2.71828182845904523536028747135266249775724709369995
-        return (200)/(1+(e^((-1/30)val))) - 100
+        return (200)/(1+(e^((-1/30)*val))) - 100
 
     def determine_first_turn(self, plyr, enemy):
         if plyr.stats.pwr > enemy.stats.pwr:
@@ -760,12 +763,33 @@ class battle_manager:
             else:
                 self.battle_dict['turn_counter'] = Turn.Attack
 
+    def determine_active_effect(self):
+        pass
+
+    def use_item(self, thing, itm):
+        if itm.stat_changes != [0, 0, 0, 0, 0]:
+            try:
+                self.battle_dict['effect_dict']['turn_effect_end'] = self.battle_dict['turn_counter'] + itm.duration
+                self.battle_dict['effect_dict']['active_effect'] = True
+            except AttributeError:
+                debug_info(e, 'An incorrect object type was used as type buff_item in battle_manager.use_item().')
+
+        for i in range(len(itm.stat_changes)):
+            if itm.stat_changes[i] > 0:
+                pass
+            elif itm.stat_changes[i] == -1:
+                pass
+
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
 
         while (plyr.stats.health > 0) and (enemy.stats.health > 0):
-            pass
+            self.battle_dict['turn_counter'] += 1
 
+            if self.battle_dict['turn_counter'] == 0:
+                pass
+            elif self.battle_dict['turn_counter'] == 1:
+                pass
 
 #
 # Tracker #
