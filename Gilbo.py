@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.10 #
+# Gilbo RPG API -- Version 0.12.11 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -245,7 +245,7 @@ class armor(equippable):
 
 
 class buff_item(equippable):
-    def __init__(self, name, dscrpt, val, hp, stren, armr, agil, pwr, effect_time=1):
+    def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0, effect_time=1):
         super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.basic_item
         self.item_dict['effect_time'] = effect_time
@@ -806,7 +806,7 @@ class battle_manager:
             if self.battle_dict['effect_dict']['active_effect_player'] is True:
                 for i in self.battle_dict['effect_dict']['reverse_effect_player']:
                     if self.battle_dict['turn_counter'] == i[0]:
-                        self.use_item_stat(plyr, i[0])
+                        self.use_item_stat(plyr, i[1])
 
                 if self.battle_dict['effect_dict']['reverse_effect_player'] == []:
                     self.battle_dict['effect_dict']['active_effect_player'] = False
@@ -814,7 +814,7 @@ class battle_manager:
             if self.battle_dict['effect_dict']['active_effect_enemy'] is True:
                 for i in self.battle_dict['effect_dict']['reverse_effect_enemy']:
                     if self.battle_dict['turn_counter'] == i[0]:
-                        self.use_item_stat(plyr, i[0])
+                        self.use_item_stat(plyr, i[1])
                 if self.battle_dict['effect_dict']['reverse_effect_enemy'] == []:
                     self.battle_dict['effect_dict']['active_effect_enemy'] = False
 
@@ -834,11 +834,11 @@ class battle_manager:
             if itm.duration > 0:
                  if isinstance(thing, player):
                      self.battle_dict['effect_dict']['active_effect_player'] = True
-                     self.battle_dict['effect_dict']['reverse_effect_player'].append([self.reverse_item_stat(itm.stat_changes), itm.duration])
+                     self.battle_dict['effect_dict']['reverse_effect_player'].append([self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes)])
                      self.battle_dict['effect_dict']['reverse_effect_player'].sort()
                  else:
                      self.battle_dict['effect_dict']['active_effect_enemy'] = True
-                     self.battle_dict['effect_dict']['reverse_effect_enemy'].append([self.reverse_item_stat(itm.stat_changes), itm.duration])
+                     self.battle_dict['effect_dict']['reverse_effect_enemy'].append([self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes)])
                      self.battle_dict['effect_dict']['reverse_effect_enemy'].sort()
 
         except AttributeError as e:
