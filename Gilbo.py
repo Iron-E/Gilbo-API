@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.7 #
+# Gilbo RPG API -- Version 0.12.8 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -765,11 +765,11 @@ class battle_manager:
         return (200)/(1+(e^((-1/30)*agi))) - 100
 
     def determine_first_turn(self, plyr, enemy):
-        if plyr.stats.pwr > enemy.stats.pwr:
+        if plyr.stats.power > enemy.stats.power:
             self.battle_dict['turn_counter'] = Turn.Attack
-        elif plyr.stats.pwr < enemy.stats.pwr:
+        elif plyr.stats.power < enemy.stats.power:
             self.battle_dict['turn_counter'] = Turn.Defend
-        elif plyr.stats.pwr == enemy.stats.pwr:
+        elif plyr.stats.power == enemy.stats.power:
             if plyr.stats.agility < enemy.stats.agility:
                 self.battle_dict['turn_counter'] = Turn.Defend
             else:
