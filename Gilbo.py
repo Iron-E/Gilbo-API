@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.8 #
+# Gilbo RPG API -- Version 0.12.9 #
 
 from abc import ABC, abstractmethod
 from random import randint
@@ -69,9 +69,9 @@ def clr_console():
 
 def debug_info(err, more_info, display=False):
     if display is True:
-        print(str(more_info), end=" See 'log.txt' for details.")
+        print(str(more_info), end=" See 'log.txt' for details.\n\n")
 
-    with open('log.txt', 'ab') as handle:
+    with open('log.txt', 'a') as handle:
         from datetime import datetime
         print(str(datetime.now()), end=':\n', file=handle)
         print(str(err), file=handle)
@@ -162,15 +162,7 @@ class battler(vendor):
 
     def sub_stat_change(self, sender, **kwargs):
         if sender is self.collection:
-            try:
-                self.stats.health = self.stats.health + kwargs['changes'][Stat_Sheet.health]
-                self.stats.health = self.stats.max_health + kwargs['changes'][Stat_Sheet.health]
-                self.stats.stren = self.stats.stren + kwargs['changes'][Stat_Sheet.strength]
-                self.stats.armor = self.stats.armor + kwargs['changes'][Stat_Sheet.armor]
-                self.stats.agility = self.stats.agility + kwargs['changes'][Stat_Sheet.agility]
-                self.stats.power = self.stats.power + kwargs['changes'][Stat_Sheet.power]
-            except TypeError:
-                debug_info(e, 'An item in stat_change was not a number.', True)
+            self.stats.stat_list = kwargs['changes']
 
 
 class player(battler):
@@ -252,11 +244,11 @@ class armor(equippable):
         self.item_dict['type'] = Item_Types.armor
 
 
-class buff_item(item):
-    def __init__(self, name, dscrpt, val, effect_time, hp=0, stren=0, armr=0, agil=0, pwr=0):
+class buff_item(equippable):
+    def __init__(self, name, dscrpt, val, hp, stren, armr, agil, pwr, effect_time=1):
         super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.basic_item
-        self.item_dict['effect_time']
+        self.item_dict['effect_time'] = effect_time
 
     @property
     def duration(self):
@@ -296,7 +288,7 @@ class battler_stats:
         return self.stat_dict['max_hp']
 
     @max_health.setter
-    def max_hp(self, value):
+    def max_health(self, value):
         self.stat_dict['max_hp'] = value
 
     @property
@@ -330,6 +322,31 @@ class battler_stats:
     @power.setter
     def power(self, value):
         self.stat_dict['power'] = value
+
+    @property
+    def stat_list(self):
+        return [self.health, self.max_health, self.stren, self.armor, self.agility, self.power]
+
+    @stat_list.setter
+    def stat_list(self, val):
+        try:
+            self.health += val[Stat_Sheet.health]
+            self.max_health += val[Stat_Sheet.health]
+            self.stren += val[Stat_Sheet.strength]
+            self.armor += val[Stat_Sheet.armor]
+            self.agility += val[Stat_Sheet.agility]
+            self.power += val[Stat_Sheet.power]
+        except IndexError as e:
+            debug_info(e, 'battler_stats.stat_list only accepts lists as setters.', True)
+        except TypeError as e:
+            debug_info(e, 'An item in stat_change was not a number.', True)
+
+    def writeout(self):
+        print(f"Health: {self.health}/{self.max_health}")
+        print(f"Strength: {self.stren}")
+        print(f"Armor: {self.armor}")
+        print(f"Agility: {self.agility}")
+        print(f"Power: {self.power}", end="\n\n")
 
 
 #
@@ -419,7 +436,7 @@ class location_manager:
                 thing.set_loc([y, x], mapid)
                 self.load_if_player(thing)
 
-        except NameError:
+        except NameError as e:
             debug_info(e, 'That map does not exist', True)
 
     def chk_boundary(self, mapid, direction, start_loc, is_player, print_errors=False):
@@ -815,28 +832,19 @@ class battle_manager:
             if itm.duration > 0:
                  if isinstance(thing, player):
                      self.battle_dict['effect_dict']['active_effect_player'] = True
-                     self.battle_dict['effect_dict']['active_effect_player'].append([itm.stat_changes, itm.duration])
+                     self.battle_dict['effect_dict']['active_effect_player'].append([self.reverse_item_stat(itm.stat_changes), itm.duration])
                      self.battle_dict['effect_dict']['active_effect_player'].sort()
                  else:
                      self.battle_dict['effect_dict']['active_effect_enemy'] = True
-                     self.battle_dict['effect_dict']['active_effect_enemy'].append([itm.duration, itm.stat_changes])
+                     self.battle_dict['effect_dict']['active_effect_enemy'].append([self.reverse_item_stat(itm.stat_changes), itm.duration])
                      self.battle_dict['effect_dict']['active_effect_enemy'].sort()
 
-        except AttributeError:
+        except AttributeError as e:
             debug_info(e, 'An incorrect object type was used as type buff_item in battle_manager.use_item().')
 
-    def use_item_stat(self, thing, stat_list):
-        if itm.stat_changes[i] > 0:
-            if i == Stat_Sheet.health:
-                thing.stats.health = thing.stats.health + itm.stat_changes[i]
-            elif i == Stat_Sheet.strength:
-                thing.stats.stren = thing.stats.stren + itm.stat_changes[i]
-            elif i == Stat_Sheet.armor:
-                thing.stats.armor = thing.stats.armor + itm.stat_changes[i]
-            elif i == Stat_Sheet.agility:
-                thing.stats.agility = thing.stats.agility + itm.stat_changes[i]
-            elif i == Stat_Sheet.power:
-                thing.stats.power = thing.stats.power + itm.stat_changes[i]
+    def use_item_stat(self, thing, stat_changes):
+        thing.stats.stat_list = stat_changes
+
 
     def use_item(self, thing, itm):
         if itm.stat_changes != [0, 0, 0, 0, 0]:
@@ -964,7 +972,7 @@ class object_tracker:
             for i in range(len(keys)):
                 try:
                     obj_list.update({keys[i]: values[i]})
-                except IndexError:
+                except IndexError as e:
                     debug_info(e, 'There was more data to load than exists now', True)
 
     @property
