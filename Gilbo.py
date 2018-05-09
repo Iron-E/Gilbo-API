@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.30 #
+# Gilbo RPG API -- Version 0.12.31 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -905,7 +905,7 @@ class battle_manager:
 
         buff_items_in_temp = [isinstance(i, buff_item) for i in temp_items]
 
-        if (temp_items != []) and (True in buff_items_in_temp):
+        if (temp_items != []) and (True in buff_items_in_temp) and (self.battle_dict['ai']['used_item'] > 0):
             return (100) / (1 + (self.e ^ ((-1 / 2) * self.battle_dict['ai']['used_item']))) - 50
         elif (temp_items != []):
             self.chance_heal(enemy)
@@ -919,22 +919,42 @@ class battle_manager:
                 temp_items.append(i)
 
         def percent_health():
-            return ((enemy.stats.max_health - enemy.stats.health) / enemy.stats.max_health) * 100)
+            return ((enemy.stats.max_health - enemy.stats.health) / enemy.stats.max_health) * 100
 
         if (temp_items != []) and (percent_health() <= 75):
-            return -25719430 + (89.67716 - -25719430)/(1 + ((percent_health() / 1720762) ^ 1.286616)
+            from math import round
+            return round(-25719430 + (89.67716 - -25719430)/(1 + ((percent_health() / 1720762) ^ 1.286616)))
         else:
             return 0
 
-    def switch_turn(self):
+    def switch_turn(self, enemy_used_item=False):
         if self.battle_dict['turn_counter'] == Turn.Attack:
-            self.battle_dict['turn_counter'] == Turn.Defend:
-            return break
+            # Switch turn
+            self.battle_dict['turn_counter'] = Turn.Defend
+            # Exit turn
+            raise TurnComplete
         elif self.battle_dict['turn_counter'] == Turn.Defend:
-            self.battle_dict['turn_counter'] == Turn.Attack:
-            return break
+            # Switch turn
+            self.battle_dict['turn_counter'] = Turn.Attack
+            # Do extras based on item use
+            if enemy_used_item is True:
+                self.battle_dict['ai']['used_item'] = 0
+            else:
+                self.battle_dict['ai']['used_item'] += 1
+            # Exit turn
+            raise TurnComplete
         else:
             debug_info(ValueError('The turn counter was not set correctly.'), 'Somehow, the value of turn_counter was switched away from 0 or 1, which are the accepted values.')
+
+    def draw_hp(self, plyr, enemy):
+        from math import round
+        prcnt_plyr_health = round((plyr.health / plyr.max_health) * 100)
+
+        print('[')
+        for i in range(100):
+            print('=' if i <= prcnt_plyr_health else '-')
+        print(']')
+
 
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
@@ -956,67 +976,90 @@ class battle_manager:
             self.battle_dict['total_turns'] += 1
 
             # Check if player is attacking or defending
-            while self.battle_dict['turn_counter'] == Turn.Attack:
-                pass
-            while self.battle_dict['turn_counter'] == Turn.Defend:
-                enemy_choice = randint(1, 100)
-                # Test if enemy uses item
-                if enemy_choice <= self.chance_item(enemy):
-                    # Use item
-                    enemy_choice = randint(1, 100)
-                    if enemy_choice <= self.chance_heal(enemy):
-                        # Use healing item
-
-                        temp_heal_items = []
-                        for heal in enemy.collection.items:
-                            if isinstance(heal, heal_item):
-                                temp_heal_items.append(enemy.collection.items.index(buff))
-
-                        for heal in temp_heal_items:
-                            if enemy.health + heal.heal_amnt <= enemy.max_health:
-                                write(f"{enemy.name} used a {heal.name}, and regained {heal.heal_amnt} health.")
-                                self.use_item(enemy, enemy.collection.items[heal])
-                                del temp_heal_items
-                                self.switch_turn()
-
-                        # Create list of healing items and sort them based on how effective they are
-                        temp_heal_list = []
-                        for i in range(len(enemy.collection.items)):
-                            if i in temp_heal_list:
-                                temp_heal_list.append((enemy.collection.items[i].heal_amnt, enemy.collection.items[i]))
-                        temp_heal_list.sort()
-
-                        # Use item and display its use
-                        write(f"{enemy.name} used a {temp_heal_list[0][1].name} and regained {enemy.max_health - enemy.health} health.")
-                        self.use_item(enemy, temp_heal_list[0][0])
-
-                        # Finish up
-                        del temp_heal_list
-                        del temp_heal_items
-                        self.switch_turn()
-                    else:
-                        # Use buff item
-
-                        # Generate list of places in inventory where buff items exist
-                        temp_buff_items = []
-                        for buff in enemy.collection.items:
-                            if isinstance(buff, buff_item):
-                                temp_buff_items.append(enemy.collection.items.index(buff))
-
-                        # Randomly select buff from list of places in inventory
-                        enemy_choice = randint(1, len(temp_buff_items))
-                        buff_choice = enemy.collection.items[temp_buff_items[enemy_choice]]
-
-                        # Tell player and use buff
-                        write(f"{enemy.name} used a {buff_choice.name}.")
-                        self.use_item(enemy, buff_choice)
-
-                        del temp_buff_items
-                        self.switch_turn()
-
-                else:
-                    # Attack
+            try:
+                while self.battle_dict['turn_counter'] == Turn.Attack:
                     pass
+
+            except TurnComplete:
+                pass
+
+            try:
+                while self.battle_dict['turn_counter'] == Turn.Defend:
+                    enemy_choice = randint(1, 100)
+                    # Test if enemy uses item
+                    if enemy_choice <= self.chance_item(enemy):
+                        # Use item
+                        enemy_choice = randint(1, 100)
+                        if enemy_choice <= self.chance_heal(enemy):
+                            # Use healing item
+
+                            temp_heal_items = []
+                            for heal in enemy.collection.items:
+                                if isinstance(heal, heal_item):
+                                    temp_heal_items.append(enemy.collection.items.index(buff))
+
+                            heals_ordered_best = []
+
+                            # Generate list of healing items that don't overheal the enemy
+                            for heal in temp_heal_items:
+                                if enemy.health + heal.heal_amnt <= enemy.max_health:
+                                    heals_ordered_best.append((heal.heal_amnt, heal))
+
+                            # Order them by what item will heal them the most
+                            heals_ordered_best.sort(reverse=True)
+
+                            # Use the item
+                            write(f"{enemy.name} used a {heals_ordered_best[0][1].name}, and regained {heals_ordered_best[0][1].heal_amnt} health.")
+                            self.use_item(enemy, enemy.collection.items[heal])
+
+                            # Delete unneeded tools
+                            del temp_heal_items
+                            del heals_ordered_best
+                            self.switch_turn(True)
+
+                            # Create list of healing items and sort them based on how effective they are
+                            temp_heal_list = []
+                            for i in range(len(enemy.collection.items)):
+                                if i in temp_heal_list:
+                                    temp_heal_list.append((enemy.collection.items[i].heal_amnt, enemy.collection.items[i]))
+                            temp_heal_list.sort()
+
+                            # Use item and display its use
+                            write(f"{enemy.name} used a {temp_heal_list[0][1].name} and regained {enemy.max_health - enemy.health} health.")
+                            self.use_item(enemy, temp_heal_list[0][0])
+
+                            # Finish up
+                            del temp_heal_list
+                            del temp_heal_items
+                            self.switch_turn(True)
+                        else:
+                            # Use buff item
+
+                            # Generate list of places in inventory where buff items exist
+                            temp_buff_items = []
+                            for buff in enemy.collection.items:
+                                if isinstance(buff, buff_item):
+                                    temp_buff_items.append(enemy.collection.items.index(buff))
+
+                            # Randomly select buff from list of places in inventory
+                            enemy_choice = randint(1, len(temp_buff_items))
+                            buff_choice = enemy.collection.items[temp_buff_items[enemy_choice]]
+
+                            # Tell player and use buff
+                            write(f"{enemy.name} used a {buff_choice.name}.")
+                            self.use_item(enemy, buff_choice)
+
+                            del temp_buff_items
+                            self.switch_turn(True)
+
+                    else:
+                        temp_attack_list = []
+                        for i in enemy.attacks:
+                            pass
+
+            except TurnComplete:
+                pass
+
 
 
 #
