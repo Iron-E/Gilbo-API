@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.27 #
+# Gilbo RPG API -- Version 0.12.19 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -918,11 +918,11 @@ class battle_manager:
             if isinstance(i, heal_item):
                 temp_items.append(i)
 
-        def calc_heal_chance():
+        def percent_health():
             return ((enemy.stats.max_health - enemy.stats.health) / enemy.stats.max_health) * 100)
 
         if (temp_items != []) and (calc_heal_chance() <= 75):
-            return -25719430 + (89.67716 - -25719430)/(1 + ((calc_heal_chance() / 1720762) ^ 1.286616)
+            return -25719430 + (89.67716 - -25719430)/(1 + ((percent_health() / 1720762) ^ 1.286616)
         else:
             return 0
 
