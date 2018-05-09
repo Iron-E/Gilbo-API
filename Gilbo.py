@@ -1,11 +1,11 @@
-# Gilbo RPG API -- Version 0.12.22 #
+# Gilbo RPG API -- Version 0.12.23 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
 
 # Allow Gilbo to see Dependencies
 import sys
-sys.path.append('.deps')
+sys.path.append('./deps/')
 
 # 3rd Party Libraries
 import numpy as np
@@ -872,22 +872,19 @@ class battle_manager:
     def use_item(self, thing, itm):
         # if itm.stat_changes != [0, 0, 0, 0, 0]:
         # Add above check to the item list generator
-        if itm in thing.collection.items:
-            try:
-                # Add specific instructions for healing items
-                if isinstance(itm, heal_item):
-                    if thing.stats.health + itm.heal_amnt > thing.stats.max_health:
-                        thing.stats.health = thing.stats.max_health
-                    else:
-                        thing.stats.health += itm.heal_amnt
-                elif isinstance(itm, buff_item):
-                    self.calc_queue(thing, itm)
-                    self.use_item_stat(thing, itm.stat_changes)
+        try:
+            # Add specific instructions for healing items
+            if isinstance(itm, heal_item):
+                if thing.stats.health + itm.heal_amnt > thing.stats.max_health:
+                    thing.stats.health = thing.stats.max_health
+                else:
+                    thing.stats.health += itm.heal_amnt
+            else:
+                self.calc_queue(thing, itm)
+                self.use_item_stat(thing, itm.stat_changes)
 
-                thing.collection.rem_item(itm)
-
-            except ValueError:
-                print(f"This item does not exist in {thing.name}'s inventory.")
+        except ValueError:
+            print(f"This item does not exist in {thing.name}'s inventory.")
 
     def enumerate_enemy_choices(self, enemy):
         temp_enemy_choices = [0 for i in range(len(enemy.attacks))]
@@ -971,17 +968,8 @@ class battle_manager:
                         del temp_heal_list
                         break
                     else:
-                        # Use buff item
-                        temp_buff_items
-                        for buff in enemy.collection.items:
-                            if isinstance(buff, buff_item):
-                                temp_buff_items.append(enemy.collection.items.index(buff))
-                                
-                        enemy_choice = randint(1, len(buff_item))
-                        self.use_item(enemy, enemy.collection.items[buff_item[enemy_choice]])
-                        
-                        write(f"{enemy.name} used a {heal.name}, and regained {heal.heal_amnt} health.")
-                        break
+                        write("")
+                        pass
 
                 else:
                     # Attack
