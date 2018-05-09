@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.31 #
+# Gilbo RPG API -- Version 0.12.33 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -612,10 +612,15 @@ class attack:
 
 
 class ranged_attack(attack):
-    def __init__(self, dmg, dscrpt, count, acc, ammo_cost):
+    def __init__(self, dmg, dscrpt, count, acc, ammo_type, ammo_cost):
         super().__init__(dmg, dscrpt, count)
         self.attack_dict['accuracy'] = acc
+        self.attack_dict['ammo_type'] = ammo_type
         self.attack_dict['ammo_cost'] = ammo_cost
+
+    @property
+    def ammo_type(self):
+        return self.attack_dict['ammo_type']
 
     @property
     def ammo_cost(self):
@@ -1054,8 +1059,10 @@ class battle_manager:
 
                     else:
                         temp_attack_list = []
-                        for i in enemy.attacks:
-                            pass
+                        for attack in enemy.attacks:
+                            temp_attack_list.append((attack.dmg, attack))
+
+                        # write rules for how what move is used is calculated
 
             except TurnComplete:
                 pass
