@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.24 #
+# Gilbo RPG API -- Version 0.12.25 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -953,34 +953,52 @@ class battle_manager:
                     enemy_choice = randint(1, 100)
                     if enemy_choice <= self.chance_heal(enemy):
                         # Use healing item
+
+                        temp_heal_items = []
                         for heal in enemy.collection.items:
+                            if isinstance(heal, heal_item):
+                                temp_heal_items.append(enemy.collection.items.index(buff))
+
+                        for heal in temp_heal_items:
                             if enemy.health + heal.heal_amnt <= enemy.max_health:
                                 write(f"{enemy.name} used a {heal.name}, and regained {heal.heal_amnt} health.")
-                                self.use_item(enemy, heal)
+                                self.use_item(enemy, enemy.collection.items[heal])
+                                del temp_heal_items
                                 break
 
                         # Create list of healing items and sort them based on how effective they are
-                        temp_heal_list = [(heal.heal_amnt, heal) for heal in enemy.collection.items]
+                        temp_heal_list = []
+                        for i in range(len(enemy.collection.items)):
+                            if i in temp_heal_list:
+                                temp_heal_list.append((enemy.collection.items[i].heal_amnt, enemy.collection.items[i]))
                         temp_heal_list.sort()
 
                         # Use item and display its use
-                        write(f"{enemy.name} used a {temp_heal_list[1][1].name} and regained {enemy.max_health - enemy.health} health.")
-                        self.use_item(enemy, temp_heal_list[0][1])
+                        write(f"{enemy.name} used a {temp_heal_list[0][1].name} and regained {enemy.max_health - enemy.health} health.")
+                        self.use_item(enemy, temp_heal_list[0][0])
 
                         # Finish up
                         del temp_heal_list
+                        del temp_heal_items
                         break
                     else:
                         # Use buff item
-                        temp_buff_items
+
+                        # Generate list of places in inventory where buff items exist
+                        temp_buff_items = []
                         for buff in enemy.collection.items:
                             if isinstance(buff, buff_item):
                                 temp_buff_items.append(enemy.collection.items.index(buff))
 
-                        enemy_choice = randint(1, len(buff_item))
-                        self.use_item(enemy, enemy.collection.items[buff_item[enemy_choice]])
+                        # Randomly select buff from list of places in inventory
+                        enemy_choice = randint(1, len(temp_buff_items))
+                        buff_choice = enemy.collection.items[temp_buff_items[enemy_choice]]
 
-                        write(f"{enemy.name} used a {heal.name}, and regained {heal.heal_amnt} health.")
+                        # Tell player and use buff
+                        write(f"{enemy.name} used a {buff_choice.name}.")
+                        self.use_item(enemy, buff_choice)
+
+                        del temp_buff_items
                         break
 
                 else:
