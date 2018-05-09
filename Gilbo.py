@@ -963,9 +963,17 @@ class battle_manager:
         from math import round
         prcnt_plyr_health = round((plyr.health / plyr.max_health) * 100)
 
-        print('[')
+        print('[', end='')
         for i in range(100):
-            print('=' if i <= prcnt_plyr_health else '-')
+            print('=' if i <= prcnt_plyr_health else '-', end='')
+        print(']')
+
+        del prcnt_plyr_health
+
+        prcnt_enemy_health = round((enemy.health / enemy.max_health) * 100)
+        print('[', end='')
+        for i in range(100):
+            print('=' if i <= prcnt_enemy_health else '-', end='')
         print(']')
 
     def enemy_use_heal_item(self, enemy):
