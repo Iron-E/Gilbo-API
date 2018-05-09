@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.25 #
+# Gilbo RPG API -- Version 0.12.26 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -923,6 +923,16 @@ class battle_manager:
         else:
             return 0
 
+    def switch_turn(self):
+        if self.battle_dict['turn_counter'] == Turn.Attack:
+            self.battle_dict['turn_counter'] == Turn.Defend:
+            return break
+        elif self.battle_dict['turn_counter'] == Turn.Defend:
+            self.battle_dict['turn_counter'] == Turn.Attack:
+            return break
+        else:
+            debug_info(ValueError('The turn counter was not set correctly.'), 'Somehow, the value of turn_counter was switched away from 0 or 1, which are the accepted values.')
+
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
 
@@ -964,7 +974,7 @@ class battle_manager:
                                 write(f"{enemy.name} used a {heal.name}, and regained {heal.heal_amnt} health.")
                                 self.use_item(enemy, enemy.collection.items[heal])
                                 del temp_heal_items
-                                break
+                                self.switch_turn()
 
                         # Create list of healing items and sort them based on how effective they are
                         temp_heal_list = []
@@ -980,7 +990,7 @@ class battle_manager:
                         # Finish up
                         del temp_heal_list
                         del temp_heal_items
-                        break
+                        self.switch_turn()
                     else:
                         # Use buff item
 
@@ -999,7 +1009,7 @@ class battle_manager:
                         self.use_item(enemy, buff_choice)
 
                         del temp_buff_items
-                        break
+                        self.switch_turn()
 
                 else:
                     # Attack
