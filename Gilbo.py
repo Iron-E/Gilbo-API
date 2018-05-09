@@ -785,6 +785,10 @@ class Enemy_Choices(IntEnum):
     Item = 1
 
 
+class TurnComplete(Exception):
+    pass
+
+
 class battle_manager:
     def __init__(self):
         self.e = 2.7182
