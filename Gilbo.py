@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.19 #
+# Gilbo RPG API -- Version 0.12.20 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -791,7 +791,7 @@ class battle_manager:
         self.battle_dict['effect_dict']['reverse_effect_enemy'] = []
         self.battle_dict['effect_dict']['reverse_effect_player'] = []
 
-        self.battle_manager['ai'] = {'used_item': 0}
+        self.battle_dict['ai'] = {'used_item': 0}
 
     def calc_agility(self, agi):
         return (150) / (1 + (self.e ^ ((-1 / 30) * agi))) - 75
