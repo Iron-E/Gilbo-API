@@ -625,7 +625,7 @@ class attack:
         return self.attack_dict['hit_count']
 
 
-class limited_attack(attack):
+class ammo_attack(attack):
     def __init__(self, name, dmg, dscrpt, ammo_type, ammo_cost, acc=100, count=Enumerators.times_attacking, debuff=None):
         super().__init__(name, dmg, dscrpt, acc, count, debuff)
         self.attack_dict['accuracy'] = acc
@@ -892,16 +892,27 @@ class battle_manager:
     def use_item_stat(self, thing, stat_changes):
         thing.stats.stat_list = stat_changes
 
-    def use_attack(self, user, target, attack):
+    def use_attack(self, user, target, attk):
         # Check if attack hits
         temp_accuracy_check = randnum(100)
-        if (temp_accuracy_check <= attack.hit_rate) and (temp_accuracy_check <= self.calc_agility(target.stats.agility)):
+        if (temp_accuracy_check <= attk.hit_rate) and (temp_accuracy_check >= self.calc_agility(target.stats.agility)):
                 # Attack landed; calculate damage
-                temp_damage = round((user.stats.stren * attack.dmg ^ (user.stats.stren ^ .05)) ^ .5)
+                try:
+                    self.attack_use_debuff(target, attk.debuff)
+                except (AttributeError, TypeError):
+                    pass
+                temp_damage = round((user.stats.stren * attk.dmg ^ (user.stats.stren ^ .05)) ^ .5)
+                temp_damage_recieved = round(temp_damage - target.stats.armor ^ (4 / 5))
+                target.stats.health -= temp_damage_recieved
+                self.hit_animate()
         else:
             # Attack missed, end turn
-            raise TurnComplete(f"{user.name} tried to use {attack.name}, but they missed.")
+            raise TurnComplete(f"{user.name} tried to use {attk.name}, but they missed.")
 
+    def attack_use_debuff(self, target, debuff):
+        if isinstance(debuff, buff_item):
+            self.calc_queue(target, debuff)
+            self.use_item_stat(target, debuff.stat_changes)
 
 
     def use_item(self, thing, itm):
@@ -1066,7 +1077,7 @@ class battle_manager:
         while True:
             random_attack = enemy.attacks[self.randnum(len(enemy.attacks))]
 
-            if isinstance(random_attack, limited_attack):
+            if isinstance(random_attack, ammo_attack):
                 req_items = 0
                 for itm in enemy.collection.items:
                     if itm is random_attack.ammo_type:
@@ -1075,7 +1086,7 @@ class battle_manager:
                 if req_items >= random_attack.ammo_cost:
                     return random_attack
 
-            elif isinstance(random_attack, limited_attack) is False:
+            elif isinstance(random_attack, ammo_attack) is False:
                 return random_attack
 
     def battle(self, plyr, enemy, spec_effect=None):
@@ -1099,32 +1110,26 @@ class battle_manager:
             self.battle_dict['total_turns'] += 1
 
             # Check if player is attacking or defending
+        try:
             for i in range(plyr.power):
-                try:
-                    while self.battle_dict['turn_counter'] == Turn.Attack:
-                        pass
-
-                except TurnComplete as e:
-                    if e.message != "":
-                        write(e)
+                while self.battle_dict['turn_counter'] == Turn.Attack:
                     pass
 
             # Loop for power
             for i in range(enemy.power):
-                try:
-                    while self.battle_dict['turn_counter'] == Turn.Defend:
-                        enemy_choice = self.randnum(100)
-                        # Test if enemy uses item
-                        if enemy_choice <= self.chance_item(enemy):
-                            self.enemy_use_item(enemy)
-                        else:
-                            # Attack
-                            self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy))
+                while self.battle_dict['turn_counter'] == Turn.Defend:
+                    enemy_choice = self.randnum(100)
+                    # Test if enemy uses item
+                    if enemy_choice <= self.chance_item(enemy):
+                        self.enemy_use_item(enemy)
+                    else:
+                        # Attack
+                        self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy))
 
-                except TurnComplete as e:
-                    if e.message != "":
-                        write(e)
-                    pass
+        except TurnComplete as e:
+            if e.message != "":
+                write(e)
+            pass
 
 
 #
