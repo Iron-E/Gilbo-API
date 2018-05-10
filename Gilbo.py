@@ -593,10 +593,15 @@ class array_map(ABC):
 
 
 class attack:
-    def __init__(self, dmg, dscrpt, count=Enumerators.times_attacking):
+    def __init__(self, dmg, dscrpt, count=Enumerators.times_attacking, debuff=None):
         self.attack_dict = {'dmg': dmg}
         self.attack_dict['description'] = dscrpt
         self.attack_dict['hit_count'] = count
+        self.attack_dict['debuff_effect'] = debuff
+
+    @property
+    def debuff(self):
+        return self.attack_dict['debuff_effect']
 
     @property
     def dmg(self):
@@ -612,8 +617,8 @@ class attack:
 
 
 class limited_attack(attack):
-    def __init__(self, dmg, dscrpt, count, acc, ammo_type, ammo_cost):
-        super().__init__(dmg, dscrpt, count)
+    def __init__(self, dmg, dscrpt, acc, ammo_type, ammo_cost, count=Enumerators.times_attacking, debuff=None):
+        super().__init__(dmg, dscrpt, count, debuff)
         self.attack_dict['accuracy'] = acc
         self.attack_dict['ammo_type'] = ammo_type
         self.attack_dict['ammo_cost'] = ammo_cost
