@@ -19,6 +19,7 @@ test2.layout = G.np.array([[G.Tiles.Cave, G.Tiles.Water, G.Tiles.Building, G.Til
 # Items
 test_debuff = G.buff_item('Test Debuff', 'Debuff to Test use_debuff()', 0, 5, 0, 0, -10)
 use_test_debuff = G.item('debuff_player() Ammo', 'Item to use debuff_player()', 0)
+test_usable_item = G.buff_item('Test Buff', 'Just a test for enemy_use_item()', 0, 3, 0, 100)
 
 # Attacks
 smash = G.attack('Basic Smash', 'You use your entire body to smash the opponent.', 15)
@@ -35,7 +36,7 @@ jim = G.player('Jimbo', test1, 2, 1, jim_collection, jim_stats)
 
 # Define Test Enemy
 test_enemy_stats = G.battler_stats(50, 45, 10, 50, 100)
-test_enemy_collection = G.battler_collection(20, [diddle, use_test_debuff, use_test_debuff], [diddle])
+test_enemy_collection = G.battler_collection(20, [diddle, use_test_debuff, test_usable_item, test_usable_item], [diddle])
 test_enemy = G.battler('Enemy', test1, 2, 1, test_enemy_collection, test_enemy_stats)
 
 # Battle jim and test_enemy

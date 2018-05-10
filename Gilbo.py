@@ -1086,9 +1086,7 @@ class battle_manager:
 
             # Generate list of places in inventory where buff items exist
             temp_buff_items = []
-            print(enemy.collection.items)
             for i in range(len(enemy.collection.items)):
-                print(f"{i}: {enemy.collection.items[i]}")
                 if isinstance(enemy.collection.items[i], buff_item):
                     temp_buff_items.append(i)
 
