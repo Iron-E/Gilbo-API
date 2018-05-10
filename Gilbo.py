@@ -903,7 +903,7 @@ class battle_manager:
                     self.attack_use_debuff(target, attk.debuff)
                 except (AttributeError, TypeError):
                     pass
-                temp_damage = round((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5)
+                temp_damage = round((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5) + self.randnum(user.stats.stren ** (2/3))
                 temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
                 if temp_damage_recieved < 1:
                     temp_damage_recieved = 1
