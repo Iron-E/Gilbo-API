@@ -611,7 +611,7 @@ class attack:
         return self.attack_dict['hit_count']
 
 
-class ranged_attack(attack):
+class limited_attack(attack):
     def __init__(self, dmg, dscrpt, count, acc, ammo_type, ammo_cost):
         super().__init__(dmg, dscrpt, count)
         self.attack_dict['accuracy'] = acc
@@ -789,6 +789,10 @@ class TurnComplete(Exception):
     pass
 
 
+class AttackMissed(Exception):
+    pass
+
+
 class battle_manager:
     def __init__(self):
         self.e = 2.7182
@@ -959,6 +963,9 @@ class battle_manager:
         else:
             debug_info(ValueError('The turn counter was not set correctly.'), 'Somehow, the value of turn_counter was switched away from 0 or 1, which are the accepted values.')
 
+    def hit_animate(self):
+        pass
+
     def draw_hp(self, plyr, enemy):
         from math import round
         prcnt_plyr_health = round((plyr.health / plyr.max_health) * 100)
@@ -975,6 +982,8 @@ class battle_manager:
         for i in range(100):
             print('=' if i <= prcnt_enemy_health else '-', end='')
         print(']')
+
+        del prcnt_enemy_health
 
     def enemy_use_heal_item(self, enemy):
         # Use healing item
@@ -1051,8 +1060,10 @@ class battle_manager:
 
         while (plyr.stats.health > 0) and (enemy.stats.health > 0):
             # Allow player to read before clearing screen
+            self.draw_hp()
             input()
             clr_console()
+            self.draw_hp()
 
             # Check to make sure no effects are active that shouldn't be
             self.refresh_active_effect(plyr, enemy)
