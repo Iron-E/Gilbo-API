@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.13.0-A #
+# Gilbo RPG API -- Version 0.13.0-alpha #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -910,14 +910,6 @@ class battle_manager:
 
             except ValueError:
                 print(f"This item does not exist in {thing.name}'s inventory.")
-
-    def enumerate_enemy_choices(self, enemy):
-        temp_enemy_choices = [0 for i in range(len(enemy.attacks))]
-        for itm in enemy.collection.items:
-            if isinstance(itm, buff_item):
-                temp_enemy_choices.append(1)
-
-        return temp_enemy_choices
 
     def chance_item(self, enemy):
         temp_items = []
