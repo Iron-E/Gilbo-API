@@ -802,7 +802,7 @@ class TurnComplete(Exception):
 class battle_manager:
     def __init__(self):
         self.e = 2.7182
-        self.battle_dict = {'turn_counter': 0, 'total_turns': 0}
+        self.battle_dict = {'turn': 0, 'total_turns': 0}
 
         self.battle_dict['effect_dict'] = {'active_effect_enemy': False}
         self.battle_dict['effect_dict']['active_effect_player'] = False
@@ -821,14 +821,14 @@ class battle_manager:
 
     def determine_first_turn(self, plyr, enemy):
         if plyr.stats.power > enemy.stats.power:
-            self.battle_dict['total_turns'] = Turn.Attack
+            self.battle_dict['turn'] = Turn.Attack
         elif plyr.stats.power < enemy.stats.power:
-            self.battle_dict['total_turns'] = Turn.Defend
+            self.battle_dict['turn'] = Turn.Defend
         elif plyr.stats.power == enemy.stats.power:
             if plyr.stats.agility < enemy.stats.agility:
-                self.battle_dict['turn_counter'] = Turn.Defend
+                self.battle_dict['turn'] = Turn.Defend
             else:
-                self.battle_dict['turn_counter'] = Turn.Attack
+                self.battle_dict['turn'] = Turn.Attack
 
     def clean_active_effect(self):
         temp = self.battle_dict['effect_dict']['reverse_effect_player']
@@ -853,7 +853,7 @@ class battle_manager:
         if (self.battle_dict['effect_dict']['active_effect_player'] is True) or (self.battle_dict['effect_dict']['active_effect_enemy'] is True):
             if self.battle_dict['effect_dict']['active_effect_player'] is True:
                 for i in self.battle_dict['effect_dict']['reverse_effect_player']:
-                    if self.battle_dict['turn_counter'] == i[0]:
+                    if self.battle_dict['turn'] == i[0]:
                         self.use_item_stat(plyr, i[1])
 
                 if self.battle_dict['effect_dict']['reverse_effect_player'] == []:
@@ -861,7 +861,7 @@ class battle_manager:
 
             if self.battle_dict['effect_dict']['active_effect_enemy'] is True:
                 for i in self.battle_dict['effect_dict']['reverse_effect_enemy']:
-                    if self.battle_dict['turn_counter'] == i[0]:
+                    if self.battle_dict['turn'] == i[0]:
                         self.use_item_stat(plyr, i[1])
                 if self.battle_dict['effect_dict']['reverse_effect_enemy'] == []:
                     self.battle_dict['effect_dict']['active_effect_enemy'] = False
@@ -879,11 +879,11 @@ class battle_manager:
             if itm.duration > 0:
                 if isinstance(thing, player):
                     self.battle_dict['effect_dict']['active_effect_player'] = True
-                    self.battle_dict['effect_dict']['reverse_effect_player'].append((self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes)))
+                    self.battle_dict['effect_dict']['reverse_effect_player'].append((self.battle_dict['turn'] + itm.duration, self.reverse_item_stat(itm.stat_changes)))
                     self.battle_dict['effect_dict']['reverse_effect_player'].sort()
                 else:
                     self.battle_dict['effect_dict']['active_effect_enemy'] = True
-                    self.battle_dict['effect_dict']['reverse_effect_enemy'].append((self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes)))
+                    self.battle_dict['effect_dict']['reverse_effect_enemy'].append((self.battle_dict['turn'] + itm.duration, self.reverse_item_stat(itm.stat_changes)))
                     self.battle_dict['effect_dict']['reverse_effect_enemy'].sort()
 
         except AttributeError as e:
@@ -979,14 +979,14 @@ class battle_manager:
         if power_data[0] < power_data[1]:
             power_data[0] += 1
         else:
-            if self.battle_dict['turn_counter'] == Turn.Attack:
+            if self.battle_dict['turn'] == Turn.Attack:
                 # Switch turn
-                self.battle_dict['turn_counter'] = Turn.Defend
+                self.battle_dict['turn'] = Turn.Defend
                 # Exit turn
                 raise TurnComplete
-            elif self.battle_dict['turn_counter'] == Turn.Defend:
+            elif self.battle_dict['turn'] == Turn.Defend:
                 # Switch turn
-                self.battle_dict['turn_counter'] = Turn.Attack
+                self.battle_dict['turn'] = Turn.Attack
                 # Do extras based on item use
                 if enemy_used_item is True:
                     self.battle_dict['ai']['used_item'] = 0
@@ -995,7 +995,7 @@ class battle_manager:
                 # Exit turn
                 raise TurnComplete
             else:
-                debug_info(ValueError('The turn counter was not set correctly.'), 'Somehow, the value of turn_counter was switched away from 0 or 1, which are the accepted values.')
+                debug_info(ValueError('The turn counter was not set correctly.'), 'Somehow, the value of turn was switched away from 0 or 1, which are the accepted values.')
 
     def hit_animate(self):
         pass
@@ -1124,12 +1124,12 @@ class battle_manager:
             try:
                 temp_power = 1
                 # Determine whose turn it is
-                if self.battle_dict['turn_counter'] == Turn.Attack:
+                if self.battle_dict['turn'] == Turn.Attack:
                     # Loop for power
                     while True:
                         pass
 
-                if self.battle_dict['turn_counter'] == Turn.Defend:
+                if self.battle_dict['turn'] == Turn.Defend:
                     while True:
                         print('enemy is attacking')
                         enemy_choice = self.randnum(100)
