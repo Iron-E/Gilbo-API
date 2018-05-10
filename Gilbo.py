@@ -905,6 +905,8 @@ class battle_manager:
                     pass
                 temp_damage = round((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5)
                 temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
+                if temp_damage_recieved < 1:
+                    temp_damage_recieved = 1
                 # Write out result
                 write(f"{user.name} used {attk.name}, and dealt {temp_damage_recieved} damage to {target.name}.")
 
@@ -1132,14 +1134,13 @@ class battle_manager:
 
                 if self.battle_dict['turn'] == Turn.Defend:
                     while True:
-                        print('enemy is attacking')
                         enemy_choice = self.randnum(100)
                         # Test if enemy uses item
                         if enemy_choice <= self.chance_item(enemy):
-                            self.switch_turn((temp_power, enemy.stats.power), self.enemy_use_item(enemy))
+                            self.switch_turn([temp_power, enemy.stats.power], self.enemy_use_item(enemy))
                         else:
                             # Attack
-                            self.switch_turn((temp_power, enemy.stats.power), self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
+                            self.switch_turn([temp_power, enemy.stats.power], self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
 
             except TurnComplete:
                 pass
