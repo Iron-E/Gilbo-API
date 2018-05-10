@@ -62,6 +62,8 @@ def write(phrase, type_speed=.040, line_delay=.5):
         sleep(line_delay)
         print('', end=' ')
 
+    print('\n')
+
 
 def clr_console():
     import os
@@ -875,7 +877,7 @@ class battle_manager:
 
         return [invert(i) for i in stat_list]
 
-    def calc_queue(self, thing, itm):
+    def calc__effect_queue(self, thing, itm):
         try:
             if itm.duration > 0:
                 if isinstance(thing, player):
@@ -895,20 +897,29 @@ class battle_manager:
 
     def use_attack(self, user, target, attk):
         # Check if attack hits
-        temp_accuracy_check = self.randnum(100)
-        if (temp_accuracy_check <= attk.hit_rate) and (temp_accuracy_check >= self.calc_agility(target.stats.agility)):
+        if (self.randnum(100) <= attk.hit_rate) and (self.randnum(100) >= self.calc_agility(target.stats.agility)):
                 # Attack landed; calculate damage
                 try:
                     # Check for debuffs and apply them
                     self.attack_use_debuff(target, attk.debuff)
                 except (AttributeError, TypeError):
                     pass
-                temp_damage = round((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5) + self.randnum(user.stats.stren ** (2/3))
+                temp_damage = round((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5 + self.randnum(round(user.stats.stren ** (2/3))))
                 temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
+
                 if temp_damage_recieved < 1:
                     temp_damage_recieved = 1
-                # Write out result
-                write(f"{user.name} used {attk.name}, and dealt {temp_damage_recieved} damage to {target.name}.")
+                # Check for crit and write out result
+                if self.randnum(100) <= self.calc_agility(user.stats.agility):
+                    # Indicate critical hit
+                    write(f"{user.name} used {attk.name}.")
+                    write("It was a critical hit!")
+                    temp_damage_recieved *= 2
+                    write(f"{user.name} dealt {temp_damage_recieved} to {target.name}.")
+                else:
+                    # No crit
+                    write(f"{user.name} used {attk.name}, and dealt {temp_damage_recieved} damage to {target.name}.")
+
 
                 target.stats.health -= temp_damage_recieved
 
@@ -925,7 +936,7 @@ class battle_manager:
 
     def attack_use_debuff(self, target, debuff):
         if isinstance(debuff, buff_item):
-            self.calc_queue(target, debuff)
+            self.calc_effect_queue(target, debuff)
             self.use_item_stat(target, debuff.stat_changes)
 
 
@@ -941,7 +952,7 @@ class battle_manager:
                     else:
                         thing.stats.health += itm.heal_amnt
                 elif isinstance(itm, buff_item):
-                    self.calc_queue(thing, itm)
+                    self.calc_effect_queue(thing, itm)
                     self.use_item_stat(thing, itm.stat_changes)
 
                 thing.collection.rem_item(itm)
