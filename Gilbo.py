@@ -972,7 +972,7 @@ class battle_manager:
         buff_items_in_temp = [isinstance(i, buff_item) for i in temp_items]
 
         if (temp_items != []) and (True in buff_items_in_temp) and (self.battle_dict['ai']['used_item'] > 0):
-            return (100) / (1 + (self.e ** ((-1 / 2) * self.battle_dict['ai']['used_item']))) - 50
+            return round((100) / (1 + (self.e ** ((-1 / 2) * self.battle_dict['ai']['used_item']))) - 50)
         elif (temp_items != []):
             self.chance_heal(enemy)
         else:
