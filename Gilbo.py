@@ -888,7 +888,8 @@ class battle_manager:
         thing.stats.stat_list = stat_changes
 
     def use_attack(self, user, target, attack):
-        pass
+        temp_damage = user.stats.stren + attack.dmg
+        # ADD MORE RULES HERE
 
     def use_item(self, thing, itm):
         # if itm.stat_changes != [0, 0, 0, 0, 0]:
