@@ -597,7 +597,7 @@ class attack:
         self.attack_dict = {'dmg': dmg}
         self.attack_dict['name'] = name
         self.attack_dict['description'] = dscrpt
-        self.attack_dict['accuracy'] = acc=100
+        self.attack_dict['accuracy'] = acc
         self.attack_dict['hit_count'] = count
         self.attack_dict['debuff_effect'] = debuff
 
@@ -818,7 +818,7 @@ class battle_manager:
         return randint(lo, hi)
 
     def calc_agility(self, agi):
-        return (150) / (1 + (self.e ^ ((-1 / 30) * agi))) - 75
+        return round((150) / (1 + (self.e ** ((-1 / 30) * agi))) - 75)
 
     def determine_first_turn(self, plyr, enemy):
         if plyr.stats.power > enemy.stats.power:
@@ -903,8 +903,8 @@ class battle_manager:
                     self.attack_use_debuff(target, attk.debuff)
                 except (AttributeError, TypeError):
                     pass
-                temp_damage = round((user.stats.stren * attk.dmg ^ (user.stats.stren ^ .05)) ^ .5)
-                temp_damage_recieved = round(temp_damage - target.stats.armor ^ (4 / 5))
+                temp_damage = round((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5)
+                temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
                 # Write out result
                 write(f"{user.name} used {attk.name}, and dealt {temp_damage_recieved} damage to {target.name}.")
 
@@ -956,7 +956,7 @@ class battle_manager:
         buff_items_in_temp = [isinstance(i, buff_item) for i in temp_items]
 
         if (temp_items != []) and (True in buff_items_in_temp) and (self.battle_dict['ai']['used_item'] > 0):
-            return (100) / (1 + (self.e ^ ((-1 / 2) * self.battle_dict['ai']['used_item']))) - 50
+            return (100) / (1 + (self.e ** ((-1 / 2) * self.battle_dict['ai']['used_item']))) - 50
         elif (temp_items != []):
             self.chance_heal(enemy)
         else:
@@ -972,7 +972,7 @@ class battle_manager:
             return ((enemy.stats.max_health - enemy.stats.health) / enemy.stats.max_health) * 100
 
         if (temp_items != []) and (percent_health() <= 75):
-            return round(-25719430 + (89.67716 - -25719430)/(1 + ((percent_health() / 1720762) ^ 1.286616)))
+            return round(-25719430 + (89.67716 - -25719430)/(1 + ((percent_health() / 1720762) ** 1.286616)))
         else:
             return 0
 
