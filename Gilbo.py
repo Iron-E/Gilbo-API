@@ -1108,10 +1108,9 @@ class battle_manager:
 
         while (plyr.stats.health > 0) and (enemy.stats.health > 0):
             # Allow player to read before clearing screen
-            self.draw_hp()
             input()
             clr_console()
-            self.draw_hp()
+            self.draw_hp(plyr, enemy)
 
             # Check to make sure no effects are active that shouldn't be
             self.refresh_active_effect(plyr, enemy)
@@ -1124,23 +1123,23 @@ class battle_manager:
             self.battle_dict['total_turns'] += 1
 
             # Check if player is attacking or defending
-        try:
-            temp_power = 0
-            while (self.battle_dict['turn_counter'] == Turn.Attack) and (temp_power <= plyr.stats.power):
+            try:
+                temp_power = 0
+                while (self.battle_dict['turn_counter'] == Turn.Attack) and (temp_power <= plyr.stats.power):
+                    pass
+
+                # Loop for power
+                while (self.battle_dict['turn_counter'] == Turn.Defend) and (temp_power <= enemy.stats.power):
+                    enemy_choice = self.randnum(100)
+                    # Test if enemy uses item
+                    if enemy_choice <= self.chance_item(enemy):
+                        self.switch_turn((temp_power, enemy.stats.power), self.enemy_use_item(enemy))
+                    else:
+                        # Attack
+                        self.switch_turn((temp_power, enemy.stats.power), self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
+
+            except TurnComplete:
                 pass
-
-            # Loop for power
-            while (self.battle_dict['turn_counter'] == Turn.Defend) and (temp_power <= enemy.stats.power):
-                enemy_choice = self.randnum(100)
-                # Test if enemy uses item
-                if enemy_choice <= self.chance_item(enemy):
-                    self.switch_turn((temp_power, enemy.stats.power), self.enemy_use_item(enemy))
-                else:
-                    # Attack
-                    self.switch_turn((temp_power, enemy.stats.power), self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
-
-        except TurnComplete:
-            pass
 
 
 #
