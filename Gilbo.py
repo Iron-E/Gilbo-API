@@ -597,6 +597,7 @@ class attack:
         self.attack_dict = {'dmg': dmg}
         self.attack_dict['name'] = name
         self.attack_dict['description'] = dscrpt
+        self.attack_dict['accuracy'] = acc=100
         self.attack_dict['hit_count'] = count
         self.attack_dict['debuff_effect'] = debuff
 
@@ -894,7 +895,7 @@ class battle_manager:
 
     def use_attack(self, user, target, attk):
         # Check if attack hits
-        temp_accuracy_check = randnum(100)
+        temp_accuracy_check = self.randnum(100)
         if (temp_accuracy_check <= attk.hit_rate) and (temp_accuracy_check >= self.calc_agility(target.stats.agility)):
                 # Attack landed; calculate damage
                 try:
@@ -1087,7 +1088,7 @@ class battle_manager:
 
     def enemy_determine_attack(self, enemy):
         while True:
-            random_attack = enemy.attacks[self.randnum(len(enemy.attacks))]
+            random_attack = enemy.attacks[self.randnum(len(enemy.attacks)) - 1]
 
             if isinstance(random_attack, ammo_attack):
                 req_items = 0
