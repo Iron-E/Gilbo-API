@@ -912,8 +912,8 @@ class battle_manager:
                 # Check for crit and write out result
                 if self.randnum(100) <= self.calc_agility(user.stats.agility):
                     # Indicate critical hit
-                    write((f"{user.name} used {attk.name}.", "It was a critical hit!", f"{user.name} dealt {temp_damage_recieved} to {target.name}."))
                     temp_damage_recieved *= 2
+                    write((f"{user.name} used {attk.name}.", "It was a critical hit!", f"{user.name} dealt {temp_damage_recieved} to {target.name}."))
                 else:
                     # No crit
                     write(f"{user.name} used {attk.name}, and dealt {temp_damage_recieved} damage to {target.name}.")
