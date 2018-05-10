@@ -593,11 +593,20 @@ class array_map(ABC):
 
 
 class attack:
-    def __init__(self, dmg, dscrpt, count=Enumerators.times_attacking, debuff=None):
+    def __init__(self, name, dmg, dscrpt, acc=100, count=Enumerators.times_attacking, debuff=None):
         self.attack_dict = {'dmg': dmg}
+        self.attack_dict['name'] = name
         self.attack_dict['description'] = dscrpt
         self.attack_dict['hit_count'] = count
         self.attack_dict['debuff_effect'] = debuff
+
+    @property
+    def name(self):
+        return self.attack_dict['name']
+
+    @property
+    def hit_rate(self):
+        return self.attack_dict['accuracy']
 
     @property
     def debuff(self):
@@ -617,8 +626,8 @@ class attack:
 
 
 class limited_attack(attack):
-    def __init__(self, dmg, dscrpt, acc, ammo_type, ammo_cost, count=Enumerators.times_attacking, debuff=None):
-        super().__init__(dmg, dscrpt, count, debuff)
+    def __init__(self, name, dmg, dscrpt, ammo_type, ammo_cost, acc=100, count=Enumerators.times_attacking, debuff=None):
+        super().__init__(name, dmg, dscrpt, acc, count, debuff)
         self.attack_dict['accuracy'] = acc
         self.attack_dict['ammo_type'] = ammo_type
         self.attack_dict['ammo_cost'] = ammo_cost
@@ -630,10 +639,6 @@ class limited_attack(attack):
     @property
     def ammo_cost(self):
         return self.attack_dict['ammo_cost']
-
-    @property
-    def acc(self):
-        return self.attack_dict['accuracy']
 
 #
 # Inventory #
@@ -888,8 +893,16 @@ class battle_manager:
         thing.stats.stat_list = stat_changes
 
     def use_attack(self, user, target, attack):
-        temp_damage = user.stats.stren + attack.dmg
-        # ADD MORE RULES HERE
+        # Check if attack hits
+        temp_accuracy_check = randnum(100)
+        if (temp_accuracy_check <= attack.hit_rate) and (temp_accuracy_check <= self.calc_agility(target.stats.agility)):
+                # Attack landed; calculate damage
+                temp_damage = round((user.stats.stren * attack.dmg ^ (user.stats.stren ^ .05)) ^ .5)
+        else:
+            # Attack missed, end turn
+            raise TurnComplete(f"{user.name} tried to use {attack.name}, but they missed.")
+
+
 
     def use_item(self, thing, itm):
         # if itm.stat_changes != [0, 0, 0, 0, 0]:
@@ -1086,29 +1099,32 @@ class battle_manager:
             self.battle_dict['total_turns'] += 1
 
             # Check if player is attacking or defending
-            try:
-                while self.battle_dict['turn_counter'] == Turn.Attack:
+            for i in range(plyr.power):
+                try:
+                    while self.battle_dict['turn_counter'] == Turn.Attack:
+                        pass
+
+                except TurnComplete as e:
+                    if e.message != "":
+                        write(e)
                     pass
 
-            except TurnComplete as e:
-                if e.message != "":
-                    write(e)
-                pass
+            # Loop for power
+            for i in range(enemy.power):
+                try:
+                    while self.battle_dict['turn_counter'] == Turn.Defend:
+                        enemy_choice = self.randnum(100)
+                        # Test if enemy uses item
+                        if enemy_choice <= self.chance_item(enemy):
+                            self.enemy_use_item(enemy)
+                        else:
+                            # Attack
+                            self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy))
 
-            try:
-                while self.battle_dict['turn_counter'] == Turn.Defend:
-                    enemy_choice = self.randnum(100)
-                    # Test if enemy uses item
-                    if enemy_choice <= self.chance_item(enemy):
-                        self.enemy_use_item(enemy)
-                    else:
-                        # Attack
-                        self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy))
-
-            except TurnComplete as e:
-                if e.message != "":
-                    write(e)
-                pass
+                except TurnComplete as e:
+                    if e.message != "":
+                        write(e)
+                    pass
 
 
 #
