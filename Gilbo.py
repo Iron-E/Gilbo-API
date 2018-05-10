@@ -898,13 +898,23 @@ class battle_manager:
         if (temp_accuracy_check <= attk.hit_rate) and (temp_accuracy_check >= self.calc_agility(target.stats.agility)):
                 # Attack landed; calculate damage
                 try:
+                    # Check for debuffs and apply them
                     self.attack_use_debuff(target, attk.debuff)
                 except (AttributeError, TypeError):
                     pass
                 temp_damage = round((user.stats.stren * attk.dmg ^ (user.stats.stren ^ .05)) ^ .5)
                 temp_damage_recieved = round(temp_damage - target.stats.armor ^ (4 / 5))
+                # Write out result
+                write(f"{user.name} used {attk.name}, and dealt {temp_damage_recieved} damage to {target.name}.")
+
                 target.stats.health -= temp_damage_recieved
+
+                del temp_damage
+                del temp_damage_recieved
                 self.hit_animate()
+
+                return False
+
         else:
             # Attack missed, end turn
             write(f"{user.name} tried to use {attk.name}, but they missed.")
