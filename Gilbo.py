@@ -1108,7 +1108,7 @@ class battle_manager:
 
         while (plyr.stats.health > 0) and (enemy.stats.health > 0):
             # Allow player to read before clearing screen
-            input()
+            input('\nPress enter to continue.')
             clr_console()
             self.draw_hp(plyr, enemy)
 
@@ -1124,7 +1124,7 @@ class battle_manager:
 
             # Check if player is attacking or defending
             try:
-                temp_power = 0
+                temp_power = 1
                 while (self.battle_dict['turn_counter'] == Turn.Attack) and (temp_power <= plyr.stats.power):
                     pass
 
