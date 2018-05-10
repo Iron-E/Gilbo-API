@@ -1057,10 +1057,20 @@ class battle_manager:
             self.switch_turn(True)
 
     def enemy_determine_attack(self, enemy):
-        temp_attack_list = [(attack.dmg, attack) for attack in enemy.attacks]
-
         while True:
-            pass
+            random_attack = enemy.attacks[self.randnum(len(enemy.attacks))]
+
+            if isinstance(random_attack, limited_attack):
+                req_items = 0
+                for itm in enemy.collection.items:
+                    if itm is random_attack.ammo_type:
+                        req_items += 1
+
+                if req_items >= random_attack.ammo_cost:
+                    return random_attack
+
+            elif isinstance(random_attack, limited_attack) is False:
+                return random_attack
 
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
