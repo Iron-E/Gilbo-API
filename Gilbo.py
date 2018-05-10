@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.12.40 #
+# Gilbo RPG API -- Version 0.12.41 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -794,10 +794,6 @@ class TurnComplete(Exception):
     pass
 
 
-class AttackMissed(Exception):
-    pass
-
-
 class battle_manager:
     def __init__(self):
         self.e = 2.7182
@@ -1060,6 +1056,9 @@ class battle_manager:
     def enemy_use_attack(self, enemy):
         temp_attack_list = [(attack.dmg, attack) for attack in enemy.attacks]
 
+        while True:
+            pass
+
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
 
@@ -1085,7 +1084,9 @@ class battle_manager:
                 while self.battle_dict['turn_counter'] == Turn.Attack:
                     pass
 
-            except TurnComplete:
+            except TurnComplete as e:
+                if e.message != "":
+                    print(e)
                 pass
 
             try:
@@ -1100,7 +1101,9 @@ class battle_manager:
 
                         # write rules for how what move is used is calculated
 
-            except TurnComplete:
+            except TurnComplete as e:
+                if e.message != "":
+                    print(e)
                 pass
 
 
