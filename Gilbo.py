@@ -971,7 +971,6 @@ class battle_manager:
             return ((enemy.stats.max_health - enemy.stats.health) / enemy.stats.max_health) * 100
 
         if (temp_items != []) and (percent_health() <= 75):
-            from math import round
             return round(-25719430 + (89.67716 - -25719430)/(1 + ((percent_health() / 1720762) ^ 1.286616)))
         else:
             return 0
@@ -1002,8 +1001,7 @@ class battle_manager:
         pass
 
     def draw_hp(self, plyr, enemy):
-        from math import round
-        prcnt_plyr_health = round((plyr.health / plyr.max_health) * 100)
+        prcnt_plyr_health = round((plyr.stats.health / plyr.stats.max_health) * 100)
 
         print('[', end='')
         for i in range(100):
@@ -1012,7 +1010,7 @@ class battle_manager:
 
         del prcnt_plyr_health
 
-        prcnt_enemy_health = round((enemy.health / enemy.max_health) * 100)
+        prcnt_enemy_health = round((enemy.stats.health / enemy.stats.max_health) * 100)
         print('[', end='')
         for i in range(100):
             print('=' if i <= prcnt_enemy_health else '-', end='')
@@ -1125,21 +1123,30 @@ class battle_manager:
             # Check if player is attacking or defending
             try:
                 temp_power = 1
-                while (self.battle_dict['turn_counter'] == Turn.Attack) and (temp_power <= plyr.stats.power):
-                    pass
+                # Determine whose turn it is
+                if self.battle_dict['turn_counter'] == Turn.Attack:
+                    # Loop for power
+                    while True:
+                        pass
 
-                # Loop for power
-                while (self.battle_dict['turn_counter'] == Turn.Defend) and (temp_power <= enemy.stats.power):
-                    enemy_choice = self.randnum(100)
-                    # Test if enemy uses item
-                    if enemy_choice <= self.chance_item(enemy):
-                        self.switch_turn((temp_power, enemy.stats.power), self.enemy_use_item(enemy))
-                    else:
-                        # Attack
-                        self.switch_turn((temp_power, enemy.stats.power), self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
+                if self.battle_dict['turn_counter'] == Turn.Defend:
+                    while True:
+                        print('enemy is attacking')
+                        enemy_choice = self.randnum(100)
+                        # Test if enemy uses item
+                        if enemy_choice <= self.chance_item(enemy):
+                            self.switch_turn((temp_power, enemy.stats.power), self.enemy_use_item(enemy))
+                        else:
+                            # Attack
+                            self.switch_turn((temp_power, enemy.stats.power), self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
 
             except TurnComplete:
                 pass
+
+        if plyr.stats.health > 0:
+            pass
+        else:
+            pass
 
 
 #
