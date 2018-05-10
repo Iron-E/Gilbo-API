@@ -258,7 +258,7 @@ class heal_item(item):
 
 
 class buff_item(equippable):
-    def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0, effect_time=1):
+    def __init__(self, name, dscrpt, val, effect_time, hp=0, stren=0, armr=0, agil=0, pwr=0):
         super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.basic_item
         self.item_dict['effect_time'] = effect_time
@@ -595,7 +595,7 @@ class array_map(ABC):
 
 
 class attack:
-    def __init__(self, name, dmg, dscrpt, acc=100, count=Enumerators.times_attacking, debuff=None):
+    def __init__(self, name, dscrpt, dmg, acc=100, count=Enumerators.times_attacking, debuff=None):
         self.attack_dict = {'dmg': dmg}
         self.attack_dict['name'] = name
         self.attack_dict['description'] = dscrpt
@@ -629,8 +629,8 @@ class attack:
 
 
 class ammo_attack(attack):
-    def __init__(self, name, dmg, dscrpt, ammo_type, ammo_cost, acc=100, count=Enumerators.times_attacking, debuff=None):
-        super().__init__(name, dmg, dscrpt, acc, count, debuff)
+    def __init__(self, name, dscrpt, dmg, ammo_type, ammo_cost, acc=100, count=Enumerators.times_attacking, debuff=None):
+        super().__init__(name, dscrpt, dmg, acc, count, debuff)
         self.attack_dict['accuracy'] = acc
         self.attack_dict['ammo_type'] = ammo_type
         self.attack_dict['ammo_cost'] = ammo_cost
@@ -877,7 +877,7 @@ class battle_manager:
 
         return [invert(i) for i in stat_list]
 
-    def calc__effect_queue(self, thing, itm):
+    def calc_effect_queue(self, thing, itm):
         try:
             if itm.duration > 0:
                 if isinstance(thing, player):
@@ -899,11 +899,6 @@ class battle_manager:
         # Check if attack hits
         if (self.randnum(100) <= attk.hit_rate) and (self.randnum(100) >= self.calc_agility(target.stats.agility)):
                 # Attack landed; calculate damage
-                try:
-                    # Check for debuffs and apply them
-                    self.attack_use_debuff(target, attk.debuff)
-                except (AttributeError, TypeError):
-                    pass
                 temp_damage = round((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5 + self.randnum(round(user.stats.stren ** (2/3))))
                 temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
 
@@ -924,6 +919,17 @@ class battle_manager:
                 del temp_damage
                 del temp_damage_recieved
                 self.hit_animate()
+                try:
+
+                    # Check for debuffs and apply them
+                    self.attack_use_debuff(target, attk.debuff)
+                except (AttributeError, TypeError):
+                    pass
+
+                try:
+                    user.collection.rem_item(attk.ammo_type, attk.ammo_cost)
+                except AttributeError:
+                    pass
 
                 return False
 
@@ -936,7 +942,6 @@ class battle_manager:
         if isinstance(debuff, buff_item):
             self.calc_effect_queue(target, debuff)
             self.use_item_stat(target, debuff.stat_changes)
-
 
     def use_item(self, thing, itm):
         # if itm.stat_changes != [0, 0, 0, 0, 0]:
@@ -1118,7 +1123,6 @@ class battle_manager:
 
         while (plyr.stats.health > 0) and (enemy.stats.health > 0):
             # Allow player to read before clearing screen
-            input('\nPress enter to continue.')
             clr_console()
             self.draw_hp(plyr, enemy)
 
@@ -1143,6 +1147,7 @@ class battle_manager:
 
                 if self.battle_dict['turn'] == Turn.Defend:
                     while True:
+                        plyr.stats.writeout()
                         enemy_choice = self.randnum(100)
                         # Test if enemy uses item
                         if enemy_choice <= self.chance_item(enemy):
@@ -1152,6 +1157,7 @@ class battle_manager:
                             self.switch_turn([temp_power, enemy.stats.power], self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
 
             except TurnComplete:
+                input('\nPress enter to continue.')
                 pass
 
         if plyr.stats.health > 0:
