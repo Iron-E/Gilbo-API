@@ -887,6 +887,9 @@ class battle_manager:
     def use_item_stat(self, thing, stat_changes):
         thing.stats.stat_list = stat_changes
 
+    def use_attack(self, user, target, attack):
+        pass
+
     def use_item(self, thing, itm):
         # if itm.stat_changes != [0, 0, 0, 0, 0]:
         # Add above check to the item list generator
@@ -1053,7 +1056,7 @@ class battle_manager:
             del temp_buff_items
             self.switch_turn(True)
 
-    def enemy_use_attack(self, enemy):
+    def enemy_determine_attack(self, enemy):
         temp_attack_list = [(attack.dmg, attack) for attack in enemy.attacks]
 
         while True:
@@ -1097,9 +1100,7 @@ class battle_manager:
                         self.enemy_use_item(enemy)
                     else:
                         # Attack
-                        self.enemy_use_item(enemy)
-
-                        # write rules for how what move is used is calculated
+                        self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy))
 
             except TurnComplete as e:
                 if e.message != "":
