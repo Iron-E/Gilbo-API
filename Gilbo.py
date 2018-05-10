@@ -1086,7 +1086,7 @@ class battle_manager:
 
             except TurnComplete as e:
                 if e.message != "":
-                    print(e)
+                    write(e)
                 pass
 
             try:
@@ -1103,7 +1103,7 @@ class battle_manager:
 
             except TurnComplete as e:
                 if e.message != "":
-                    print(e)
+                    write(e)
                 pass
 
 
