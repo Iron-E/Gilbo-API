@@ -907,7 +907,8 @@ class battle_manager:
                 self.hit_animate()
         else:
             # Attack missed, end turn
-            raise TurnComplete(f"{user.name} tried to use {attk.name}, but they missed.")
+            write(f"{user.name} tried to use {attk.name}, but they missed.")
+            return False
 
     def attack_use_debuff(self, target, debuff):
         if isinstance(debuff, buff_item):
@@ -965,24 +966,27 @@ class battle_manager:
         else:
             return 0
 
-    def switch_turn(self, enemy_used_item=False):
-        if self.battle_dict['turn_counter'] == Turn.Attack:
-            # Switch turn
-            self.battle_dict['turn_counter'] = Turn.Defend
-            # Exit turn
-            raise TurnComplete
-        elif self.battle_dict['turn_counter'] == Turn.Defend:
-            # Switch turn
-            self.battle_dict['turn_counter'] = Turn.Attack
-            # Do extras based on item use
-            if enemy_used_item is True:
-                self.battle_dict['ai']['used_item'] = 0
-            else:
-                self.battle_dict['ai']['used_item'] += 1
-            # Exit turn
-            raise TurnComplete
+    def switch_turn(self, power_data, enemy_used_item=False):
+        if power_data[0] < power_data[1]:
+            power_data[0] += 1
         else:
-            debug_info(ValueError('The turn counter was not set correctly.'), 'Somehow, the value of turn_counter was switched away from 0 or 1, which are the accepted values.')
+            if self.battle_dict['turn_counter'] == Turn.Attack:
+                # Switch turn
+                self.battle_dict['turn_counter'] = Turn.Defend
+                # Exit turn
+                raise TurnComplete
+            elif self.battle_dict['turn_counter'] == Turn.Defend:
+                # Switch turn
+                self.battle_dict['turn_counter'] = Turn.Attack
+                # Do extras based on item use
+                if enemy_used_item is True:
+                    self.battle_dict['ai']['used_item'] = 0
+                else:
+                    self.battle_dict['ai']['used_item'] += 1
+                # Exit turn
+                raise TurnComplete
+            else:
+                debug_info(ValueError('The turn counter was not set correctly.'), 'Somehow, the value of turn_counter was switched away from 0 or 1, which are the accepted values.')
 
     def hit_animate(self):
         pass
@@ -1031,7 +1035,7 @@ class battle_manager:
         # Delete unneeded tools
         del temp_heal_items
         del heals_ordered_best
-        self.switch_turn(True)
+        return True
 
         # Create list of healing items and sort them based on how effective they are
         temp_heal_list = []
@@ -1046,7 +1050,7 @@ class battle_manager:
 
         # Finish up
         del temp_heal_list
-        self.switch_turn(True)
+        return True
 
     def enemy_use_item(self, enemy):
         # Use item
@@ -1071,7 +1075,7 @@ class battle_manager:
             self.use_item(enemy, buff_choice)
 
             del temp_buff_items
-            self.switch_turn(True)
+            return True
 
     def enemy_determine_attack(self, enemy):
         while True:
@@ -1111,24 +1115,21 @@ class battle_manager:
 
             # Check if player is attacking or defending
         try:
-            for i in range(plyr.power):
-                while self.battle_dict['turn_counter'] == Turn.Attack:
-                    pass
+            temp_power = 0
+            while (self.battle_dict['turn_counter'] == Turn.Attack) and (temp_power <= plyr.stats.power):
+                pass
 
             # Loop for power
-            for i in range(enemy.power):
-                while self.battle_dict['turn_counter'] == Turn.Defend:
-                    enemy_choice = self.randnum(100)
-                    # Test if enemy uses item
-                    if enemy_choice <= self.chance_item(enemy):
-                        self.enemy_use_item(enemy)
-                    else:
-                        # Attack
-                        self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy))
+            while (self.battle_dict['turn_counter'] == Turn.Defend) and (temp_power <= enemy.stats.power):
+                enemy_choice = self.randnum(100)
+                # Test if enemy uses item
+                if enemy_choice <= self.chance_item(enemy):
+                    self.switch_turn((temp_power, enemy.stats.power), self.enemy_use_item(enemy))
+                else:
+                    # Attack
+                    self.switch_turn((temp_power, enemy.stats.power), self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
 
-        except TurnComplete as e:
-            if e.message != "":
-                write(e)
+        except TurnComplete:
             pass
 
 
