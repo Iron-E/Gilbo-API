@@ -813,7 +813,7 @@ class battle_manager:
         self.battle_dict['effect_dict']['reverse_effect_enemy'] = []
         self.battle_dict['effect_dict']['reverse_effect_player'] = []
 
-        self.battle_dict['ai'] = {'used_item': 0}
+        self.battle_dict['ai'] = {'used_item': 4}
 
     def randnum(self, hi, lo=1):
         from random import randint
@@ -913,7 +913,6 @@ class battle_manager:
                     # No crit
                     write(f"{user.name} used {attk.name}, and dealt {temp_damage_recieved} damage to {target.name}.")
 
-
                 target.stats.health -= temp_damage_recieved
 
                 del temp_damage
@@ -974,7 +973,7 @@ class battle_manager:
         if (temp_items != []) and (True in buff_items_in_temp) and (self.battle_dict['ai']['used_item'] > 0):
             return round((100) / (1 + (self.e ** ((-1 / 2) * self.battle_dict['ai']['used_item']))) - 50)
         elif (temp_items != []):
-            self.chance_heal(enemy)
+            return self.chance_heal(enemy)
         else:
             return 0
 
@@ -1087,12 +1086,14 @@ class battle_manager:
 
             # Generate list of places in inventory where buff items exist
             temp_buff_items = []
-            for buff in enemy.collection.items:
-                if isinstance(buff, buff_item):
-                    temp_buff_items.append(enemy.collection.items.index(buff))
+            print(enemy.collection.items)
+            for i in range(len(enemy.collection.items)):
+                print(f"{i}: {enemy.collection.items[i]}")
+                if isinstance(enemy.collection.items[i], buff_item):
+                    temp_buff_items.append(i)
 
             # Randomly select buff from list of places in inventory
-            enemy_choice = self.randnum(len(temp_buff_items))
+            enemy_choice = self.randnum(len(temp_buff_items) - 1, 0)
             buff_choice = enemy.collection.items[temp_buff_items[enemy_choice]]
 
             # Tell player and use buff
@@ -1147,7 +1148,6 @@ class battle_manager:
 
                 if self.battle_dict['turn'] == Turn.Defend:
                     while True:
-                        plyr.stats.writeout()
                         enemy_choice = self.randnum(100)
                         # Test if enemy uses item
                         if enemy_choice <= self.chance_item(enemy):
