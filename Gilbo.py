@@ -257,7 +257,7 @@ class heal_item(item):
         return self.item_dict['heal_amount']
 
 
-class buff_item(equippable):
+class stat_item(equippable):
     def __init__(self, name, dscrpt, val, effect_time, hp=0, stren=0, armr=0, agil=0, pwr=0):
         super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.basic_item
@@ -890,7 +890,7 @@ class battle_manager:
                     self.battle_dict['effect_dict']['reverse_effect_enemy'].sort()
 
         except AttributeError as e:
-            debug_info(e, 'An incorrect object type was used as type buff_item in battle_manager.use_item().')
+            debug_info(e, 'An incorrect object type was used as type stat_item in battle_manager.use_item().')
 
     def use_item_stat(self, thing, stat_changes):
         thing.stats.stat_list = stat_changes
@@ -938,7 +938,7 @@ class battle_manager:
             return False
 
     def attack_use_debuff(self, target, debuff):
-        if isinstance(debuff, buff_item):
+        if isinstance(debuff, stat_item):
             self.calc_effect_queue(target, debuff)
             self.use_item_stat(target, debuff.stat_changes)
 
@@ -953,7 +953,7 @@ class battle_manager:
                         thing.stats.health = thing.stats.max_health
                     else:
                         thing.stats.health += itm.heal_amnt
-                elif isinstance(itm, buff_item):
+                elif isinstance(itm, stat_item):
                     self.calc_effect_queue(thing, itm)
                     self.use_item_stat(thing, itm.stat_changes)
 
@@ -965,12 +965,12 @@ class battle_manager:
     def chance_item(self, enemy):
         temp_items = []
         for i in enemy.collection.items:
-            if isinstance(i, buff_item):
+            if isinstance(i, stat_item):
                 temp_items.append(i)
 
-        buff_items_in_temp = [isinstance(i, buff_item) for i in temp_items]
+        stat_items_in_temp = [isinstance(i, stat_item) for i in temp_items]
 
-        if (temp_items != []) and (True in buff_items_in_temp) and (self.battle_dict['ai']['used_item'] > 0):
+        if (temp_items != []) and (True in stat_items_in_temp) and (self.battle_dict['ai']['used_item'] > 0):
             return round((100) / (1 + (self.e ** ((-1 / 2) * self.battle_dict['ai']['used_item']))) - 50)
         elif (temp_items != []):
             return self.chance_heal(enemy)
@@ -1085,20 +1085,20 @@ class battle_manager:
             # Use buff item
 
             # Generate list of places in inventory where buff items exist
-            temp_buff_items = []
+            temp_stat_items = []
             for i in range(len(enemy.collection.items)):
-                if isinstance(enemy.collection.items[i], buff_item):
-                    temp_buff_items.append(i)
+                if isinstance(enemy.collection.items[i], stat_item):
+                    temp_stat_items.append(i)
 
             # Randomly select buff from list of places in inventory
-            enemy_choice = self.randnum(len(temp_buff_items) - 1, 0)
-            buff_choice = enemy.collection.items[temp_buff_items[enemy_choice]]
+            enemy_choice = self.randnum(len(temp_stat_items) - 1, 0)
+            buff_choice = enemy.collection.items[temp_stat_items[enemy_choice]]
 
             # Tell player and use buff
             write(f"{enemy.name} used a {buff_choice.name}.")
             self.use_item(enemy, buff_choice)
 
-            del temp_buff_items
+            del temp_stat_items
             return True
 
     def enemy_determine_attack(self, enemy):
