@@ -974,13 +974,13 @@ class battle_manager:
         else:
             return 0
 
+    def percent_health(self, thing):
+        return ((thing.stats.health / thing.stats.max_health) * 100)
+
     def chance_heal(self, enemy):
         enemy_has_heal_items = [isinstance(i, heal_item) for i in enemy.collection.items]
 
-        def percent_health():
-            return 100 - (((enemy.stats.max_health - enemy.stats.health) / enemy.stats.max_health) * 100)
-
-        if (True in enemy_has_heal_items) and (percent_health() <= 80):
+        if (True in enemy_has_heal_items) and (self.percent_health(enemy) <= 80):
             return round(-25719423 + (89.67716 - -25719430)/(1 + ((percent_health() / 1720762) ** 1.286616)))
         else:
             return 0
@@ -1011,18 +1011,19 @@ class battle_manager:
         pass
 
     def draw_hp(self, plyr, enemy):
-        prcnt_plyr_health = round((plyr.stats.health / plyr.stats.max_health) * 100)
+        prcnt_plyr_health = round(self.percent_health(plyr) / 2)
 
         print('[', end='')
-        for i in range(100):
+        for i in range(50):
             print('=' if i <= prcnt_plyr_health else '-', end='')
         print(']')
 
         del prcnt_plyr_health
 
-        prcnt_enemy_health = round((enemy.stats.health / enemy.stats.max_health) * 100)
+        prcnt_enemy_health = round(self.percent_health(enemy) / 2)
+
         print('[', end='')
-        for i in range(100):
+        for i in range(50):
             print('=' if i <= prcnt_enemy_health else '-', end='')
         print(']')
 
