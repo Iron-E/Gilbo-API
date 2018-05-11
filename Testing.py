@@ -10,6 +10,19 @@ class test_matrix_map(G.array_map):
         return True
 
 
+# Battle Manager class
+class test_bat_man(G.battle_manager):
+    def player_win(self, plyr, enemy):
+        # The player wins
+        print(f"{plyr.name} defeated {enemy.name}.")
+    def player_lose(self, plyr, enemy):
+        # The player loses
+        print(f"{plyr.name} was defeated by {enemy.name}.")
+
+
+bat_man = test_bat_man()
+
+
 # Test maps
 test1 = test_matrix_map('tortelini')
 test2 = test_matrix_map('tortelini')
@@ -17,9 +30,10 @@ test1.layout = G.np.array([[G.Tiles.Grass, G.Tiles.Grass, G.Tiles.Grass, G.Tiles
 test2.layout = G.np.array([[G.Tiles.Cave, G.Tiles.Water, G.Tiles.Building, G.Tiles.Building], [G.Tiles.Dirt, G.Tiles.Ice, G.Tiles.Wall, G.Tiles.Lava]])
 
 # Items
-test_debuff = G.buff_item('Test Debuff', 'Debuff to Test use_debuff()', 0, 5, 0, 0, -10)
+test_debuff = G.stat_item('Test Debuff', 'Debuff to Test use_debuff()', 0, 5, 0, 0, -10)
 use_test_debuff = G.item('debuff_player() Ammo', 'Item to use debuff_player()', 0)
-test_usable_item = G.buff_item('Test Buff', 'Just a test for enemy_use_item()', 0, 3, 0, 100)
+test_usable_item = G.stat_item('Test Buff', 'Just a test for enemy_use_item()', 0, 3, 0, 100)
+test_heal = G.heal_item('Test Heal', 'A healing item to rival Metal Gear.', 0, 25)
 
 # Attacks
 smash = G.attack('Basic Smash', 'You use your entire body to smash the opponent.', 15)
@@ -36,8 +50,8 @@ jim = G.player('Jimbo', test1, 2, 1, jim_collection, jim_stats)
 
 # Define Test Enemy
 test_enemy_stats = G.battler_stats(50, 45, 10, 50, 100)
-test_enemy_collection = G.battler_collection(20, [diddle, use_test_debuff, test_usable_item, test_usable_item], [diddle])
+test_enemy_collection = G.battler_collection(20, [diddle, test_heal, use_test_debuff, test_usable_item, test_usable_item], [diddle])
 test_enemy = G.battler('Enemy', test1, 2, 1, test_enemy_collection, test_enemy_stats)
 
 # Battle jim and test_enemy
-G.bat_man.battle(jim, test_enemy)
+bat_man.battle(jim, test_enemy)
