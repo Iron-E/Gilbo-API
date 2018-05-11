@@ -802,7 +802,7 @@ class TurnComplete(Exception):
     pass
 
 
-class battle_manager:
+class battle_manager(ABC):
     def __init__(self):
         self.e = 2.7182
         self.battle_dict = {'turn': 0, 'total_turns': 0}
@@ -1119,6 +1119,20 @@ class battle_manager:
             elif isinstance(random_attack, ammo_attack) is False:
                 return random_attack
 
+    @abstractmethod
+    def player_win(self, plyr, enemy):
+        # The player wins
+        """
+        This method is defined by users of Gilbo. If the player wins battle(), this method is called. Whether they loot the enemy, or gain experience, it must be defined here.
+        """
+    @abstractmethod
+    def player_lose(self, plyr, enemy):
+        # The player loses
+        """
+        This method is defined by users of Gilbo. If the player loses battle(), this method is called. Whether they lose money and respawn, or get booted out to the last time they saved, it must be defined here.
+        """
+
+
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
 
@@ -1161,9 +1175,9 @@ class battle_manager:
                 pass
 
         if plyr.stats.health > 0:
-            pass
+            self.player_win(plyr, enemy)
         else:
-            pass
+            self.player_lose(plyr, enemy)
 
 
 #
@@ -1281,4 +1295,3 @@ class object_tracker:
 
 tracker = object_tracker()
 loc_man = location_manager()
-bat_man = battle_manager()
