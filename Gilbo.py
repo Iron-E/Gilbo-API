@@ -981,7 +981,7 @@ class battle_manager:
         enemy_has_heal_items = [isinstance(i, heal_item) for i in enemy.collection.items]
 
         if (True in enemy_has_heal_items) and (self.percent_health(enemy) <= 80):
-            return round(-25719423 + (89.67716 - -25719430)/(1 + ((percent_health() / 1720762) ** 1.286616)))
+            return round(-25719423 + (89.67716 - -25719430)/(1 + ((self.percent_health() / 1720762) ** 1.286616)))
         else:
             return 0
 
