@@ -801,6 +801,12 @@ class Enemy_Choices(IntEnum):
 class TurnComplete(Exception):
     pass
 
+class PlayerAttacks(Exception):
+    pass
+
+class PlayerUsesItem(Exception):
+    pass
+
 
 class battle_manager(ABC):
     def __init__(self):
@@ -1029,6 +1035,34 @@ class battle_manager(ABC):
 
         del prcnt_enemy_health
 
+    def item_info(self, itm):
+        pass
+
+    def plyr_choose_item(self, plyr):
+        pass
+
+    def attack_info(self, attack):
+        pass
+
+    def plyr_choose_attack(self, plyr):
+        for i in range(len(plyr.attacks)):
+            print(f"{i + 1}. {plyr.attacks[i].name}")
+
+        # Prompt user
+        while True:
+            user_choice = str(input('\nEnter a number to attack, or type "info [number]" for more info about the attack.\nChoice: '))
+            try:
+                user_choice = int(user_choice) - 1
+                # Determine if the user wants more info
+                if "info" in user_choice:
+                    if user_choice.split(' ')[1] != user_choice.split(' ')[-1]:
+                        raise IndexError
+                    self.attack_info(plyr.attacks[user_choice.split(' ')[1]])
+                else:
+                    return plyr.attacks[user_choice]
+            except (ValueError, IndexError):
+                print('Invalid input.')
+
     def enemy_use_heal_item(self, enemy):
         # Use healing item
 
@@ -1138,8 +1172,6 @@ class battle_manager(ABC):
 
         while (plyr.stats.health > 0) and (enemy.stats.health > 0):
             # Allow player to read before clearing screen
-            clr_console()
-            self.draw_hp(plyr, enemy)
 
             # Check to make sure no effects are active that shouldn't be
             self.refresh_active_effect(plyr, enemy)
@@ -1156,21 +1188,22 @@ class battle_manager(ABC):
                 temp_power = 1
                 # Determine whose turn it is
                 if self.battle_dict['turn'] == Turn.Attack:
-                    user_choice = input("1. Attack\n2.Use Item")
-                    try:
-                        if user_choice.lower() == 'attack':
-                            pass
-                        elif (user_choice.lower() == 'use item') or (user_choice.lower() == 'use') or (user_choice.lower() == 'item'):
-                            pass
+                    while True:
+                        # Clear console and then redraw HP
+                        clr_console()
+                        self.draw_hp(plyr, enemy)
+
+                        user_choice = input("1. Attack\n2.Use Item\n\nChoice: ")
+
+                        if (user_choice.lower() == 'attack') or (user_choice == 1):
+                            # Player chooses to attack #
+                            # Determine attack and use it
+                            self.switch_turn([temp_power, plyr.stats.power], self.use_attack(plyr, enemy, self.plyr_choose_attack(plyr)))
+                        elif (user_choice.lower() == 'use item') or (user_choice.lower() == 'use') or (user_choice.lower() == 'item') or (user_choice == 2):
+                            # Player choose to use an item #
+                            self.switch_turn([temp_power, plyr.stats.power], self.use_item(plyr, self.plyr_choose_item(plyr)))
                         else:
-                            print('Invalid input.')
-                    except AttributeError:
-                        if user_choice == 1:
-                            pass
-                        elif user_choice == 2:
-                            pass
-                        else:
-                            print('Invalid input.')
+                            input('Invalid input.')
 
                 if self.battle_dict['turn'] == Turn.Defend:
                     while True:
