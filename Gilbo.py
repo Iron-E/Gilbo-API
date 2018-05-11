@@ -899,15 +899,19 @@ class battle_manager:
         # Check if attack hits
         if (self.randnum(100) <= attk.hit_rate) and (self.randnum(100) >= self.calc_agility(target.stats.agility)):
                 # Attack landed; calculate damage
-                temp_damage = round((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5 + self.randnum(round(user.stats.stren ** (2/3))))
+                print(f"Damage without variation: {round((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5)}")
+                temp_damage = round(((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5) + self.randnum(round((user.stats.stren / 2) ** (1/2))))
+                print(f'Primary Damage Calculation: {temp_damage}')
                 temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
+                print(f'Secondary Damage Calculation: {temp_damage_recieved}')
 
                 if temp_damage_recieved < 1:
                     temp_damage_recieved = 1
                 # Check for crit and write out result
                 if self.randnum(100) <= self.calc_agility(user.stats.agility):
                     # Indicate critical hit
-                    temp_damage_recieved *= 2
+                    temp_damage_recieved *= 3/2
+                    temp_damage_recieved = round(temp_damage_recieved)
                     write((f"{user.name} used {attk.name}.", "It was a critical hit!", f"{user.name} dealt {temp_damage_recieved} to {target.name}."))
                 else:
                     # No crit
