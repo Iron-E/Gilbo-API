@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 0.13.0-alpha2 #
+# Gilbo RPG API -- Version 0.13.0-alpha3 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -1156,9 +1156,21 @@ class battle_manager(ABC):
                 temp_power = 1
                 # Determine whose turn it is
                 if self.battle_dict['turn'] == Turn.Attack:
-                    # Loop for power
-                    while True:
-                        pass
+                    user_choice = input("1. Attack\n2.Use Item")
+                    try:
+                        if user_choice.lower() == 'attack':
+                            pass
+                        elif (user_choice.lower() == 'use item') or (user_choice.lower() == 'use') or (user_choice.lower() == 'item'):
+                            pass
+                        else:
+                            print('Invalid input.')
+                    except AttributeError:
+                        if user_choice == 1:
+                            pass
+                        elif user_choice == 2:
+                            pass
+                        else:
+                            print('Invalid input.')
 
                 if self.battle_dict['turn'] == Turn.Defend:
                     while True:
