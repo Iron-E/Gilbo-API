@@ -1072,9 +1072,7 @@ class battle_manager(ABC):
                 else:
                     # Convert user_choice to indexable integer
                     user_choice = int(user_choice) - 1
-                    # Try to access the selected attack
-                    # plyr.attacks[user_choice]
-                    # If that check succeeds, the return will continue
+                    # Try to access the selected attack and return it
                     return plyr.attacks[user_choice]
             except (ValueError, IndexError):
                 print('Invalid input.')
