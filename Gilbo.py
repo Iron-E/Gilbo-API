@@ -249,7 +249,7 @@ class armor(equippable):
 
 class heal_item(item):
     def __init__(self, name, dscrpt, val, hp=0):
-        super().__init__(name, dscrpt, val, hp)
+        super().__init__(name, dscrpt, val)
         self.item_dict['heal_amount'] = hp
 
     @property
