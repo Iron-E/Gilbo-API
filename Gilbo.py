@@ -595,12 +595,11 @@ class array_map(ABC):
 
 
 class attack:
-    def __init__(self, name, dscrpt, dmg, acc=100, count=Enumerators.times_attacking, debuff=None):
+    def __init__(self, name, dscrpt, dmg, acc=100, debuff=None):
         self.attack_dict = {'dmg': dmg}
         self.attack_dict['name'] = name
         self.attack_dict['description'] = dscrpt
         self.attack_dict['accuracy'] = acc
-        self.attack_dict['hit_count'] = count
         self.attack_dict['debuff_effect'] = debuff
 
     @property
@@ -629,8 +628,8 @@ class attack:
 
 
 class ammo_attack(attack):
-    def __init__(self, name, dscrpt, dmg, ammo_type, ammo_cost, acc=100, count=Enumerators.times_attacking, debuff=None):
-        super().__init__(name, dscrpt, dmg, acc, count, debuff)
+    def __init__(self, name, dscrpt, dmg, ammo_type, ammo_cost, acc=100, debuff=None):
+        super().__init__(name, dscrpt, dmg, acc, debuff)
         self.attack_dict['accuracy'] = acc
         self.attack_dict['ammo_type'] = ammo_type
         self.attack_dict['ammo_cost'] = ammo_cost
@@ -801,10 +800,7 @@ class Enemy_Choices(IntEnum):
 class TurnComplete(Exception):
     pass
 
-class PlayerAttacks(Exception):
-    pass
-
-class PlayerUsesItem(Exception):
+class ChooseAgain(Exception):
     pass
 
 
@@ -1042,7 +1038,21 @@ class battle_manager(ABC):
         pass
 
     def attack_info(self, attack):
-        pass
+        print(f"\n{attack.name}\n_______")
+        print(f"{attack.dscrpt}")
+        print(f"Damage: {attack.dmg}")
+        print(f"Accuracy {attack.hit_rate}%")
+
+        try:
+            print(f"Ammo: {attack.ammo_type.name}")
+            print(f"Ammo Cost: {attack.ammo_cost}")
+        except AttributeError:
+            pass
+
+        try:
+            print(f"Debuff Effect: {attack.debuff.name}")
+        except AttributeError:
+            pass
 
     def plyr_choose_attack(self, plyr):
         for i in range(len(plyr.attacks)):
@@ -1050,15 +1060,21 @@ class battle_manager(ABC):
 
         # Prompt user
         while True:
-            user_choice = str(input('\nEnter a number to attack, or type "info [number]" for more info about the attack.\nChoice: '))
+            user_choice = str(input('\nEnter a number to attack. \nType "info [number]" for more info about the attack.\nType "q" to return to the previous menu.\nChoice: '))
             try:
-                user_choice = int(user_choice) - 1
-                # Determine if the user wants more info
+                # Determine action based on input
                 if "info" in user_choice:
                     if user_choice.split(' ')[1] != user_choice.split(' ')[-1]:
-                        raise IndexError
+                        break
                     self.attack_info(plyr.attacks[user_choice.split(' ')[1]])
+                elif user_choice.lower() == 'q':
+                    raise ChooseAgain
                 else:
+                    # Convert user_choice to indexable integer
+                    user_choice = int(user_choice) - 1
+                    # Try to access the selected attack
+                    # plyr.attacks[user_choice]
+                    # If that check succeeds, the return will continue
                     return plyr.attacks[user_choice]
             except (ValueError, IndexError):
                 print('Invalid input.')
@@ -1189,21 +1205,24 @@ class battle_manager(ABC):
                 # Determine whose turn it is
                 if self.battle_dict['turn'] == Turn.Attack:
                     while True:
-                        # Clear console and then redraw HP
-                        clr_console()
-                        self.draw_hp(plyr, enemy)
+                        try:
+                            # Clear console and then redraw HP
+                            clr_console()
+                            self.draw_hp(plyr, enemy)
 
-                        user_choice = input("1. Attack\n2.Use Item\n\nChoice: ")
+                            user_choice = input("1. Attack\n2.Use Item\n\nChoice: ")
 
-                        if (user_choice.lower() == 'attack') or (user_choice == 1):
-                            # Player chooses to attack #
-                            # Determine attack and use it
-                            self.switch_turn([temp_power, plyr.stats.power], self.use_attack(plyr, enemy, self.plyr_choose_attack(plyr)))
-                        elif (user_choice.lower() == 'use item') or (user_choice.lower() == 'use') or (user_choice.lower() == 'item') or (user_choice == 2):
-                            # Player choose to use an item #
-                            self.switch_turn([temp_power, plyr.stats.power], self.use_item(plyr, self.plyr_choose_item(plyr)))
-                        else:
-                            input('Invalid input.')
+                            if (user_choice.lower() == 'attack') or (user_choice == '1'):
+                                # Player chooses to attack #
+                                # Determine attack and use it
+                                self.switch_turn([temp_power, plyr.stats.power], self.use_attack(plyr, enemy, self.plyr_choose_attack(plyr)))
+                            elif (user_choice.lower() == 'use item') or (user_choice.lower() == 'use') or (user_choice.lower() == 'item') or (user_choice == '2'):
+                                # Player choose to use an item #
+                                self.switch_turn([temp_power, plyr.stats.power], self.use_item(plyr, self.plyr_choose_item(plyr)))
+                            else:
+                                input('Invalid input.')
+                        except ChooseAgain:
+                            pass
 
                 if self.battle_dict['turn'] == Turn.Defend:
                     while True:
