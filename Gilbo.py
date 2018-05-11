@@ -813,7 +813,7 @@ class battle_manager:
         self.battle_dict['effect_dict']['reverse_effect_enemy'] = []
         self.battle_dict['effect_dict']['reverse_effect_player'] = []
 
-        self.battle_dict['ai'] = {'used_item': 4}
+        self.battle_dict['ai'] = {'used_item': 7}
 
     def randnum(self, hi, lo=1):
         from random import randint
@@ -899,11 +899,8 @@ class battle_manager:
         # Check if attack hits
         if (self.randnum(100) <= attk.hit_rate) and (self.randnum(100) >= self.calc_agility(target.stats.agility)):
                 # Attack landed; calculate damage
-                print(f"Damage without variation: {round((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5)}")
                 temp_damage = round(((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5) + self.randnum(round((user.stats.stren / 2) ** (1/2))))
-                print(f'Primary Damage Calculation: {temp_damage}')
                 temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
-                print(f'Secondary Damage Calculation: {temp_damage_recieved}')
 
                 if temp_damage_recieved < 1:
                     temp_damage_recieved = 1
@@ -967,31 +964,24 @@ class battle_manager:
                 print(f"This item does not exist in {thing.name}'s inventory.")
 
     def chance_item(self, enemy):
-        temp_items = []
-        for i in enemy.collection.items:
-            if isinstance(i, stat_item):
-                temp_items.append(i)
+        enemy_has_stat_items = [isinstance(i, stat_item) for i in enemy.collection.items]
+        enemy_has_heal_items = [isinstance(i, heal_item) for i in enemy.collection.items]
 
-        stat_items_in_temp = [isinstance(i, stat_item) for i in temp_items]
-
-        if (temp_items != []) and (True in stat_items_in_temp) and (self.battle_dict['ai']['used_item'] > 0):
+        if (True in enemy_has_stat_items) and (self.battle_dict['ai']['used_item'] > 0):
             return round((100) / (1 + (self.e ** ((-1 / 2) * self.battle_dict['ai']['used_item']))) - 50)
-        elif (temp_items != []):
+        elif (True in enemy_has_heal_items) and (self.battle_dict['ai']['used_item'] > 0):
             return self.chance_heal(enemy)
         else:
             return 0
 
     def chance_heal(self, enemy):
-        temp_items = []
-        for i in enemy.collection.items:
-            if isinstance(i, heal_item):
-                temp_items.append(i)
+        enemy_has_heal_items = [isinstance(i, heal_item) for i in enemy.collection.items]
 
         def percent_health():
-            return ((enemy.stats.max_health - enemy.stats.health) / enemy.stats.max_health) * 100
+            return 100 - (((enemy.stats.max_health - enemy.stats.health) / enemy.stats.max_health) * 100)
 
-        if (temp_items != []) and (percent_health() <= 75):
-            return round(-25719430 + (89.67716 - -25719430)/(1 + ((percent_health() / 1720762) ** 1.286616)))
+        if (True in enemy_has_heal_items) and (percent_health() <= 80):
+            return round(-25719423 + (89.67716 - -25719430)/(1 + ((percent_health() / 1720762) ** 1.286616)))
         else:
             return 0
 
@@ -1044,46 +1034,53 @@ class battle_manager:
         temp_heal_items = []
         for heal in enemy.collection.items:
             if isinstance(heal, heal_item):
-                temp_heal_items.append(enemy.collection.items.index(heal))
+                temp_heal_items.append(heal)
 
         heals_ordered_best = []
 
         # Generate list of healing items that don't overheal the enemy
         for heal in temp_heal_items:
-            if enemy.health + heal.heal_amnt <= enemy.max_health:
+            if enemy.stats.health + heal.heal_amnt <= enemy.stats.max_health:
                 heals_ordered_best.append((heal.heal_amnt, heal))
 
-        # Order them by what item will heal them the most
-        heals_ordered_best.sort(reverse=True)
-
-        # Use the item
-        write(f"{enemy.name} used a {heals_ordered_best[0][1].name}, and regained {heals_ordered_best[0][1].heal_amnt} health.")
-        self.use_item(enemy, enemy.collection.items[heal])
-
-        # Delete unneeded tools
         del temp_heal_items
-        del heals_ordered_best
-        return True
+
+        if heals_ordered_best != []:
+            # Order them by what item will heal them the most
+            heals_ordered_best.sort(reverse=True)
+
+            # Use the item
+            write(f"{enemy.name} used a {heals_ordered_best[0][1].name}, and regained {heals_ordered_best[0][1].heal_amnt} health.")
+            self.use_item(enemy, heals_ordered_best[0][1])
+
+            # Delete unneeded var
+            del heals_ordered_best
+            return True
+
 
         # Create list of healing items and sort them based on how effective they are
         temp_heal_list = []
-        for i in range(len(enemy.collection.items)):
-            if i in temp_heal_list:
-                temp_heal_list.append((enemy.collection.items[i].heal_amnt, enemy.collection.items[i]))
+        for heal in enemy.collection.items:
+            if isinstance(heal, heal_item):
+                temp_heal_list.append((heal.heal_amnt, heal))
         temp_heal_list.sort()
 
         # Use item and display its use
-        write(f"{enemy.name} used a {temp_heal_list[0][1].name} and regained {enemy.max_health - enemy.health} health.")
+        write(f"{enemy.name} used a {temp_heal_list[0][1].name} and regained {enemy.stats.max_health - enemy.stats.health} health.")
         self.use_item(enemy, temp_heal_list[0][0])
 
         # Finish up
         del temp_heal_list
+        del heals_ordered_best
         return True
 
     def enemy_use_item(self, enemy):
-        # Use item
+        # Use item #
+        # Generate random number
         enemy_choice = self.randnum(100)
-        if enemy_choice <= self.chance_heal(enemy):
+        # Check if there are valid items or not
+        valid_stat_items = (isinstance(itm, stat_item) for itm in enemy.collection.items)
+        if (enemy_choice <= self.chance_heal(enemy)) or all(check is False for check in valid_stat_items):
             self.enemy_use_heal_item(enemy)
         else:
             # Use buff item
