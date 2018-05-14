@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.0-beta1 #
+# Gilbo RPG API -- Version 1.0.0-beta2 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -955,9 +955,12 @@ class battle_manager(ABC):
                         thing.stats.health = thing.stats.max_health
                     else:
                         thing.stats.health += itm.heal_amnt
+
+                    write(f"{thing.name} used a {itm.name}, and regained {itm.heal_amnt} health.")
                 elif isinstance(itm, stat_item):
                     self.calc_effect_queue(thing, itm)
                     self.use_item_stat(thing, itm.stat_changes)
+                    write(f"{thing.name} used a {itm.name}.")
 
                 thing.collection.rem_item(itm)
 
@@ -1146,7 +1149,6 @@ class battle_manager(ABC):
             heals_ordered_best.sort(reverse=True)
 
             # Use the item
-            write(f"{enemy.name} used a {heals_ordered_best[0][1].name}, and regained {heals_ordered_best[0][1].heal_amnt} health.")
             self.use_item(enemy, heals_ordered_best[0][1])
 
             # Delete unneeded var
