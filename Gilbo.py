@@ -1,12 +1,11 @@
-# Gilbo RPG API -- Version 0.11.5 #
+# Gilbo RPG API -- Version 0.13.0-alpha3 #
 
 from abc import ABC, abstractmethod
-from random import randint
 from enum import IntEnum, auto
 
 # Allow Gilbo to see Dependencies
 import sys
-sys.path.append('.deps')
+sys.path.append('./deps/')
 
 # 3rd Party Libraries
 import numpy as np
@@ -32,9 +31,6 @@ pub_chk_pos = Signal()
 
 
 class Enumerators(IntEnum):
-    # Stat enums
-    base_carry_cap = 100
-    carry_cap_modifier = 2
     # Inventory enums
     items_to_modify = 1
     infinite_coin = -1
@@ -50,7 +46,7 @@ class Enumerators(IntEnum):
 
 def write(phrase, type_speed=.040, line_delay=.5):
     from time import sleep
-    if isinstance(phrase, list):
+    if isinstance(phrase, list) or isinstance(phrase, tuple):
         for i in range(len(phrase)):
             for j in range(len(phrase[i])):
                 print(phrase[i][j], end="", flush=True)
@@ -66,15 +62,19 @@ def write(phrase, type_speed=.040, line_delay=.5):
         sleep(line_delay)
         print('', end=' ')
 
+    print('\n')
+
+
 def clr_console():
     import os
     os.system('cls' if os.name == 'nt' else 'clear')
 
+
 def debug_info(err, more_info, display=False):
     if display is True:
-        print(str(more_info), end="See 'log.txt' for details.")
+        print(str(more_info), end=" See 'log.txt' for details.\n\n")
 
-    with open('log.txt', 'ab') as handle:
+    with open('log.txt', 'a') as handle:
         from datetime import datetime
         print(str(datetime.now()), end=':\n', file=handle)
         print(str(err), file=handle)
@@ -157,28 +157,22 @@ class battler(vendor):
     @property
     def attacks(self):
         try:
-            for i in range(len(self.collection.equipped)):
-                if isinstance(self.collection.equipped[i], weapon):
-                    return self.collection.equipped[i].attacks
+            for itm in self.collection.equipped:
+                if isinstance(itm, weapon):
+                    return itm.linked_attacks
         except AttributeError as e:
             debug_info(e, 'The battler must use a battler_collection for an inventory.', True)
 
     def sub_stat_change(self, sender, **kwargs):
         if sender is self.collection:
-            try:
-                self.stats.health = self.stats.health + kwargs['changes'][0]
-                self.stats.health = self.stats.max_health + kwargs['changes'][0]
-                self.stats.stren = self.stats.stren + kwargs['changes'][1]
-                self.stats.armor = self.stats.armor + kwargs['changes'][2]
-                self.stats.agility = self.stats.agility + kwargs['changes'][3]
-                self.stats.power = self.stats.power + kwargs['changes'][4]
-            except TypeError:
-                debug_info(e, 'An item in stat_change was not a number.', True)
+            self.stats.stat_list = kwargs['changes']
 
 
 class player(battler):
     def __init__(self, name, location, x, y, inv, stats):
         super().__init__(name, location, x, y, inv, stats)
+
+        self.entity_dict['quest_list'] = []
 
         def handle_chk_pos(sender, **kwargs):
             self.sub_chk_pos(sender, **kwargs)
@@ -193,6 +187,12 @@ class player(battler):
 # Items/Weapons in the game #
 #
 
+class Stat_Sheet(IntEnum):
+    health = 0
+    strength = 1
+    armor = 2
+    agility = 3
+    power = 4
 
 class Item_Types(IntEnum):
     basic_item = auto()
@@ -242,9 +242,9 @@ class weapon(equippable):
         self.item_dict['type'] = Item_Types.weapon
         self.item_dict['linked_attack_list'] = linked_attacks
 
-        @property
-        def attacks(self):
-            return self.item_dict['linked_attack_list']
+    @property
+    def linked_attacks(self):
+        return self.item_dict['linked_attack_list']
 
 
 class armor(equippable):
@@ -253,19 +253,31 @@ class armor(equippable):
         self.item_dict['type'] = Item_Types.armor
 
 
-class buff_item(item):
+class heal_item(item):
+    def __init__(self, name, dscrpt, val, hp=0):
+        super().__init__(name, dscrpt, val)
+        self.item_dict['heal_amount'] = hp
+
+    @property
+    def heal_amnt(self):
+        return self.item_dict['heal_amount']
+
+
+class stat_item(equippable):
     def __init__(self, name, dscrpt, val, effect_time, hp=0, stren=0, armr=0, agil=0, pwr=0):
         super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.basic_item
-        self.item_dict['effect_time']
+        self.item_dict['effect_time'] = effect_time
 
     @property
     def duration(self):
         return self.item_dict['effect_time']
 
+
 #
 # Entity Stats #
 #
+
 
 
 class battler_stats:
@@ -290,7 +302,7 @@ class battler_stats:
         return self.stat_dict['max_hp']
 
     @max_health.setter
-    def max_hp(self, value):
+    def max_health(self, value):
         self.stat_dict['max_hp'] = value
 
     @property
@@ -325,6 +337,31 @@ class battler_stats:
     def power(self, value):
         self.stat_dict['power'] = value
 
+    @property
+    def stat_list(self):
+        return [self.health, self.max_health, self.stren, self.armor, self.agility, self.power]
+
+    @stat_list.setter
+    def stat_list(self, val):
+        try:
+            self.health += val[Stat_Sheet.health]
+            self.max_health += val[Stat_Sheet.health]
+            self.stren += val[Stat_Sheet.strength]
+            self.armor += val[Stat_Sheet.armor]
+            self.agility += val[Stat_Sheet.agility]
+            self.power += val[Stat_Sheet.power]
+        except IndexError as e:
+            debug_info(e, 'battler_stats.stat_list only accepts lists as setters.', True)
+        except TypeError as e:
+            debug_info(e, 'An item in stat_change was not a number.', True)
+
+    def writeout(self):
+        print(f"Health: {self.health}/{self.max_health}")
+        print(f"Strength: {self.stren}")
+        print(f"Armor: {self.armor}")
+        print(f"Agility: {self.agility}")
+        print(f"Power: {self.power}", end="\n\n")
+
 
 #
 # Locations #
@@ -332,14 +369,14 @@ class battler_stats:
 
 
 class Directions(IntEnum):
-    Up = 11
-    Up_Left = 12
+    Up_Left = 11
+    Up = 12
     Up_Right = 13
-    Left = 22
-    Right = 33
-    Down = 41
-    Down_Left = 42
-    Down_Right = 43
+    Left = 21
+    Right = 23
+    Down_Left = 31
+    Down = 32
+    Down_Right = 33
 
 
 class Location_Errors(IntEnum):
@@ -413,7 +450,7 @@ class location_manager:
                 thing.set_loc([y, x], mapid)
                 self.load_if_player(thing)
 
-        except NameError:
+        except NameError as e:
             debug_info(e, 'That map does not exist', True)
 
     def chk_boundary(self, mapid, direction, start_loc, is_player, print_errors=False):
@@ -533,13 +570,11 @@ class array_map(ABC):
         #         print('A wide river halts your progress down this path.')
         #     return False
 
-
     def chk_tile_val(self, tile, to_match):
             if self.layout[tile[Locate_Entity.y_cord], tile[Locate_Entity.x_cord]] == to_match:
                 return True
             else:
                 return False
-
 
     @property
     def id(self):
@@ -560,10 +595,24 @@ class array_map(ABC):
 
 
 class attack:
-    def __init__(self, dmg, dscrpt, count=Enumerators.times_attacking):
+    def __init__(self, name, dscrpt, dmg, acc=100, debuff=None):
         self.attack_dict = {'dmg': dmg}
+        self.attack_dict['name'] = name
         self.attack_dict['description'] = dscrpt
-        self.attack_dict['hit_count'] = count
+        self.attack_dict['accuracy'] = acc
+        self.attack_dict['debuff_effect'] = debuff
+
+    @property
+    def name(self):
+        return self.attack_dict['name']
+
+    @property
+    def hit_rate(self):
+        return self.attack_dict['accuracy']
+
+    @property
+    def debuff(self):
+        return self.attack_dict['debuff_effect']
 
     @property
     def dmg(self):
@@ -578,19 +627,20 @@ class attack:
         return self.attack_dict['hit_count']
 
 
-class ranged_attack(attack):
-    def __init__(self, dmg, dscrpt, count, acc, ammo_cost):
-        super().__init__(dmg, dscrpt, count)
+class ammo_attack(attack):
+    def __init__(self, name, dscrpt, dmg, ammo_type, ammo_cost, acc=100, debuff=None):
+        super().__init__(name, dscrpt, dmg, acc, debuff)
         self.attack_dict['accuracy'] = acc
+        self.attack_dict['ammo_type'] = ammo_type
         self.attack_dict['ammo_cost'] = ammo_cost
+
+    @property
+    def ammo_type(self):
+        return self.attack_dict['ammo_type']
 
     @property
     def ammo_cost(self):
         return self.attack_dict['ammo_cost']
-
-    @property
-    def acc(self):
-        return self.attack_dict['accuracy']
 
 #
 # Inventory #
@@ -651,7 +701,7 @@ class vendor_collection(item_collection):
 
 
 class battler_collection(item_collection):
-    def __init__(self, coin, items, equipped=list()):
+    def __init__(self, coin, items, equipped):
         super().__init__(coin, items)
         self.collect_dict['on_entity'] = equipped
         self.collect_dict['Errors'] = "Couldn't equip item."
@@ -695,7 +745,7 @@ class battler_collection(item_collection):
 
 
 class player_collection(battler_collection, vendor_collection):
-    def __init__(self, coin, items, equipped=list()):
+    def __init__(self, coin, items, equipped):
         super().__init__(coin, items, equipped)
 
     def add_item(self, itm, amnt=Enumerators.items_to_modify):
@@ -731,17 +781,512 @@ class quest(ABC):
         Some possibilities include checking for items in the iventory: subscribe to the pub_item_obtained event and check the player's inventory for items. Check if a player has stepped
         onto a tile by writing a quest.stage method into the array_map class's send_data method. Or, make NPCs say certain things by creating an if statement to check if a quest has a certain stage.
         """
-        # TEMPLATE #
-        # WIP
-
 
 
 #
 # Battle System #
 #
 
-class battle_manager:
+class Turn(IntEnum):
+    Attack = 0
+    Defend = 1
+
+
+class Enemy_Choices(IntEnum):
+    Attack = 0
+    Item = 1
+
+
+class TurnComplete(Exception):
     pass
+
+class ChooseAgain(Exception):
+    pass
+
+
+class battle_manager(ABC):
+    def __init__(self):
+        self.e = 2.7182
+        self.battle_dict = {'turn': 0, 'total_turns': 0}
+
+        self.battle_dict['effect_dict'] = {'active_effect_enemy': False}
+        self.battle_dict['effect_dict']['active_effect_player'] = False
+
+        self.battle_dict['effect_dict']['reverse_effect_enemy'] = []
+        self.battle_dict['effect_dict']['reverse_effect_player'] = []
+
+        self.battle_dict['ai'] = {'used_item': 0}
+
+    def randnum(self, hi, lo=1):
+        from random import randint
+        return randint(lo, hi)
+
+    def calc_agility(self, agi):
+        return round((150) / (1 + (self.e ** ((-1 / 30) * agi))) - 75)
+
+    def determine_first_turn(self, plyr, enemy):
+        if plyr.stats.power > enemy.stats.power:
+            self.battle_dict['turn'] = Turn.Attack
+        elif plyr.stats.power < enemy.stats.power:
+            self.battle_dict['turn'] = Turn.Defend
+        elif plyr.stats.power == enemy.stats.power:
+            if plyr.stats.agility < enemy.stats.agility:
+                self.battle_dict['turn'] = Turn.Defend
+            else:
+                self.battle_dict['turn'] = Turn.Attack
+
+    def clean_active_effect(self):
+        i = 0
+        while i < len(self.battle_dict['effect_dict']['reverse_effect_player']):
+            if (self.battle_dict['effect_dict']['reverse_effect_player'] != []) and (self.battle_dict['effect_dict']['reverse_effect_player'][i][0] < self.battle_dict['total_turns']):
+                del self.battle_dict['effect_dict']['reverse_effect_player'][i]
+            else:
+                i += 1
+
+        i = 0
+        while i < len(self.battle_dict['effect_dict']['reverse_effect_enemy']):
+            if (self.battle_dict['effect_dict']['reverse_effect_enemy'] != []) and (self.battle_dict['effect_dict']['reverse_effect_enemy'][i][0] < self.battle_dict['total_turns']):
+                del self.battle_dict['effect_dict']['reverse_effect_enemy'][i]
+            else:
+                i += 1
+
+        del i
+
+    def refresh_active_effect(self, plyr, enemy):
+        if (self.battle_dict['effect_dict']['active_effect_player'] is True) or (self.battle_dict['effect_dict']['active_effect_enemy'] is True):
+            if self.battle_dict['effect_dict']['active_effect_player'] is True:
+                for i in self.battle_dict['effect_dict']['reverse_effect_player']:
+                    if self.battle_dict['turn'] == i[0]:
+                        self.use_item_stat(plyr, i[1])
+
+                if self.battle_dict['effect_dict']['reverse_effect_player'] == []:
+                    self.battle_dict['effect_dict']['active_effect_player'] = False
+
+            if self.battle_dict['effect_dict']['active_effect_enemy'] is True:
+                for i in self.battle_dict['effect_dict']['reverse_effect_enemy']:
+                    if self.battle_dict['turn'] == i[0]:
+                        self.use_item_stat(plyr, i[1])
+                if self.battle_dict['effect_dict']['reverse_effect_enemy'] == []:
+                    self.battle_dict['effect_dict']['active_effect_enemy'] = False
+
+            self.clean_active_effect()
+
+    def reverse_item_stat(self, stat_list):
+        def invert(val):
+            return val * -1
+
+        return [invert(i) for i in stat_list]
+
+    def calc_effect_queue(self, thing, itm):
+        try:
+            if itm.duration > 0:
+                if isinstance(thing, player):
+                    self.battle_dict['effect_dict']['active_effect_player'] = True
+                    self.battle_dict['effect_dict']['reverse_effect_player'].append((self.battle_dict['turn'] + itm.duration, self.reverse_item_stat(itm.stat_changes)))
+                    self.battle_dict['effect_dict']['reverse_effect_player'].sort()
+                else:
+                    self.battle_dict['effect_dict']['active_effect_enemy'] = True
+                    self.battle_dict['effect_dict']['reverse_effect_enemy'].append((self.battle_dict['turn'] + itm.duration, self.reverse_item_stat(itm.stat_changes)))
+                    self.battle_dict['effect_dict']['reverse_effect_enemy'].sort()
+
+        except AttributeError as e:
+            debug_info(e, 'An incorrect object type was used as type stat_item in battle_manager.use_item().')
+
+    def use_item_stat(self, thing, stat_changes):
+        thing.stats.stat_list = stat_changes
+
+    def use_attack(self, user, target, attk):
+        # Check if attack hits
+        if (self.randnum(100) <= attk.hit_rate) and (self.randnum(100) >= self.calc_agility(target.stats.agility)):
+                # Attack landed; calculate damage
+                temp_damage = round(((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5) + self.randnum(round((user.stats.stren / 2) ** (1/2))))
+                temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
+
+                if temp_damage_recieved < 1:
+                    temp_damage_recieved = 1
+                # Check for crit and write out result
+                if self.randnum(100) <= self.calc_agility(user.stats.agility):
+                    # Indicate critical hit
+                    temp_damage_recieved *= 3/2
+                    temp_damage_recieved = round(temp_damage_recieved)
+                    write((f"{user.name} used {attk.name}.", "It was a critical hit!", f"{user.name} dealt {temp_damage_recieved} to {target.name}."))
+                else:
+                    # No crit
+                    write(f"{user.name} used {attk.name}, and dealt {temp_damage_recieved} damage to {target.name}.")
+
+                target.stats.health -= temp_damage_recieved
+
+                del temp_damage
+                del temp_damage_recieved
+                self.hit_animate()
+                try:
+
+                    # Check for debuffs and apply them
+                    self.attack_use_debuff(target, attk.debuff)
+                except (AttributeError, TypeError):
+                    pass
+
+                try:
+                    user.collection.rem_item(attk.ammo_type, attk.ammo_cost)
+                except AttributeError:
+                    pass
+
+                return False
+
+        else:
+            # Attack missed, end turn
+            write(f"{user.name} tried to use {attk.name}, but they missed.")
+            return False
+
+    def attack_use_debuff(self, target, debuff):
+        if isinstance(debuff, stat_item):
+            self.calc_effect_queue(target, debuff)
+            self.use_item_stat(target, debuff.stat_changes)
+
+    def use_item(self, thing, itm):
+        # if itm.stat_changes != [0, 0, 0, 0, 0]:
+        # Add above check to the item list generator
+        if itm in thing.collection.items:
+            try:
+                # Add specific instructions for healing items
+                if isinstance(itm, heal_item):
+                    print("it's a healing item")
+                    if thing.stats.health + itm.heal_amnt > thing.stats.max_health:
+                        thing.stats.health = thing.stats.max_health
+                    else:
+                        thing.stats.health += itm.heal_amnt
+                elif isinstance(itm, stat_item):
+                    self.calc_effect_queue(thing, itm)
+                    self.use_item_stat(thing, itm.stat_changes)
+
+                thing.collection.rem_item(itm)
+
+            except ValueError:
+                print(f"This item does not exist in {thing.name}'s inventory.")
+
+    def chance_item(self, enemy):
+        enemy_has_stat_items = [isinstance(i, stat_item) for i in enemy.collection.items]
+        enemy_has_heal_items = [isinstance(i, heal_item) for i in enemy.collection.items]
+
+        if (True in enemy_has_stat_items) and (self.battle_dict['ai']['used_item'] > 0):
+            return round((100) / (1 + (self.e ** ((-1 / 2) * self.battle_dict['ai']['used_item']))) - 50)
+        elif (True in enemy_has_heal_items) and (self.battle_dict['ai']['used_item'] > 0):
+            return self.chance_heal(enemy)
+        else:
+            return 0
+
+    def percent_health(self, thing):
+        return ((thing.stats.health / thing.stats.max_health) * 100)
+
+    def chance_heal(self, enemy):
+        enemy_has_heal_items = [isinstance(i, heal_item) for i in enemy.collection.items]
+
+        if (True in enemy_has_heal_items) and (self.percent_health(enemy) <= 80):
+            return round(-25719423 + (89.67716 - -25719430)/(1 + ((self.percent_health(enemy) / 1720762) ** 1.286616)))
+        else:
+            return 0
+
+    def switch_turn(self, power_data, enemy_used_item=False):
+        if power_data[0] < power_data[1]:
+            power_data[0] += 1
+        else:
+            if self.battle_dict['turn'] == Turn.Attack:
+                # Switch turn
+                self.battle_dict['turn'] = Turn.Defend
+                # Exit turn
+                raise TurnComplete
+            elif self.battle_dict['turn'] == Turn.Defend:
+                # Switch turn
+                self.battle_dict['turn'] = Turn.Attack
+                # Do extras based on item use
+                if enemy_used_item is True:
+                    self.battle_dict['ai']['used_item'] = 0
+                else:
+                    self.battle_dict['ai']['used_item'] += 1
+                # Exit turn
+                raise TurnComplete
+            else:
+                debug_info(ValueError('The turn counter was not set correctly.'), 'Somehow, the value of turn was switched away from 0 or 1, which are the accepted values.')
+
+    def hit_animate(self):
+        pass
+
+    def draw_hp(self, plyr, enemy):
+        prcnt_plyr_health = round(self.percent_health(plyr) / 2)
+
+        print(f'{plyr.name}: [', end='')
+        for i in range(50):
+            print('=' if i <= prcnt_plyr_health else '-', end='')
+        print(']')
+
+        del prcnt_plyr_health
+
+        prcnt_enemy_health = round(self.percent_health(enemy) / 2)
+
+        print(f'{enemy.name}: [', end='')
+        for i in range(50):
+            print('=' if i <= prcnt_enemy_health else '-', end='')
+        print(']')
+
+        del prcnt_enemy_health
+
+    def item_info(self, itm):
+        print(f"\n{itm.name}")
+        # Create barrier from name length
+        for i in itm.name:
+            print('-', end='')
+
+        print(f"\nDescription: '{itm.dscrpt}'")
+
+        if isinstance(itm, heal_item):
+            print('Type: Healing Item')
+            print(f"Heal Amount: {itm.heal_amnt}")
+        else:
+            print('Type: Buff Item')
+            print(f"Turns Effective: {itm.duration}\n")
+            print(f"HP Modifier: {itm.stat_changes[Stat_Sheet.health]}")
+            print(f"Strength Modifier: {itm.stat_changes[Stat_Sheet.strength]}")
+            print(f"Armor Modifier: {itm.stat_changes[Stat_Sheet.armor]}")
+            print(f"Agility Modifier: {itm.stat_changes[Stat_Sheet.agility]}")
+            print(f"Power Modifier: {itm.stat_changes[Stat_Sheet.power]}")
+
+    def plyr_choose_item(self, plyr):
+        # Writeout valid items
+        valid_items = []
+        temp_index = 1
+        for i in range(len(plyr.collection.items)):
+            if isinstance(plyr.collection.items[i], heal_item) or isinstance(plyr.collection.items[i], stat_item):
+                print(f"{temp_index}. {plyr.collection.items[i].name}")
+                valid_items.append((temp_index, plyr.collection.items[i]))
+
+                temp_index += 1
+
+
+        if valid_items == []:
+            print('\nYou have no items to use.')
+            input('Press enter to continue.')
+            raise ChooseAgain
+
+        print('\nEnter a number to use an item. \nType "info [number]" for more info about the item.\nType "q" to return to the previous menu.')
+        while True:
+            user_choice = str(input('\nChoice: '))
+            try:
+                # Determine action based on input
+                if "info" in user_choice:
+                    for i in valid_items:
+                        if i[0] == int(user_choice.split(' ')[1]):
+                            self.item_info(i[1])
+                elif user_choice.lower() == 'q':
+                    raise ChooseAgain
+                else:
+                    # Convert user_choice to indexable integer
+                    user_choice = int(user_choice)
+                    # Try to access the selected attack and return it
+                    for i in valid_items:
+                        if i[0] == user_choice:
+                            return i[1]
+
+            except (ValueError, IndexError, AttributeError):
+                print('Invalid input.')
+
+    def attack_info(self, attack):
+        print(f"\n{attack.name}")
+        # Create barrier from name length
+        for i in attack.name:
+            print('-', end='')
+
+        print(f"\nDescription: '{attack.dscrpt}'")
+        print(f"Damage: {attack.dmg}")
+        print(f"Accuracy {attack.hit_rate}%")
+
+        try:
+            print(f"Ammo: {attack.ammo_type.name}")
+            print(f"Ammo Cost: {attack.ammo_cost}")
+        except AttributeError:
+            pass
+
+        try:
+            print(f"Debuff Effect: {attack.debuff.name}")
+        except AttributeError:
+            pass
+
+    def plyr_choose_attack(self, plyr):
+        for i in range(len(plyr.attacks)):
+            print(f"{i + 1}. {plyr.attacks[i].name}")
+
+        # Prompt user
+        print('\nEnter a number to attack. \nType "info [number]" for more info about the attack.\nType "q" to return to the previous menu.')
+        while True:
+            user_choice = str(input('\nChoice: '))
+            try:
+                # Determine action based on input
+                if "info" in user_choice:
+                    self.attack_info(plyr.attacks[int(user_choice.split(' ')[1]) - 1])
+                elif user_choice.lower() == 'q':
+                    raise ChooseAgain
+                else:
+                    # Convert user_choice to indexable integer
+                    user_choice = int(user_choice) - 1
+                    # Try to access the selected attack and return it
+                    return plyr.attacks[user_choice]
+            except (ValueError, IndexError, AttributeError):
+                print('Invalid input.')
+
+    def enemy_use_heal_item(self, enemy):
+        # Use healing item
+        heals_ordered_best = []
+
+        # Generate list of healing items that don't overheal the enemy
+        for heal in enemy.collection.items:
+            if isinstance(heal, heal_item) and (enemy.stats.health + heal.heal_amnt <= enemy.stats.max_health):
+                heals_ordered_best.append((heal.heal_amnt, heal))
+
+        if heals_ordered_best != []:
+            # Order them by what item will heal them the most
+            heals_ordered_best.sort(reverse=True)
+
+            # Use the item
+            write(f"{enemy.name} used a {heals_ordered_best[0][1].name}, and regained {heals_ordered_best[0][1].heal_amnt} health.")
+            self.use_item(enemy, heals_ordered_best[0][1])
+
+            # Delete unneeded var
+            del heals_ordered_best
+            return True
+
+
+        # Create list of healing items and sort them based on how effective they are
+        temp_heal_list = []
+        for heal in enemy.collection.items:
+            if isinstance(heal, heal_item):
+                temp_heal_list.append((heal.heal_amnt, heal))
+        temp_heal_list.sort()
+
+        # Use item and display its use
+        write(f"{enemy.name} used a {temp_heal_list[0][1].name} and regained {enemy.stats.max_health - enemy.stats.health} health.")
+        self.use_item(enemy, temp_heal_list[0][1])
+
+        # Finish up
+        del temp_heal_list
+        del heals_ordered_best
+        return True
+
+    def enemy_use_item(self, enemy):
+        # Use item #
+        # Generate random number
+        enemy_choice = self.randnum(100)
+        # Check if there are valid items or not
+        valid_stat_items = (isinstance(itm, stat_item) for itm in enemy.collection.items)
+        if (enemy_choice <= self.chance_heal(enemy)) or all(check is False for check in valid_stat_items):
+            self.enemy_use_heal_item(enemy)
+        else:
+            # Use buff item
+
+            # Generate list of places in inventory where buff items exist
+            temp_stat_items = []
+            for i in range(len(enemy.collection.items)):
+                if isinstance(enemy.collection.items[i], stat_item):
+                    temp_stat_items.append(i)
+
+            # Randomly select buff from list of places in inventory
+            enemy_choice = self.randnum(len(temp_stat_items) - 1, 0)
+            buff_choice = enemy.collection.items[temp_stat_items[enemy_choice]]
+
+            # Tell player and use buff
+            write(f"{enemy.name} used a {buff_choice.name}.")
+            self.use_item(enemy, buff_choice)
+
+            del temp_stat_items
+            return True
+
+    def enemy_determine_attack(self, enemy):
+        while True:
+            random_attack = enemy.attacks[self.randnum(len(enemy.attacks)) - 1]
+
+            if isinstance(random_attack, ammo_attack):
+                req_items = 0
+                for itm in enemy.collection.items:
+                    if itm is random_attack.ammo_type:
+                        req_items += 1
+
+                if req_items >= random_attack.ammo_cost:
+                    return random_attack
+
+            elif isinstance(random_attack, ammo_attack) is False:
+                return random_attack
+
+    @abstractmethod
+    def player_win(self, plyr, enemy):
+        # The player wins
+        """
+        This method is defined by users of Gilbo. If the player wins battle(), this method is called. Whether they loot the enemy, or gain experience, it must be defined here.
+        """
+    @abstractmethod
+    def player_lose(self, plyr, enemy):
+        # The player loses
+        """
+        This method is defined by users of Gilbo. If the player loses battle(), this method is called. Whether they lose money and respawn, or get booted out to the last time they saved, it must be defined here.
+        """
+
+
+    def battle(self, plyr, enemy, spec_effect=None):
+        self.determine_first_turn(plyr, enemy)
+
+        while (plyr.stats.health > 0) and (enemy.stats.health > 0):
+            # Allow player to read before clearing screen
+
+            # Check to make sure no effects are active that shouldn't be
+            self.refresh_active_effect(plyr, enemy)
+
+            # Run the spec_effect if there is one specified
+            if spec_effect is not None:
+                spec_effect()
+
+            # Increase turn counter
+            self.battle_dict['total_turns'] += 1
+
+            # Check if player is attacking or defending
+            try:
+                temp_power = 1
+                # Determine whose turn it is
+                if self.battle_dict['turn'] == Turn.Attack:
+                    while True:
+                        try:
+                            # Clear console and then redraw HP
+                            clr_console()
+                            self.draw_hp(plyr, enemy)
+
+                            user_choice = input("1. Attack\n2.Use Item\n\nChoice: ")
+
+                            if (user_choice.lower() == 'attack') or (user_choice == '1'):
+                                # Player chooses to attack #
+                                # Determine attack and use it
+                                self.switch_turn([temp_power, plyr.stats.power], self.use_attack(plyr, enemy, self.plyr_choose_attack(plyr)))
+                            elif (user_choice.lower() == 'use item') or (user_choice.lower() == 'use') or (user_choice.lower() == 'item') or (user_choice == '2'):
+                                # Player choose to use an item #
+                                self.switch_turn([temp_power, plyr.stats.power], self.use_item(plyr, self.plyr_choose_item(plyr)))
+                            else:
+                                input('Invalid input.')
+                        except ChooseAgain:
+                            pass
+
+                if self.battle_dict['turn'] == Turn.Defend:
+                    while True:
+                        enemy_choice = self.randnum(100)
+                        # Test if enemy uses item
+                        if enemy_choice <= self.chance_item(enemy):
+                            self.switch_turn([temp_power, enemy.stats.power], self.enemy_use_item(enemy))
+                        else:
+                            # Attack
+                            self.switch_turn([temp_power, enemy.stats.power], self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
+
+            except TurnComplete:
+                input('\nPress enter to continue.')
+                pass
+
+        if plyr.stats.health > 0:
+            self.player_win(plyr, enemy)
+        else:
+            self.player_lose(plyr, enemy)
 
 
 #
@@ -849,7 +1394,7 @@ class object_tracker:
             for i in range(len(keys)):
                 try:
                     obj_list.update({keys[i]: values[i]})
-                except IndexError:
+                except IndexError as e:
                     debug_info(e, 'There was more data to load than exists now', True)
 
     @property
