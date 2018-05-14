@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.0-beta5 #
+# Gilbo RPG API -- Version 1.0.0-beta2 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -1122,7 +1122,7 @@ class battle_manager(ABC):
             except (ValueError, IndexError, AttributeError):
                 print('Invalid input.')
 
-    def attack_info(self, attack):
+    def attack_info(self, collection, attack):
         print(f"\n{attack.name}")
         # Create barrier from name length
         for i in attack.name:
@@ -1134,7 +1134,7 @@ class battle_manager(ABC):
 
         try:
             print(f"Ammo: {attack.ammo_type.name}")
-            print(f"Ammo Cost: {attack.ammo_cost}")
+            print(f"Ammo Cost: {attack.ammo_cost} ({collection.count(attack.ammo_type)} in inventory)")
         except AttributeError:
             pass
 
@@ -1154,7 +1154,7 @@ class battle_manager(ABC):
             try:
                 # Determine action based on input
                 if "info" in user_choice:
-                    self.attack_info(plyr.attacks[int(user_choice.split(' ')[1]) - 1])
+                    self.attack_info(plyr.collection.items, plyr.attacks[int(user_choice.split(' ')[1]) - 1])
                 elif user_choice.lower() == 'q':
                     raise ChooseAgain
                 else:
