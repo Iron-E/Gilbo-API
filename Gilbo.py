@@ -187,6 +187,12 @@ class player(battler):
 # Items/Weapons in the game #
 #
 
+class Stat_Sheet(IntEnum):
+    health = 0
+    strength = 1
+    armor = 2
+    agility = 3
+    power = 4
 
 class Item_Types(IntEnum):
     basic_item = auto()
@@ -272,12 +278,6 @@ class stat_item(equippable):
 # Entity Stats #
 #
 
-class Stat_Sheet(IntEnum):
-    health = 0
-    strength = 1
-    armor = 2
-    agility = 3
-    power = 4
 
 
 class battler_stats:
@@ -815,7 +815,7 @@ class battle_manager(ABC):
         self.battle_dict['effect_dict']['reverse_effect_enemy'] = []
         self.battle_dict['effect_dict']['reverse_effect_player'] = []
 
-        self.battle_dict['ai'] = {'used_item': 6}
+        self.battle_dict['ai'] = {'used_item': 0}
 
     def randnum(self, hi, lo=1):
         from random import randint
@@ -1031,10 +1031,63 @@ class battle_manager(ABC):
         del prcnt_enemy_health
 
     def item_info(self, itm):
-        pass
+        print(f"\n{itm.name}")
+        # Create barrier from name length
+        for i in itm.name:
+            print('-', end='')
+
+        print(f"\nDescription: '{itm.dscrpt}'")
+
+        if isinstance(itm, heal_item):
+            print('Type: Healing Item')
+            print(f"Heal Amount: {itm.heal_amnt}")
+        else:
+            print('Type: Buff Item')
+            print(f"Turns Effective: {itm.duration}\n")
+            print(f"HP Modifier: {itm.stat_changes[Stat_Sheet.health]}")
+            print(f"Strength Modifier: {itm.stat_changes[Stat_Sheet.strength]}")
+            print(f"Armor Modifier: {itm.stat_changes[Stat_Sheet.armor]}")
+            print(f"Agility Modifier: {itm.stat_changes[Stat_Sheet.agility]}")
+            print(f"Power Modifier: {itm.stat_changes[Stat_Sheet.power]}")
 
     def plyr_choose_item(self, plyr):
-        pass
+        # Writeout valid items
+        valid_items = []
+        temp_index = 1
+        for i in range(len(plyr.collection.items)):
+            if isinstance(plyr.collection.items[i], heal_item) or isinstance(plyr.collection.items[i], stat_item):
+                print(f"{temp_index}. {plyr.collection.items[i].name}")
+                valid_items.append((temp_index, plyr.collection.items[i]))
+
+                temp_index += 1
+
+
+        if valid_items == []:
+            print('\nYou have no items to use.')
+            input('Press enter to continue.')
+            raise ChooseAgain
+
+        print('\nEnter a number to use an item. \nType "info [number]" for more info about the item.\nType "q" to return to the previous menu.')
+        while True:
+            user_choice = str(input('\nChoice: '))
+            try:
+                # Determine action based on input
+                if "info" in user_choice:
+                    for i in valid_items:
+                        if i[0] == int(user_choice.split(' ')[1]):
+                            self.item_info(i[1])
+                elif user_choice.lower() == 'q':
+                    raise ChooseAgain
+                else:
+                    # Convert user_choice to indexable integer
+                    user_choice = int(user_choice)
+                    # Try to access the selected attack and return it
+                    for i in valid_items:
+                        if i[0] == user_choice:
+                            return i[1]
+
+            except (ValueError, IndexError, AttributeError):
+                print('Invalid input.')
 
     def attack_info(self, attack):
         print(f"\n{attack.name}")
@@ -1068,8 +1121,6 @@ class battle_manager(ABC):
             try:
                 # Determine action based on input
                 if "info" in user_choice:
-                    if user_choice.split(' ')[1] != user_choice.split(' ')[-1]:
-                        break
                     self.attack_info(plyr.attacks[int(user_choice.split(' ')[1]) - 1])
                 elif user_choice.lower() == 'q':
                     raise ChooseAgain
@@ -1078,7 +1129,7 @@ class battle_manager(ABC):
                     user_choice = int(user_choice) - 1
                     # Try to access the selected attack and return it
                     return plyr.attacks[user_choice]
-            except (ValueError, IndexError):
+            except (ValueError, IndexError, AttributeError):
                 print('Invalid input.')
 
     def enemy_use_heal_item(self, enemy):
