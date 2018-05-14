@@ -815,7 +815,7 @@ class battle_manager(ABC):
         self.battle_dict['effect_dict']['reverse_effect_enemy'] = []
         self.battle_dict['effect_dict']['reverse_effect_player'] = []
 
-        self.battle_dict['ai'] = {'used_item': 7}
+        self.battle_dict['ai'] = {'used_item': 6}
 
     def randnum(self, hi, lo=1):
         from random import randint
@@ -836,23 +836,21 @@ class battle_manager(ABC):
                 self.battle_dict['turn'] = Turn.Attack
 
     def clean_active_effect(self):
-        temp = self.battle_dict['effect_dict']['reverse_effect_player']
+        i = 0
+        while i < len(self.battle_dict['effect_dict']['reverse_effect_player']):
+            if (self.battle_dict['effect_dict']['reverse_effect_player'] != []) and (self.battle_dict['effect_dict']['reverse_effect_player'][i][0] < self.battle_dict['total_turns']):
+                del self.battle_dict['effect_dict']['reverse_effect_player'][i]
+            else:
+                i += 1
 
-        for i in range(len(self.battle_dict['effect_dict']['reverse_effect_player'])):
-            if temp[i][0] > self.battle_dict['total_turns']:
-                del temp[i]
+        i = 0
+        while i < len(self.battle_dict['effect_dict']['reverse_effect_enemy']):
+            if (self.battle_dict['effect_dict']['reverse_effect_enemy'] != []) and (self.battle_dict['effect_dict']['reverse_effect_enemy'][i][0] < self.battle_dict['total_turns']):
+                del self.battle_dict['effect_dict']['reverse_effect_enemy'][i]
+            else:
+                i += 1
 
-        self.battle_dict['effect_dict']['reverse_effect_player'] = temp
-
-        temp = self.battle_dict['effect_dict']['reverse_effect_player']
-
-        for i in self.battle_dict['effect_dict']['reverse_effect_enemy']:
-            if temp[i][0] > self.battle_dict['total_turns']:
-                del temp[i]
-
-        temp = self.battle_dict['effect_dict']['reverse_effect_enemy']
-
-        del temp
+        del i
 
     def refresh_active_effect(self, plyr, enemy):
         if (self.battle_dict['effect_dict']['active_effect_player'] is True) or (self.battle_dict['effect_dict']['active_effect_enemy'] is True):
@@ -952,6 +950,7 @@ class battle_manager(ABC):
             try:
                 # Add specific instructions for healing items
                 if isinstance(itm, heal_item):
+                    print("it's a healing item")
                     if thing.stats.health + itm.heal_amnt > thing.stats.max_health:
                         thing.stats.health = thing.stats.max_health
                     else:
@@ -983,7 +982,7 @@ class battle_manager(ABC):
         enemy_has_heal_items = [isinstance(i, heal_item) for i in enemy.collection.items]
 
         if (True in enemy_has_heal_items) and (self.percent_health(enemy) <= 80):
-            return round(-25719423 + (89.67716 - -25719430)/(1 + ((self.percent_health() / 1720762) ** 1.286616)))
+            return round(-25719423 + (89.67716 - -25719430)/(1 + ((self.percent_health(enemy) / 1720762) ** 1.286616)))
         else:
             return 0
 
@@ -1015,7 +1014,7 @@ class battle_manager(ABC):
     def draw_hp(self, plyr, enemy):
         prcnt_plyr_health = round(self.percent_health(plyr) / 2)
 
-        print('[', end='')
+        print(f'{plyr.name}: [', end='')
         for i in range(50):
             print('=' if i <= prcnt_plyr_health else '-', end='')
         print(']')
@@ -1024,7 +1023,7 @@ class battle_manager(ABC):
 
         prcnt_enemy_health = round(self.percent_health(enemy) / 2)
 
-        print('[', end='')
+        print(f'{enemy.name}: [', end='')
         for i in range(50):
             print('=' if i <= prcnt_enemy_health else '-', end='')
         print(']')
@@ -1038,8 +1037,12 @@ class battle_manager(ABC):
         pass
 
     def attack_info(self, attack):
-        print(f"\n{attack.name}\n_______")
-        print(f"{attack.dscrpt}")
+        print(f"\n{attack.name}")
+        # Create barrier from name length
+        for i in attack.name:
+            print('-', end='')
+
+        print(f"\nDescription: '{attack.dscrpt}'")
         print(f"Damage: {attack.dmg}")
         print(f"Accuracy {attack.hit_rate}%")
 
@@ -1059,14 +1062,15 @@ class battle_manager(ABC):
             print(f"{i + 1}. {plyr.attacks[i].name}")
 
         # Prompt user
+        print('\nEnter a number to attack. \nType "info [number]" for more info about the attack.\nType "q" to return to the previous menu.')
         while True:
-            user_choice = str(input('\nEnter a number to attack. \nType "info [number]" for more info about the attack.\nType "q" to return to the previous menu.\nChoice: '))
+            user_choice = str(input('\nChoice: '))
             try:
                 # Determine action based on input
                 if "info" in user_choice:
                     if user_choice.split(' ')[1] != user_choice.split(' ')[-1]:
                         break
-                    self.attack_info(plyr.attacks[user_choice.split(' ')[1]])
+                    self.attack_info(plyr.attacks[int(user_choice.split(' ')[1]) - 1])
                 elif user_choice.lower() == 'q':
                     raise ChooseAgain
                 else:
@@ -1079,20 +1083,12 @@ class battle_manager(ABC):
 
     def enemy_use_heal_item(self, enemy):
         # Use healing item
-
-        temp_heal_items = []
-        for heal in enemy.collection.items:
-            if isinstance(heal, heal_item):
-                temp_heal_items.append(heal)
-
         heals_ordered_best = []
 
         # Generate list of healing items that don't overheal the enemy
-        for heal in temp_heal_items:
-            if enemy.stats.health + heal.heal_amnt <= enemy.stats.max_health:
+        for heal in enemy.collection.items:
+            if isinstance(heal, heal_item) and (enemy.stats.health + heal.heal_amnt <= enemy.stats.max_health):
                 heals_ordered_best.append((heal.heal_amnt, heal))
-
-        del temp_heal_items
 
         if heals_ordered_best != []:
             # Order them by what item will heal them the most
@@ -1116,7 +1112,7 @@ class battle_manager(ABC):
 
         # Use item and display its use
         write(f"{enemy.name} used a {temp_heal_list[0][1].name} and regained {enemy.stats.max_health - enemy.stats.health} health.")
-        self.use_item(enemy, temp_heal_list[0][0])
+        self.use_item(enemy, temp_heal_list[0][1])
 
         # Finish up
         del temp_heal_list
