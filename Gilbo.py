@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.0-beta2 #
+# Gilbo RPG API -- Version 1.0.0-beta3 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -1020,7 +1020,7 @@ class battle_manager(ABC):
         print(f'{plyr.name}: [', end='')
         for i in range(50):
             print('=' if i <= prcnt_plyr_health else '-', end='')
-        print(']')
+        print(f"] ({plyr.stats.health}/{plyr.stats.max_health})")
 
         del prcnt_plyr_health
 
