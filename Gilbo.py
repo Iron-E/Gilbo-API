@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.0-beta3 #
+# Gilbo RPG API -- Version 1.0.0-beta4 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -950,7 +950,6 @@ class battle_manager(ABC):
             try:
                 # Add specific instructions for healing items
                 if isinstance(itm, heal_item):
-                    print("it's a healing item")
                     if thing.stats.health + itm.heal_amnt > thing.stats.max_health:
                         thing.stats.health = thing.stats.max_health
                     else:
