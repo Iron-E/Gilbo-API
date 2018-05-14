@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.0-beta4 #
+# Gilbo RPG API -- Version 1.0.0-beta5 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -938,6 +938,37 @@ class battle_manager(ABC):
             write(f"{user.name} tried to use {attk.name}, but they missed.")
             return False
 
+    def stat_change_writeout(self):
+        if self.battle_dict['effect_dict']['active_effect_player'] is True:
+            print('\nPlayer Status Effects:\n------------------------')
+            i = 1
+            for effect in self.battle_dict['effect_dict']['reverse_effect_player']:
+                print(f"Effect {i}:")
+                print(f"Turns left: {effect[0] - self.battle_dict['turn']}")
+                print(f"Health Modifier: {effect[1][Stat_Sheet.health] * -1}\n" if effect[1][Stat_Sheet.health] != 0 else '', end='')
+                print(f"Strength Modifier: {effect[1][Stat_Sheet.strength] * -1}\n" if effect[1][Stat_Sheet.strength] != 0 else '', end='')
+                print(f"Armor Modifier: {effect[1][Stat_Sheet.armor] * -1}\n" if effect[1][Stat_Sheet.armor] != 0 else '', end='')
+                print(f"Agility Modifier: {effect[1][Stat_Sheet.agility] * -1}\n" if effect[1][Stat_Sheet.agility] != 0 else '', end='')
+                print(f"Power Modifier: {effect[1][Stat_Sheet.power] * -1}" if effect[1][Stat_Sheet.power] != 0 else '', end='')
+                i += 1
+
+
+        if self.battle_dict['effect_dict']['active_effect_enemy'] is True:
+            print('\nEnemy Status Effects:\n------------------------')
+            i = 1
+            for effect in self.battle_dict['effect_dict']['reverse_effect_enemy']:
+                print(f"Effect {i}:")
+                print(f"Turns left: {effect[0] - self.battle_dict['turn']}\n")
+                print(f"Health Modifier: {effect[1][Stat_Sheet.health] * -1}\n" if effect[1][Stat_Sheet.health] != 0 else '', end='')
+                print(f"Strength Modifier: {effect[1][Stat_Sheet.strength] * -1}\n" if effect[1][Stat_Sheet.strength] != 0 else '', end='')
+                print(f"Armor Modifier: {effect[1][Stat_Sheet.armor] * -1}\n" if effect[1][Stat_Sheet.armor] != 0 else '', end='')
+                print(f"Agility Modifier: {effect[1][Stat_Sheet.agility] * -1}\n" if effect[1][Stat_Sheet.agility] != 0 else '', end='')
+                print(f"Power Modifier: {effect[1][Stat_Sheet.power] * -1}" if effect[1][Stat_Sheet.power] != 0 else '', end='')
+                i += 1
+
+
+        input('\nPress enter to return to the previous menu.')
+
     def attack_use_debuff(self, target, debuff):
         if isinstance(debuff, stat_item):
             self.calc_effect_queue(target, debuff)
@@ -1044,13 +1075,13 @@ class battle_manager(ABC):
             print('Type: Healing Item')
             print(f"Heal Amount: {itm.heal_amnt}")
         else:
-            print('Type: Buff Item')
+            print('\nType: Buff Item')
             print(f"Turns Effective: {itm.duration}\n")
-            print(f"HP Modifier: {itm.stat_changes[Stat_Sheet.health]}")
-            print(f"Strength Modifier: {itm.stat_changes[Stat_Sheet.strength]}")
-            print(f"Armor Modifier: {itm.stat_changes[Stat_Sheet.armor]}")
-            print(f"Agility Modifier: {itm.stat_changes[Stat_Sheet.agility]}")
-            print(f"Power Modifier: {itm.stat_changes[Stat_Sheet.power]}")
+            print(f"HP Modifier: {itm.stat_changes[Stat_Sheet.health]}\n" if itm.stat_changes[Stat_Sheet.health] != 0 else '', end='')
+            print(f"Strength Modifier: {itm.stat_changes[Stat_Sheet.strength]}\n" if itm.stat_changes[Stat_Sheet.strength] != 0 else '', end='')
+            print(f"Armor Modifier: {itm.stat_changes[Stat_Sheet.armor]}\n" if itm.stat_changes[Stat_Sheet.armor] != 0 else '', end='')
+            print(f"Agility Modifier: {itm.stat_changes[Stat_Sheet.agility]}\n" if itm.stat_changes[Stat_Sheet.agility] != 0 else '', end='')
+            print(f"Power Modifier: {itm.stat_changes[Stat_Sheet.power]}" if itm.stat_changes[Stat_Sheet.power] != 0 else '', end='')
 
     def plyr_choose_item(self, plyr):
         # Writeout valid items
@@ -1250,21 +1281,36 @@ class battle_manager(ABC):
                 temp_power = 1
                 # Determine whose turn it is
                 if self.battle_dict['turn'] == Turn.Attack:
+                    def active_debuff_check():
+                        if (self.battle_dict['effect_dict']['active_effect_player'] is True) or (self.battle_dict['effect_dict']['active_effect_enemy'] is True):
+                            return True
+                        else:
+                            return False
+
                     while True:
                         try:
                             # Clear console and then redraw HP
                             clr_console()
                             self.draw_hp(plyr, enemy)
 
-                            user_choice = input("1. Attack\n2.Use Item\n\nChoice: ")
+                            print("\n1. Attack\n2. Use Item")
 
-                            if (user_choice.lower() == 'attack') or (user_choice == '1'):
+                            if active_debuff_check() is True:
+                                print("3. Status Effects")
+
+                            print("Enter a number to select an option.")
+
+                            user_choice = input("\nChoice: ")
+
+                            if user_choice == '1':
                                 # Player chooses to attack #
                                 # Determine attack and use it
                                 self.switch_turn([temp_power, plyr.stats.power], self.use_attack(plyr, enemy, self.plyr_choose_attack(plyr)))
-                            elif (user_choice.lower() == 'use item') or (user_choice.lower() == 'use') or (user_choice.lower() == 'item') or (user_choice == '2'):
+                            elif user_choice == '2':
                                 # Player choose to use an item #
                                 self.switch_turn([temp_power, plyr.stats.power], self.use_item(plyr, self.plyr_choose_item(plyr)))
+                            elif (user_choice == '3') and (active_debuff_check() is True):
+                                self.stat_change_writeout()
                             else:
                                 input('Invalid input.')
                         except ChooseAgain:
