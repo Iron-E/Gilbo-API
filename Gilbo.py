@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.0-beta9 #
+# Gilbo RPG API -- Version 1.0.0-beta7 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -1158,12 +1158,12 @@ class battle_manager(ABC):
                 else:
                     # Convert user_choice to indexable integer
                     user_choice = int(user_choice) - 1
-                    # Try to access the selected attack and return it
+
                     try:
-                        if plyr.attacks[user_choice].ammo_type in plyr.collection.items is False:
-                            print("You don't have the correct item to use this attack.")
-                        else:
-                            return plyr.attacks[user_choice]
+                          if plyr.attacks[user_choice].ammo_type in plyr.collection.items:
+                              return plyr.attacks[user_choice]
+                          else:
+                              print("You don't have the correct item to use this attack.")
                     except AttributeError:
                         return plyr.attacks[user_choice]
 
