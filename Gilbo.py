@@ -1,11 +1,7 @@
-# Gilbo RPG API -- Version 1.0.0 #
+# Gilbo RPG API -- Version 1.0.1 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
-
-# Allow Gilbo to see Dependencies
-import sys
-sys.path.append('./deps/')
 
 # 3rd Party Libraries
 import numpy as np
@@ -951,20 +947,20 @@ class battle_manager(ABC):
             del temp_stat_changes
 
         if self.effect_dict['reverse_effect_enemy'] != []:
-            print('\nEnemy Status Effects:\n------------------------')
+            print('Enemy Status Effects:\n------------------------')
             temp_stat_changes = self.effect_dict['reverse_effect_enemy']
             for i in range(len(temp_stat_changes)):
-                print(f"Effect {i + 1}:")
+                print(f"Effect {i + 1}: {temp_stat_changes[i][2]}")
                 print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn']}")
                 print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
                 print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
                 print(f"Armor Modifier: {temp_stat_changes[i][1][Stat_Sheet.armor] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.armor] != 0 else '', end='')
                 print(f"Agility Modifier: {temp_stat_changes[i][1][Stat_Sheet.agility] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.agility] != 0 else '', end='')
                 print(f"Power Modifier: {temp_stat_changes[i][1][Stat_Sheet.power] * -1}" if temp_stat_changes[i][1][Stat_Sheet.power] != 0 else '', end='')
-                i += 1
+                print()
             del temp_stat_changes
 
-        input('\nPress enter to return to the previous menu.')
+        input('Press enter to return to the previous menu.')
 
     def attack_use_debuff(self, target, debuff):
         if isinstance(debuff, stat_item):
