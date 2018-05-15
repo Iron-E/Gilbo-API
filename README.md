@@ -20,8 +20,9 @@ pip install dill
 
 By using Gilbo's dependencies, you agree to their licenses.
 
+## Features & Documentation
 Read the [Wiki](https://github.com/ajzett/Gilbo-API/wiki) for documentation, feature lists, and ideas.
 
-# Changelogs
-## v1.0.0
+## Changelogs
+### v1.0.0
 - Initial release
