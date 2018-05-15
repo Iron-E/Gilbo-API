@@ -14,8 +14,7 @@ By using this API you agree to the [license](https://github.com/ajzett/Gilbo-API
 
 You can install `NumPy` and `dill` by entering a command-line or terminal interface, and passing the following commands to pip:
 ```
-pip install numpy
-pip install dill
+pip install dill numpy
 ```
 
 By using Gilbo's dependencies, you agree to their licenses.
