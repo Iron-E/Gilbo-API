@@ -20,31 +20,7 @@ pip install dill
 
 By using Gilbo's dependencies, you agree to their licenses.
 
-## Features 
-### Player & NPC Management
-- [x] Create entities (NPCs, Players, Vendors, etc.)
-- [x] Define an item list for an entity
-- [x] Define stat lists for an entity
-- [x] Basic Save & Load data
-- [x] Gear based progression system
-- [ ] Battle entities
-
-### Quests & Staging
-- [x] Quests have multiple stages
-- [x] Begin quests based on events (picking up items, killing entities)
-- [x] Quest completion rewards
-
-### Locations
-The location manager defaults to working with Numpy-array-based maps and works by increasing or decreasing the player's "position" on said map, which triggers a function that reads what is on that tile. However, it can be easily modified to use other 2D, or even 3D libraries to manage a location. See [documentation](https://github.com/ajzett/Gilbo-API/blob/master/DOCUMENTATION.md) for more. 
-
-- [x] Location manager loads in and empties location data automatically
-- [x] Location manager feeds data to Save & Load data to the save and load functions so your character can start in the same place
-
-### LAN Battle?
-- [ ] Battle other players over LAN. Not really sure about this one.
-
-### Modification / Structure
-- Creative Commons License and Object-oriented design allows for easy utilization or modification, and permits redistribution.
+Read the [Wiki](https://github.com/ajzett/Gilbo-API/wiki) for documentation, feature lists, and ideas.
 
 # Changelogs
 ## v1.0.0
