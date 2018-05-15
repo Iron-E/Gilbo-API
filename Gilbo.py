@@ -1,11 +1,14 @@
-# Gilbo RPG API -- Version 1.0.1 #
+# Gilbo RPG API -- Version 1.0.2 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
 
 # 3rd Party Libraries
 import numpy as np
-from dispatcher import Signal
+try:
+    from dispatcher import Signal
+except ModuleNotFoundError:
+    from django.dispatch.dispatcher import Signal
 
 # ascii-table.com/ansi-escape-sequences.php
 # https://docs.djangoproject.com/en/2.0/topics/signals/#django.contrib.auth.signals.Signal
