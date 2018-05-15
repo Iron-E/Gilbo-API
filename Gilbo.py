@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.0-beta8 #
+# Gilbo RPG API -- Version 1.0.0-beta9 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -807,7 +807,7 @@ class ChooseAgain(Exception):
 class battle_manager(ABC):
     def __init__(self):
         self.e = 2.7182
-        self.battle_dict = {'turn': 0, 'total_turns': 0}
+        self.battle_dict = {'turn': 0, 'turn_counter': 0}
 
         self.battle_dict['effect_dict'] = {'reverse_effect_player': [], 'reverse_effect_enemy': []}
 
@@ -838,14 +838,14 @@ class battle_manager(ABC):
     def clean_active_effect(self):
         i = 0
         while i < len(self.effect_dict['reverse_effect_player']):
-            if (self.effect_dict['reverse_effect_player'] != []) and (self.effect_dict['reverse_effect_player'][i][0] < self.battle_dict['total_turns']):
+            if (self.effect_dict['reverse_effect_player'] != []) and (self.effect_dict['reverse_effect_player'][i][0] < self.battle_dict['turn_counter']):
                 del self.effect_dict['reverse_effect_player'][i]
             else:
                 i += 1
 
         i = 0
         while i < len(self.effect_dict['reverse_effect_enemy']):
-            if (self.effect_dict['reverse_effect_enemy'] != []) and (self.effect_dict['reverse_effect_enemy'][i][0] < self.battle_dict['total_turns']):
+            if (self.effect_dict['reverse_effect_enemy'] != []) and (self.effect_dict['reverse_effect_enemy'][i][0] < self.battle_dict['turn_counter']):
                 del self.effect_dict['reverse_effect_enemy'][i]
             else:
                 i += 1
@@ -876,17 +876,15 @@ class battle_manager(ABC):
         try:
             if itm.duration > 0:
                 if isinstance(thing, player):
-                    to_append = (self.battle_dict['turn'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm.name)
+                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm.name)
                     self.effect_dict['reverse_effect_player'].append(to_append)
                     self.effect_dict['reverse_effect_player'].sort()
                     del to_append
                 else:
-                    to_append = (self.battle_dict['turn'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm.name)
+                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm.name)
                     self.effect_dict['reverse_effect_enemy'].append(to_append)
                     self.effect_dict['reverse_effect_enemy'].sort()
                     del to_append
-
-            input('calculated effect queue')
 
         except AttributeError as e:
             debug_info(e, 'An incorrect object type was used as type stat_item in battle_manager.use_item().')
@@ -942,7 +940,6 @@ class battle_manager(ABC):
             print('\nPlayer Status Effects:\n------------------------')
             temp_stat_changes = self.effect_dict['reverse_effect_player']
             for i in range(len(temp_stat_changes)):
-                print(self.effect_dict['reverse_effect_player'][i])
                 print(f"Effect {i + 1}: {temp_stat_changes[i][2]}")
                 print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn']}")
                 print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
@@ -950,14 +947,13 @@ class battle_manager(ABC):
                 print(f"Armor Modifier: {temp_stat_changes[i][1][Stat_Sheet.armor] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.armor] != 0 else '', end='')
                 print(f"Agility Modifier: {temp_stat_changes[i][1][Stat_Sheet.agility] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.agility] != 0 else '', end='')
                 print(f"Power Modifier: {temp_stat_changes[i][1][Stat_Sheet.power] * -1}" if temp_stat_changes[i][1][Stat_Sheet.power] != 0 else '', end='')
-                i += 1
+                print()
             del temp_stat_changes
 
         if self.effect_dict['reverse_effect_enemy'] != []:
             print('\nEnemy Status Effects:\n------------------------')
-            temp_stat_changes = self.effect_dict['reverse_effect_player']
+            temp_stat_changes = self.effect_dict['reverse_effect_enemy']
             for i in range(len(temp_stat_changes)):
-                print(temp_stat_changes[i])
                 print(f"Effect {i + 1}:")
                 print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn']}")
                 print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
@@ -1284,7 +1280,7 @@ class battle_manager(ABC):
                 spec_effect()
 
             # Increase turn counter
-            self.battle_dict['total_turns'] += 1
+            self.battle_dict['turn_counter'] += 1
 
             # Check if player is attacking or defending
             try:
