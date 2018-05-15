@@ -47,4 +47,5 @@ The location manager defaults to working with Numpy-array-based maps and works b
 - Creative Commons License and Object-oriented design allows for easy utilization or modification, and permits redistribution.
 
 # Changelogs
-None until release.
+## v1.0.0
+- Initial release
