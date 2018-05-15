@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.2 #
+# Gilbo RPG API -- Version 1.0.3 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -182,6 +182,7 @@ class player(battler):
     def sub_chk_pos(self, sender, **kwargs):
         sender.player_pos = self.location
 
+
 #
 # Items/Weapons in the game #
 #
@@ -192,6 +193,7 @@ class Stat_Sheet(IntEnum):
     armor = 2
     agility = 3
     power = 4
+
 
 class Item_Types(IntEnum):
     basic_item = auto()
@@ -276,7 +278,6 @@ class stat_item(equippable):
 #
 # Entity Stats #
 #
-
 
 
 class battler_stats:
@@ -799,6 +800,7 @@ class Enemy_Choices(IntEnum):
 class TurnComplete(Exception):
     pass
 
+
 class ChooseAgain(Exception):
     pass
 
@@ -1091,7 +1093,6 @@ class battle_manager(ABC):
 
                 temp_index += 1
 
-
         if valid_items == []:
             print('\nYou have no items to use.')
             input('Press enter to continue.')
@@ -1159,16 +1160,15 @@ class battle_manager(ABC):
                     user_choice = int(user_choice) - 1
 
                     try:
-                          if plyr.attacks[user_choice].ammo_type in plyr.collection.items:
-                              return plyr.attacks[user_choice]
-                          else:
-                              print("You don't have the correct item to use this attack.")
+                        if plyr.attacks[user_choice].ammo_type in plyr.collection.items:
+                            return plyr.attacks[user_choice]
+                        else:
+                            print("You don't have the correct item to use this attack.")
                     except AttributeError:
                         return plyr.attacks[user_choice]
 
-
             except (ValueError, IndexError, AttributeError):
-                print('Invalid input.')
+                    print('Invalid input.')
 
     def enemy_use_heal_item(self, enemy):
         # Use healing item
@@ -1189,7 +1189,6 @@ class battle_manager(ABC):
             # Delete unneeded var
             del heals_ordered_best
             return True
-
 
         # Create list of healing items and sort them based on how effective they are
         temp_heal_list = []
@@ -1263,7 +1262,6 @@ class battle_manager(ABC):
         """
         This method is defined by users of Gilbo. If the player loses battle(), this method is called. Whether they lose money and respawn, or get booted out to the last time they saved, it must be defined here.
         """
-
 
     def battle(self, plyr, enemy, spec_effect=None):
         self.determine_first_turn(plyr, enemy)
