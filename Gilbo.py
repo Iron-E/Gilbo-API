@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.4 #
+# Gilbo RPG API -- Version 1.0.5 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -895,7 +895,12 @@ class battle_manager(ABC):
 
     def use_attack(self, user, target, attk):
         # Check if attack hits
-        if (self.randnum(100) <= attk.hit_rate) and (self.randnum(100) >= self.calc_agility(target.stats.agility)):
+        if user.stats.agility > target.stats.agility:
+            temp_hit_check = self.randnum(100) / 2
+        else:
+            temp_hit_check = self.randnum(100)
+
+        if (self.randnum(100) <= attk.hit_rate) and (temp_hit_check >= self.calc_agility(target.stats.agility)):
                 # Attack landed; calculate damage
                 temp_damage = round(((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5) + self.randnum(round((user.stats.stren / 2) ** (1/2))))
                 temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
