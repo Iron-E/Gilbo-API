@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.3 #
+# Gilbo RPG API -- Version 1.0.4 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -1068,7 +1068,7 @@ class battle_manager(ABC):
         for i in itm.name:
             print('-', end='')
 
-        print(f"\nDescription: '{itm.dscrpt}'")
+        print(f'\nDescription: "{itm.dscrpt}"')
 
         if isinstance(itm, heal_item):
             print('Type: Healing Item')
@@ -1126,7 +1126,7 @@ class battle_manager(ABC):
         for i in attack.name:
             print('-', end='')
 
-        print(f"\nDescription: '{attack.dscrpt}'")
+        print(f'\nDescription: "{attack.dscrpt}"')
         print(f"Damage: {attack.dmg}")
         print(f"Accuracy {attack.hit_rate}%")
 
