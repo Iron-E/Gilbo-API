@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.5 #
+# Gilbo RPG API -- Version 1.0.6 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -238,7 +238,7 @@ class equippable(item):
 
 
 class weapon(equippable):
-    def __init__(self, name, dscrpt, val, dmg, linked_attacks, hp=0, stren=0, armr=0, agil=0, pwr=0):
+    def __init__(self, name, dscrpt, val, linked_attacks, hp=0, stren=0, armr=0, agil=0, pwr=0):
         super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
         self.item_dict['type'] = Item_Types.weapon
         self.item_dict['linked_attack_list'] = linked_attacks
