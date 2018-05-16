@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.6 #
+# Gilbo RPG API -- Version 1.0.7 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -281,7 +281,7 @@ class stat_item(equippable):
 
 
 class battler_stats:
-    def __init__(self, hp, stren, armr, agil, pwr):
+    def __init__(self, hp, stren, armr, agil, pwr=1):
         self.stat_dict = {'hp': hp}
         self.stat_dict['max_hp'] = hp
         self.stat_dict['strength'] = stren
