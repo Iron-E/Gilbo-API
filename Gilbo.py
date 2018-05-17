@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.7 #
+# Gilbo RPG API -- Version 1.0.8 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -46,20 +46,30 @@ class Enumerators(IntEnum):
 def write(phrase, type_speed=.040, line_delay=.5):
     from time import sleep
     if isinstance(phrase, list) or isinstance(phrase, tuple):
-        for i in range(len(phrase)):
-            for j in range(len(phrase[i])):
-                print(phrase[i][j], end="", flush=True)
+        try:
+            for i in range(len(phrase)):
+                for j in range(len(phrase[i])):
+                    print(phrase[i][j], end="", flush=True)
+                    sleep(type_speed)
+
+                sleep(line_delay)
+                print('', end=' ')
+        except KeyboardInterrupt:
+            print('\r')
+            for i in range(len(phrase)):
+                print(phrase[i], end=' ')
+
+    else:
+        try:
+            for i in range(len(phrase)):
+                print(phrase[i], end="", flush=True)
                 sleep(type_speed)
 
             sleep(line_delay)
             print('', end=' ')
-    else:
-        for i in range(len(phrase)):
-            print(phrase[i], end="", flush=True)
-            sleep(type_speed)
-
-        sleep(line_delay)
-        print('', end=' ')
+        except KeyboardInterrupt:
+            print('\r')
+            print(phrase, end=' ')
 
     print('\n')
 
