@@ -22,6 +22,6 @@ By using Gilbo's dependencies, you agree to their licenses.
 ## Features & Documentation
 Read the [Wiki](https://github.com/ajzett/Gilbo-API/wiki) for documentation, feature lists, and ideas.
 
-## Changelogs
+## Notable Changelogs
 ### v1.0.0
 - Initial release
