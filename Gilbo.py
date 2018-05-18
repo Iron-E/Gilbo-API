@@ -43,7 +43,7 @@ class Enumerators(IntEnum):
 #
 
 
-def write(phrase, type_speed=.025, line_delay=.5):
+def write(phrase, type_speed=.029, line_delay=.5):
     try:
         from time import sleep
         if isinstance(phrase, list) or isinstance(phrase, tuple):
