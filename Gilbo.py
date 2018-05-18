@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.9 #
+# Gilbo RPG API -- Version 1.0.10 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -965,7 +965,7 @@ class battle_manager(ABC):
             del temp_stat_changes
 
         if self.effect_dict['reverse_effect_enemy'] != []:
-            print('Enemy Status Effects:\n------------------------')
+            print('\nEnemy Status Effects:\n------------------------')
             temp_stat_changes = self.effect_dict['reverse_effect_enemy']
             for i in range(len(temp_stat_changes)):
                 print(f"Effect {i + 1}: {temp_stat_changes[i][2]}")
