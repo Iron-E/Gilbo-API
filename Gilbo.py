@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.1.2 #
+# Gilbo RPG API -- Version 1.1.3 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -669,10 +669,11 @@ class item_collection(ABC):
         for i in range(amnt):
             try:
                 self.items.remove(itm)
-                return True
             except ValueError:
                 print(f"There is/are no more {itm.name} to use, sell, or buy.")
                 return False
+
+        return True
 
     @property
     def items(self):
@@ -1185,10 +1186,11 @@ class battle_manager(ABC):
                     user_choice = int(user_choice) - 1
 
                     try:
-                        if plyr.attacks[user_choice].ammo_type in plyr.collection.items:
+                        req_ammo = plyr.collection.count(plyr.attacks[user_choice].ammo_type)
+                        if (plyr.attacks[user_choice].ammo_type in plyr.collection.items) and (req_ammo >= plyr.attacks[user_choice].ammo_cost):
                             return plyr.attacks[user_choice]
                         else:
-                            print("You don't have the correct item to use this attack.")
+                            print(f"You don't have enough {plyr.attacks[user_choice].ammo_type.name}s to use this attack.")
                     except AttributeError:
                         return plyr.attacks[user_choice]
 
