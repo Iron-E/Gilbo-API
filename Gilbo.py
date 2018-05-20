@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.10 #
+# Gilbo RPG API -- Version 1.0.11 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -816,7 +816,7 @@ class ChooseAgain(Exception):
 class battle_manager(ABC):
     def __init__(self):
         self.e = 2.7182
-        self.battle_dict = {'turn': 0, 'turn_counter': 0}
+        self.battle_dict = {'turn': 0, 'turn_counter': 0, 'power_counter': 1}
 
         self.battle_dict['effect_dict'] = {'reverse_effect_player': [], 'reverse_effect_enemy': []}
 
@@ -1031,9 +1031,10 @@ class battle_manager(ABC):
             return 0
 
     def switch_turn(self, power_data, enemy_used_item=False):
-        if power_data[0] < power_data[1]:
-            power_data[0] += 1
+        if self.battle_dict['power_counter'] < power_data:
+            self.battle_dict['power_counter'] += 1
         else:
+            self.battle_dict['power_counter'] = 1
             if self.battle_dict['turn'] == Turn.Attack:
                 # Switch turn
                 self.battle_dict['turn'] = Turn.Defend
@@ -1294,7 +1295,6 @@ class battle_manager(ABC):
 
             # Check if player is attacking or defending
             try:
-                temp_power = 1
                 # Determine whose turn it is
                 if self.battle_dict['turn'] == Turn.Attack:
                     def active_debuff_check():
@@ -1322,11 +1322,11 @@ class battle_manager(ABC):
                                 # Determine attack and use it
                                 self.draw_hp(plyr, enemy)
 
-                                self.switch_turn([temp_power, plyr.stats.power], self.use_attack(plyr, enemy, self.plyr_choose_attack(plyr)))
+                                self.switch_turn(plyr.stats.power, self.use_attack(plyr, enemy, self.plyr_choose_attack(plyr)))
                             elif user_choice == '2':
                                 # Player choose to use an item #
                                 self.draw_hp(plyr, enemy)
-                                self.switch_turn([temp_power, plyr.stats.power], self.use_item(plyr, self.plyr_choose_item(plyr)))
+                                self.switch_turn(plyr.stats.power, self.use_item(plyr, self.plyr_choose_item(plyr)))
                             elif (user_choice == '3') and (active_debuff_check() is True):
                                 self.draw_hp(plyr, enemy)
                                 self.stat_change_writeout()
