@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.1.3 #
+# Gilbo RPG API -- Version 1.1.4 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -1186,7 +1186,7 @@ class battle_manager(ABC):
                     user_choice = int(user_choice) - 1
 
                     try:
-                        req_ammo = plyr.collection.count(plyr.attacks[user_choice].ammo_type)
+                        req_ammo = plyr.collection.items.count(plyr.attacks[user_choice].ammo_type)
                         if (plyr.attacks[user_choice].ammo_type in plyr.collection.items) and (req_ammo >= plyr.attacks[user_choice].ammo_cost):
                             return plyr.attacks[user_choice]
                         else:
