@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.12 #
+# Gilbo RPG API -- Version 1.1.0 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -885,12 +885,12 @@ class battle_manager(ABC):
         try:
             if itm.duration > 0:
                 if isinstance(thing, player):
-                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm.name)
+                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm.name, itm.dscrpt)
                     self.effect_dict['reverse_effect_player'].append(to_append)
                     self.effect_dict['reverse_effect_player'].sort()
                     del to_append
                 else:
-                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm.name)
+                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm.name, itm.dscrpt)
                     self.effect_dict['reverse_effect_enemy'].append(to_append)
                     self.effect_dict['reverse_effect_enemy'].sort()
                     del to_append
@@ -955,6 +955,7 @@ class battle_manager(ABC):
             temp_stat_changes = self.effect_dict['reverse_effect_player']
             for i in range(len(temp_stat_changes)):
                 print(f"Effect {i + 1}: {temp_stat_changes[i][2]}")
+                print(f"Description: '{temp_stat_changes[i][3]}'\n")
                 print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn']}")
                 print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
                 print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
@@ -969,6 +970,7 @@ class battle_manager(ABC):
             temp_stat_changes = self.effect_dict['reverse_effect_enemy']
             for i in range(len(temp_stat_changes)):
                 print(f"Effect {i + 1}: {temp_stat_changes[i][2]}")
+                print(f"Description: '{temp_stat_changes[i][3]}'\n")
                 print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn']}")
                 print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
                 print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
