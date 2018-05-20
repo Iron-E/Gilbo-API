@@ -10,9 +10,6 @@ try:
 except ModuleNotFoundError:
     from django.dispatch.dispatcher import Signal
 
-# ascii-table.com/ansi-escape-sequences.php
-# https://docs.djangoproject.com/en/2.0/topics/signals/#django.contrib.auth.signals.Signal
-
 #
 # Events #
 #
