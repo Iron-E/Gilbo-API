@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.1.0 #
+# Gilbo RPG API -- Version 1.1.1 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -956,7 +956,7 @@ class battle_manager(ABC):
             for i in range(len(temp_stat_changes)):
                 print(f"Effect {i + 1}: {temp_stat_changes[i][2]}")
                 print(f"Description: '{temp_stat_changes[i][3]}'\n")
-                print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn']}")
+                print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn_counter']}")
                 print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
                 print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
                 print(f"Armor Modifier: {temp_stat_changes[i][1][Stat_Sheet.armor] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.armor] != 0 else '', end='')
@@ -971,7 +971,7 @@ class battle_manager(ABC):
             for i in range(len(temp_stat_changes)):
                 print(f"Effect {i + 1}: {temp_stat_changes[i][2]}")
                 print(f"Description: '{temp_stat_changes[i][3]}'\n")
-                print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn']}")
+                print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn_counter']}")
                 print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
                 print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
                 print(f"Armor Modifier: {temp_stat_changes[i][1][Stat_Sheet.armor] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.armor] != 0 else '', end='')
