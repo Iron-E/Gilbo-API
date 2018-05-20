@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.1.1 #
+# Gilbo RPG API -- Version 1.1.2 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -816,7 +816,7 @@ class ChooseAgain(Exception):
 class battle_manager(ABC):
     def __init__(self):
         self.e = 2.7182
-        self.battle_dict = {'turn': 0, 'turn_counter': 0, 'power_counter': 1}
+        self.battle_dict = {'turn': 0, 'turn_counter': 1, 'power_counter': 1, 'first_turn': None}
 
         self.battle_dict['effect_dict'] = {'reverse_effect_player': [], 'reverse_effect_enemy': []}
 
@@ -836,13 +836,17 @@ class battle_manager(ABC):
     def determine_first_turn(self, plyr, enemy):
         if plyr.stats.power > enemy.stats.power:
             self.battle_dict['turn'] = Turn.Attack
+            self.battle_dict['first_turn'] = Turn.Attack
         elif plyr.stats.power < enemy.stats.power:
             self.battle_dict['turn'] = Turn.Defend
+            self.battle_dict['first_turn'] = Turn.Defend
         elif plyr.stats.power == enemy.stats.power:
             if plyr.stats.agility < enemy.stats.agility:
                 self.battle_dict['turn'] = Turn.Defend
+                self.battle_dict['first_turn'] = Turn.Defend
             else:
                 self.battle_dict['turn'] = Turn.Attack
+                self.battle_dict['first_turn'] = Turn.Attack
 
     def clean_active_effect(self):
         i = 0
@@ -885,12 +889,12 @@ class battle_manager(ABC):
         try:
             if itm.duration > 0:
                 if isinstance(thing, player):
-                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm.name, itm.dscrpt)
+                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm)
                     self.effect_dict['reverse_effect_player'].append(to_append)
                     self.effect_dict['reverse_effect_player'].sort()
                     del to_append
                 else:
-                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm.name, itm.dscrpt)
+                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm)
                     self.effect_dict['reverse_effect_enemy'].append(to_append)
                     self.effect_dict['reverse_effect_enemy'].sort()
                     del to_append
@@ -954,8 +958,8 @@ class battle_manager(ABC):
             print('\nPlayer Status Effects:\n------------------------')
             temp_stat_changes = self.effect_dict['reverse_effect_player']
             for i in range(len(temp_stat_changes)):
-                print(f"Effect {i + 1}: {temp_stat_changes[i][2]}")
-                print(f"Description: '{temp_stat_changes[i][3]}'\n")
+                print(f"Effect {i + 1}: {temp_stat_changes[i][2].name}")
+                print(f"Description: '{temp_stat_changes[i][2].dscrpt}'\n")
                 print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn_counter']}")
                 print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
                 print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
@@ -969,8 +973,8 @@ class battle_manager(ABC):
             print('\nEnemy Status Effects:\n------------------------')
             temp_stat_changes = self.effect_dict['reverse_effect_enemy']
             for i in range(len(temp_stat_changes)):
-                print(f"Effect {i + 1}: {temp_stat_changes[i][2]}")
-                print(f"Description: '{temp_stat_changes[i][3]}'\n")
+                print(f"Effect {i + 1}: {temp_stat_changes[i][2].name}")
+                print(f"Description: '{temp_stat_changes[i][2].dscrpt}'\n")
                 print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn_counter']}")
                 print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
                 print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
@@ -1036,13 +1040,18 @@ class battle_manager(ABC):
         if self.battle_dict['power_counter'] < power_data:
             self.battle_dict['power_counter'] += 1
         else:
+            # Reset temporary power counter
             self.battle_dict['power_counter'] = 1
             if self.battle_dict['turn'] == Turn.Attack:
+                if self.battle_dict['first_turn'] == Turn.Defend:
+                    self.battle_dict['turn_counter'] += 1
                 # Switch turn
                 self.battle_dict['turn'] = Turn.Defend
                 # Exit turn
                 raise TurnComplete
             elif self.battle_dict['turn'] == Turn.Defend:
+                if self.battle_dict['first_turn'] == Turn.Attack:
+                    self.battle_dict['turn_counter'] += 1
                 # Switch turn
                 self.battle_dict['turn'] = Turn.Attack
                 # Do extras based on item use
@@ -1291,9 +1300,6 @@ class battle_manager(ABC):
             # Run the spec_effect if there is one specified
             if spec_effect is not None:
                 spec_effect()
-
-            # Increase turn counter
-            self.battle_dict['turn_counter'] += 1
 
             # Check if player is attacking or defending
             try:
