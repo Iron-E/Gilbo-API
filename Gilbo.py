@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.0.11 #
+# Gilbo RPG API -- Version 1.0.12 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -1340,10 +1340,10 @@ class battle_manager(ABC):
                         enemy_choice = self.randnum(100)
                         # Test if enemy uses item
                         if enemy_choice <= self.chance_item(enemy):
-                            self.switch_turn([temp_power, enemy.stats.power], self.enemy_use_item(enemy))
+                            self.switch_turn(enemy.stats.power, self.enemy_use_item(enemy))
                         else:
                             # Attack
-                            self.switch_turn([temp_power, enemy.stats.power], self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
+                            self.switch_turn(enemy.stats.power, self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
 
             except TurnComplete:
                 input('\nPress enter to continue.')
