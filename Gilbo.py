@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.1.6 #
+# Gilbo RPG API -- Version 1.1.7 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -1127,7 +1127,7 @@ class battle_manager(ABC):
 
         if valid_items == []:
             print('\nYou have no items to use.')
-            input('Press enter to continue.')
+            input('(Press enter to continue.)')
             raise ChooseAgain
 
         print('\nEnter a number to use an item. \nType "info [number]" for more info about the item.\nType "q" to return to the previous menu.')
@@ -1306,9 +1306,10 @@ class battle_manager(ABC):
             # Check to make sure no effects are active that shouldn't be
             self.refresh_active_effect(plyr, enemy)
 
-            # Run the spec_effect if there is one specified
-            if spec_effect is not None:
-                spec_effect()
+            def call(funct):
+                funct()
+
+            call(spec_effect)
 
             # Check if player is attacking or defending
             try:
@@ -1363,7 +1364,7 @@ class battle_manager(ABC):
                             self.switch_turn(enemy.stats.power, self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
 
             except TurnComplete:
-                input('\nPress enter to continue.')
+                input('\n(Press enter to continue.)')
                 pass
 
         if plyr.stats.health > 0:
