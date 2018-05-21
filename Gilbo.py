@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.1.5 #
+# Gilbo RPG API -- Version 1.1.6 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -1174,6 +1174,7 @@ class battle_manager(ABC):
             pass
 
     def plyr_choose_attack(self, plyr):
+        print()
         for i in range(len(plyr.attacks)):
             print(f"{i + 1}. {plyr.attacks[i].name}")
 
