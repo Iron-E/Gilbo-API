@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.1.4 #
+# Gilbo RPG API -- Version 1.1.5 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -829,7 +829,10 @@ class battle_manager(ABC):
         return randint(lo, hi)
 
     def calc_agility(self, agi):
-        return round((150) / (1 + (self.e ** ((-1 / 30) * agi))) - 75)
+        try:
+            return round((150) / (1 + (self.e ** ((-1 / 30) * agi))) - 75)
+        except TypeError:
+            return round((150) / (1 + (self.e ** ((-1 / 30) * 0))) - 75)
 
     def determine_first_turn(self, plyr, enemy):
         if plyr.stats.power > enemy.stats.power:
@@ -912,8 +915,14 @@ class battle_manager(ABC):
 
         if (self.randnum(100) <= attk.hit_rate) and (temp_hit_check >= self.calc_agility(target.stats.agility)):
                 # Attack landed; calculate damage
-                temp_damage = round(((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5) + self.randnum(round((user.stats.stren / 2) ** (1/2))))
-                temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
+                try:
+                    temp_damage = round(((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5) + self.randnum(round((user.stats.stren / 2) ** (1/2))))
+                except TypeError:
+                    temp_damage = round(((1 * attk.dmg ** (1 ** .05)) ** .5) + self.randnum(round((1 / 2) ** (1/2))))
+                try:
+                    temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
+                except TypeError:
+                    temp_damage_recieved = round(temp_damage - 0 ** (4 / 5))
 
                 if temp_damage_recieved < 1:
                     temp_damage_recieved = 1
