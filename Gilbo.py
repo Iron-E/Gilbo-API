@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.1.7 #
+# Gilbo RPG API -- Version 1.2.0 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -1297,8 +1297,16 @@ class battle_manager(ABC):
         This method is defined by users of Gilbo. If the player loses battle(), this method is called. Whether they lose money and respawn, or get booted out to the last time they saved, it must be defined here.
         """
 
-    def battle(self, plyr, enemy, spec_effect=None):
+    def battle(self, plyr, enemy, spec_effect=None, music=None):
         self.determine_first_turn(plyr, enemy)
+
+        try:
+            from Gilbo_Media import music_manager
+            mus_man = music_manager(5)
+            mus_man.init_track(music)
+            mus_man.play_loop()
+        except AttributeError:
+            pass
 
         while (plyr.stats.health > 0) and (enemy.stats.health > 0):
             # Allow player to read before clearing screen
@@ -1306,10 +1314,7 @@ class battle_manager(ABC):
             # Check to make sure no effects are active that shouldn't be
             self.refresh_active_effect(plyr, enemy)
 
-            def call(funct):
-                funct()
-
-            call(spec_effect)
+            spec_effect()
 
             # Check if player is attacking or defending
             try:
@@ -1366,6 +1371,8 @@ class battle_manager(ABC):
             except TurnComplete:
                 input('\n(Press enter to continue.)')
                 pass
+
+        mus_man.stop()
 
         if plyr.stats.health > 0:
             self.player_win(plyr, enemy)
