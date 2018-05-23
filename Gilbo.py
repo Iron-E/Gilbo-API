@@ -1,1312 +1,437 @@
-# Gilbo RPG API -- Version 1.2.0 #
-
-from abc import ABC, abstractmethod
-from enum import IntEnum, auto
-
-# 3rd Party Libraries
-import numpy as np
-try:
-    from dispatcher import Signal
-except ModuleNotFoundError:
-    from django.dispatch.dispatcher import Signal
+from sys import path
+path.append('./Gilbo-API/')
+path.append('./Gilbo-API/deps/')
+import Gilbo as G
+from colorama import Fore, Back, Style
 
 #
-# Events #
+# Objects #
 #
 
-# Inventory-related
-pub_item_obtained = Signal(providing_args=["itms"])
-pub_stat_change = Signal(providing_args=["changes"])
+# Ammo #
+stamina = G.item('Stamina', "Your body's natural energy.", 0)
+spray_can = G.item('Pepper Spray', 'A can of pepper spray.', 10)
 
-# Entity-position-related
-pub_chk_pos = Signal()
+# Buffs/Heals #
+# Buffs
+black_suit_buff = G.stat_item('Mysterious Orange Liquid', 'A mysterious orange liquid that was used by the Man in the Black Suit.', 1000, 10, 0, 25, 5, -10)
+msg = G.stat_item('MSG', 'Super Salt. Seriously bad for you, but a seriously wild ride.', 5, 2, 0, 10, 0, 10)
+tso_chicken = G.stat_item("General Tso's Chicken", "Nothing incites a fighting spirit like the effigy of General Tso's Chicken. Why did the General only have one?", 20, 3, 30)
 
-#
-# Common Enumerators #
-#
+# Heals
+noodles = G.heal_item('Noodles', "A cup of Alton Brown's world-famous noodles.", 10, 10)
+msg_noodles = G.heal_item('MSG Noodles', "Alton Brown's noodles, now with 150% more MSG. It seems to good to be true, so you'll probably pay for it later...", 2, 20)
+lo_mein = G.heal_item('Lo Mein', "Alton Brown's signature Lo Mein. You'd slurp the noodles if he weren't watchinG.", 7, 15)
+sushi_roll = G.heal_item('California Roll', 'California Roll hand-crafted by Alton Brown. You can smell the seacost.', 5, 5)
 
+stim_pack = G.heal_item('Stim Pack', 'A stim pack issued by FBI agents that frequently see combat.', 500, 10)
 
-class Enumerators(IntEnum):
-    # Inventory enums
-    items_to_modify = 1
-    infinite_coin = -1
-    # Attack enums
-    base_ammo_cost = 1
-    times_attacking = 1
+# Debuffs
+surprise_debuff = G.stat_item("Caught By Surprise", "Someone was caught by surprise and suffered the consequence.", 0, 1, -5, -5, -5, -7)
+defense_down = G.stat_item('Defense Down', "The bearer's defense has been lowered.", 0, 3, -5, 0, -10)
+enrage_debuff = G.stat_item('Enraged', 'The bearer has been taunted, leaving them stronger, but also reckless.', 0, 2, 0, 10, -15, 5)
+irritated_eyes = G.stat_item('Irritated Eyes', "The bearer's eyes have been irritated by some chemical, causing them to miss attacks and present openings in their defense.", 0, 2, 0, 0, -6, -10)
+
+# Attacks #
+# For katana
+quick_draw = G.ammo_attack('Quick Draw', 'Draw your sword from its sheath at lightning speed.', 5, stamina, 3, 100, surprise_debuff)
+cross_slash = G.ammo_attack('Cross Slash', 'Quickly slash twice at your oppnent, weakening their defense.', 6, stamina, 1, 100, defense_down)
+parry = G.attack('Parry', 'Parry an attack from your opponent, enraging them while leaving them defenseless.', 2, 100, enrage_debuff)
+sword_dance = G.attack('Sword Dance', 'Weave around the enemy slicing so thinly it would appear to be a dance.', 8)
+
+# For black belt
+charge = G.attack('Charge', 'Charge towards the enemy with great force', 10)
+flying_kick = G.attack('Flying Scissor Kick', 'Leap at the enemy with a Scissor Kick.', 20, 65)
+high_kick = G.attack('High Kick', 'Lean back and kick high with your good leG.', 15, 85)
+low_sweep = G.ammo_attack('Low Sweep', 'Sweep your leg and temporarily disarm the apponent.', 8, stamina, 1, 100, surprise_debuff)
+
+# For pre-buff blacksuit
+shin_kick = G.attack('Shin Kick', "Kick your opponent's shin.", 8)
+pepper_spray = G.ammo_attack('Use Pepper Spray', "Shoot pepper spray into the eyes of your opponent.", 2, spray_can, 1, 90, irritated_eyes)
+throw_chair = G.attack('Throw Chair', 'Grab a nearby chair and throw it at the opponent.', 25, 60)
+punch = G.attack('Punch', 'Deliver a flurry of punches to your opponent.', 13, 90)
+
+# For buffed blacksuit
+bash = G.attack('Skull Bash', 'Bash your head into the oppnent.', 11)
+throw_table = G.attack('Throw Table', 'Throw a table at your opponent.', 30, 45)
+
+# Weapons #
+# User Weapons
+chop_sticks = G.weapon('Chop Sticks', 'A pair of chopsticks you had used to eat your meal. If you believe in yourself, who knows what might happen?', 1, [sword_dance, quick_draw, cross_slash, parry, charge, flying_kick, low_sweep, high_kick, punch, shin_kick, pepper_spray, throw_chair, bash, throw_table], 5, 5, 5, 5, 1)
+katana = G.weapon('Katana', 'A weapon proven deadly when used in the right hands. Catch your enemies by surprise, or just impress them with your collection.', 100, [sword_dance, quick_draw, cross_slash, parry], 5, 8, 0, 12)
+black_belt = G.weapon('Black Belt', 'A weapon worn around the waist. Grants user impeccable hand-to-hand combat ability. Or, supposedly, it could be used to towel-snap your opponent.', 5, [charge, flying_kick, low_sweep, high_kick], 10, 10, 5)
+
+# Boss Weapons
+black_suit_prebuff = G.weapon("Agent's Arsenal", 'An array of items and techniques known and used by the FBI.', 1000, [punch, shin_kick, pepper_spray, throw_chair])
+black_suit_buffed = G.weapon('Herculean Brawn', "After injection of a mysterious liquid, the FBI agent has turned into a terrifying bruiser.", 5000, [bash, punch, shin_kick, throw_table])
+
+# Entity-related #
+
+# Collections
+user_collection = G.player_collection(50, [tso_chicken, lo_mein, msg_noodles, katana, chop_sticks, black_belt], [])
+user_collection.add_item(noodles, 2)
+user_collection.add_item(sushi_roll, 3)
+user_collection.add_item(stamina, 2)
+
+black_suit_collection = G.battler_collection(1000, [black_suit_prebuff, black_suit_buffed, spray_can, spray_can, spray_can, spray_can], [black_suit_prebuff])
+black_suit_collection.add_item(stim_pack, 6)
+# Stat Lists
+user_stats = G.battler_stats(100, 10, 10, 10)
+black_suit_stats = G.battler_stats(150, 12, 15, 10)
+
+# Battlers
+user = G.player('Ed', None, None, None, user_collection, user_stats)
+black_suit = G.battler('The Man', None, None, None, black_suit_collection, black_suit_stats)
+
+# NPCs
+alton = G.NPC('Alton Brown', None, None, None)
+alton.add_dialogue('thanks-for-tipping', f'"Thanks, {user.name}. It means a lot that you\'d support my small business.", says {alton.name}.')
+alton.add_dialogue('law-run-in', f'"I\'ve had run-ins with the law before, {user.name}! I\'m not looking to do it again!"')
+
+suit_narrator = G.NPC('The man in a black suit', None, None, None)
+suit_narrator.add_dialogue('initial-encounter', '"Where do you think you\'re going?"')
+suit_narrator.add_dialogue('tax-confront', "\"Thought you'd just be able to get away with evading taxes?\"")
+suit_narrator.add_dialogue('avoid-this', ["\"Well, you might've been able to avoid taxes...", "but you won't be able to avoid this!\""])
+suit_narrator.add_dialogue('use-buff', '"I was hoping it would\'t come to this..."')
+suit_narrator.add_dialogue('the-plunge',  ["\n\n\"Command,\" he begins as a sly smile crosses his face,",  "\"this guy isn't cooperating.\"", "\"I'm going to use...", f'{Fore.RED}the system{Style.RESET_ALL}."\n\n'])
+suit_narrator.add_dialogue('spare-the-cash', f'"{Fore.LIGHTRED_EX}You just couldn\'t spare the 9%, could you?{Style.RESET_ALL}"')
+
+narrator = G.NPC('Narrator', None, None, None)
+narrator.add_dialogue('get-user-name', 'What is your name?')
+narrator.add_dialogue('describe-setting', ["You find yourself at \"Alton Brown's Noodle Shack\".", 'You come here once a month to stock up on noodle-related supplies, and --- as he so lovingly puts it --- "oriental wares".', '\n\nAlton has been so good to you for so long, you feel like you should tip him.', 'Will you tip?'])
+narrator.add_dialogue('user-tipped', 'You decided to tip Alton. After all, he deserves it.')
+narrator.add_dialogue('user-no-tip', ["You decided not to tip Alton. It would set a precedent, and you'd always have to tip from now on.", '\n\nHe lets out a slight look of disappointment, if even for a second.'])
+narrator.add_dialogue('try-to-leave', ["You take your things and turn to leave. You take five steps before the door busts open with a gust of wind so powerful that it blows the curtains back at the other side of the restaurant.", 'A glare prevents you from seeing clearly, but you make out the shape of a man standing in the doorway.'])
+narrator.add_dialogue('enemy-spotted', ['The figure steps forward, and the sun retreats behind it like water, revealing a man in a black suit.', 'You stare at each other as a deep silence falls upon the earth, like something seen in a classic Western movie.', 'You turn around, but Alton is nowhere to be seen.', 'Calling out, he responds from under the counter.'])
+narrator.add_dialogue('back-to-reality', ['Your head snaps back from where Alton lay beneath the counter.', f'{suit_narrator.name} now faces you fists raised, ready to pounce.'])
+narrator.add_dialogue('enemy-attacks', [f'{suit_narrator.name} runs forward towards you and takes a swing.', 'You drop to the ground in an effort to dodge.', 'He tries to kick you, but you roll away.', 'Adrenaline begins to pump through your veins as you desparately attempt being hit. You have nothing to defend yourself with.', '\n\nOn the ground, you notice three weapons that Alton stores under tables.', 'The oppurtunity to grab one arises.', 'Which do you choose?'])
+narrator.add_dialogue('use-item', [f'A breafcase comes crashing through the roof. {black_suit.name} reaches up to catch it with perfect timing, as if it had happened a million times before.', "Out of the breafcase, he takes a needle containing a strange, orange liquid.", f"{black_suit.name} raises his hand to his ear and speaks into a small microphone."])
+narrator.add_dialogue('the-plunge', ['You get a bad feeling as he flicks off his earpiece.', "You hear the buzzing of wild chatter from the man's earpiece, which now hangs from his shirt.", 'As he drains the liquid you stand transfixed as he swells into a grotesquely muscular creature.', "His suit tears with his newly increased size.", "\n\nThe very moment when you become grounded enough to run, he glares at you.", 'He grins.'])
 
 
 #
 # Functions #
 #
+def let_read():
+    input('(Press enter to continue.)')
+    G.clr_console()
 
 
-def write(phrase, type_speed=.029, line_delay=.5):
-    try:
-        from time import sleep
-        if isinstance(phrase, list) or isinstance(phrase, tuple):
-            for i in range(len(phrase)):
-                for j in range(len(phrase[i])):
-                    print(phrase[i][j], end="", flush=True)
-                    sleep(type_speed)
-
-                sleep(line_delay)
-                print('', end=' ')
-        else:
-            for i in range(len(phrase)):
-                print(phrase[i], end="", flush=True)
-                sleep(type_speed)
-
-            sleep(line_delay)
-            print('', end=' ')
-    except KeyboardInterrupt:
-        print('\r')
-        if isinstance(phrase, list) or isinstance(phrase, tuple):
-            for i in range(len(phrase)):
-                print(phrase[i], end=' ')
-        else:
-            print(phrase, end=' ')
-
-    print('\n')
+class dialogue_index(G.IntEnum):
+    black_suit = 0
+    alton = 1
 
 
-def clr_console():
+def advance_dialogue():
+    monologue[dialogue_index.black_suit] += 1
+    let_read()
+
+
+def cli_color(fallback, win='color 0F'):
     import os
-    os.system('cls' if os.name == 'nt' else 'clear')
-
-
-def debug_info(err, more_info, display=False):
-    if display is True:
-        print(str(more_info), end=" See 'log.txt' for details.\n\n")
-
-    with open('log.txt', 'a') as handle:
-        from datetime import datetime
-        print(str(datetime.now()), end=':\n', file=handle)
-        print(str(err), file=handle)
-        print(str(more_info), end='\n\n', file=handle)
-
-#
-# Abstract class from which all enemies, NPCs, and players are derived. #
-#
-
-
-class Locate_Entity(IntEnum):
-    mapid = 0
-    coordinates = 1
-    x_cord = 1
-    y_cord = 0
-
-
-class entity(ABC):
-    def __init__(self, name, location, x, y):
-        self.entity_dict = {'name': name}
-        self.entity_dict.update({'location': [location]})
-        self.entity_dict['location'].append([y, x])
-
-    @property
-    def name(self):
-        return self.entity_dict['name']
-
-    @name.setter
-    def name(self, value):
-        self.entity_dict['name'] = value
-
-    @property
-    def location(self):
-        return self.entity_dict['location']
-
-    def set_loc(self, cord, location=None):
-        if location is None:
-            location = self.location[Locate_Entity.mapid.value]
-
-        self.entity_dict['location'][Locate_Entity.mapid.value] = location
-        self.entity_dict['location'][Locate_Entity.coordinates.value] = cord
-
-
-class NPC(entity):
-    def __init__(self, name, location, x, y):
-        super().__init__(name, location, x, y)
-        self.dialogue_dict = {}
-
-    def add_dialogue(self, diag_name, diag_content):
-        self.dialogue_dict.update({diag_name: diag_content})
-
-    def say(self, diag_name):
-            write(self.dialogue_dict[diag_name])
-
-
-class vendor(entity):
-    def __init__(self, name, location, x, y, inv):
-        super().__init__(name, location, x, y)
-        self.entity_dict['inventory'] = inv
-
-    @property
-    def collection(self):
-        return self.entity_dict['inventory']
-
-
-class battler(vendor):
-    def __init__(self, name, location, x, y, inv, stats):
-        super().__init__(name, location, x, y, inv)
-        self.entity_dict['stats'] = stats
-
-        def handle_stat_change(sender, **kwargs):
-            self.sub_stat_change(sender, **kwargs)
-        self.handle_stat_change = handle_stat_change
-        pub_stat_change.connect(handle_stat_change)
-
-    @property
-    def stats(self):
-        return self.entity_dict['stats']
-
-    @property
-    def attacks(self):
-        try:
-            for itm in self.collection.equipped:
-                if isinstance(itm, weapon):
-                    return itm.linked_attacks
-        except AttributeError as e:
-            debug_info(e, 'The battler must use a battler_collection for an inventory.', True)
-
-    def sub_stat_change(self, sender, **kwargs):
-        if sender is self.collection:
-            self.stats.stat_list = kwargs['changes']
-
-
-class player(battler):
-    def __init__(self, name, location, x, y, inv, stats):
-        super().__init__(name, location, x, y, inv, stats)
-
-        self.entity_dict['quest_list'] = []
-
-        def handle_chk_pos(sender, **kwargs):
-            self.sub_chk_pos(sender, **kwargs)
-        self.handle_chk_pos = handle_chk_pos
-        pub_chk_pos.connect(handle_chk_pos)
-
-    # @receiver(pub_chk_pos)
-    def sub_chk_pos(self, sender, **kwargs):
-        sender.player_pos = self.location
-
-
-#
-# Items/Weapons in the game #
-#
-
-class Stat_Sheet(IntEnum):
-    health = 0
-    strength = 1
-    armor = 2
-    agility = 3
-    power = 4
-
-
-class Item_Types(IntEnum):
-    basic_item = auto()
-    basic_equippable = auto()
-    weapon = auto()
-    armor = auto()
-
-
-class item:
-    def __init__(self, name, dscrpt, val):
-        self.item_dict = {'type': Item_Types.basic_item}
-        self.item_dict['name'] = name
-        self.item_dict['description'] = dscrpt
-        self.item_dict['value'] = val
-
-    @property
-    def type(self):
-        return self.item_dict['type']
-
-    @property
-    def value(self):
-        return self.item_dict['value']
-
-    @property
-    def name(self):
-        return self.item_dict['name']
-
-    @property
-    def dscrpt(self):
-        return self.item_dict['description']
-
-
-class equippable(item):
-    def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0):
-        super().__init__(name, dscrpt, val)
-        self.item_dict['type'] = Item_Types.basic_equippable
-        self.item_dict['stat_change'] = [hp, stren, armr, agil, pwr]
-
-    @property
-    def stat_changes(self):
-        return self.item_dict['stat_change']
-
-
-class weapon(equippable):
-    def __init__(self, name, dscrpt, val, linked_attacks, hp=0, stren=0, armr=0, agil=0, pwr=0):
-        super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
-        self.item_dict['type'] = Item_Types.weapon
-        self.item_dict['linked_attack_list'] = linked_attacks
-
-    @property
-    def linked_attacks(self):
-        return self.item_dict['linked_attack_list']
-
-
-class armor(equippable):
-    def __init__(self, name, dscrpt, val, hp=0, stren=0, armr=0, agil=0, pwr=0):
-        super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
-        self.item_dict['type'] = Item_Types.armor
-
-
-class heal_item(item):
-    def __init__(self, name, dscrpt, val, hp=0):
-        super().__init__(name, dscrpt, val)
-        self.item_dict['heal_amount'] = hp
-
-    @property
-    def heal_amnt(self):
-        return self.item_dict['heal_amount']
-
-
-class stat_item(equippable):
-    def __init__(self, name, dscrpt, val, effect_time, hp=0, stren=0, armr=0, agil=0, pwr=0):
-        super().__init__(name, dscrpt, val, hp, stren, armr, agil, pwr)
-        self.item_dict['type'] = Item_Types.basic_item
-        self.item_dict['effect_time'] = effect_time
-
-    @property
-    def duration(self):
-        return self.item_dict['effect_time']
-
-
-#
-# Entity Stats #
-#
-
-
-class battler_stats:
-    def __init__(self, hp, stren, armr, agil, pwr=1):
-        self.stat_dict = {'hp': hp}
-        self.stat_dict['max_hp'] = hp
-        self.stat_dict['strength'] = stren
-        self.stat_dict['armor'] = armr
-        self.stat_dict['agility'] = agil
-        self.stat_dict['power'] = pwr
-
-    @property
-    def health(self):
-        return self.stat_dict['hp']
-
-    @health.setter
-    def health(self, value):
-        self.stat_dict['hp'] = value
-
-    @property
-    def max_health(self):
-        return self.stat_dict['max_hp']
-
-    @max_health.setter
-    def max_health(self, value):
-        self.stat_dict['max_hp'] = value
-
-    @property
-    def stren(self):
-        return self.stat_dict['strength']
-
-    @stren.setter
-    def stren(self, value):
-        self.stat_dict['strength'] = value
-
-    @property
-    def armor(self):
-        return self.stat_dict['armor']
-
-    @armor.setter
-    def armor(self, value):
-        self.stat_dict['armor'] = value
-
-    @property
-    def agility(self):
-        return self.stat_dict['agility']
-
-    @agility.setter
-    def agility(self, value):
-        self.stat_dict['agility'] = value
-
-    @property
-    def power(self):
-        return self.stat_dict['power']
-
-    @power.setter
-    def power(self, value):
-        self.stat_dict['power'] = value
-
-    @property
-    def stat_list(self):
-        return [self.health, self.max_health, self.stren, self.armor, self.agility, self.power]
-
-    @stat_list.setter
-    def stat_list(self, val):
-        try:
-            self.health += val[Stat_Sheet.health]
-            self.max_health += val[Stat_Sheet.health]
-            self.stren += val[Stat_Sheet.strength]
-            self.armor += val[Stat_Sheet.armor]
-            self.agility += val[Stat_Sheet.agility]
-            self.power += val[Stat_Sheet.power]
-        except IndexError as e:
-            debug_info(e, 'battler_stats.stat_list only accepts lists as setters.', True)
-        except TypeError as e:
-            debug_info(e, 'An item in stat_change was not a number.', True)
-
-    def writeout(self):
-        print(f"Health: {self.health}/{self.max_health}")
-        print(f"Strength: {self.stren}")
-        print(f"Armor: {self.armor}")
-        print(f"Agility: {self.agility}")
-        print(f"Power: {self.power}", end="\n\n")
-
-
-#
-# Locations #
-#
-
-
-class Directions(IntEnum):
-    Up_Left = 11
-    Up = 12
-    Up_Right = 13
-    Left = 21
-    Right = 23
-    Down_Left = 31
-    Down = 32
-    Down_Right = 33
-
-
-class Location_Errors(IntEnum):
-    no_exist = 0
-    invalid_direction = 1
-
-
-class Tiles(IntEnum):
-    Player = auto()
-    Grass = auto()
-    Wall = auto()
-    Mountain = auto()
-    Cave = auto()
-    Water = auto()
-    Building = auto()
-    Lava = auto()
-    Dirt = auto()
-    Ice = auto()
-    Pit = auto()
-
-
-class location_manager:
-    def __init__(self):
-        self.xy_dict = {'Errors': []}
-        self.xy_dict['Errors'].append("That place doesn't exist.")
-        self.xy_dict['Errors'].append("You're carrying too much.")
-        self.xy_dict['Errors'].append("You cannot go that way.")
-        self.xy_dict['auto_load'] = True
-        self.xy_dict['current_map'] = None
-
-    @property
-    def auto_load_map(self):
-        return self.xy_dict['auto_load']
-
-    @auto_load_map.setter
-    def auto_load_map(self, value):
-        # Allows user to turn off map loading for certain sections of the game
-        if value is True or value is False:
-            self.xy_dict['auto_load'] = value
-        else:
-            raise TypeError('Value must be True or False.')
-
-    @property
-    def player_pos(self):
-        return self.xy_dict['player_location']
-
-    @player_pos.setter
-    def player_pos(self, val):
-        self.xy_dict['player_location'] = val
-
-    def load_if_player(self, thing):
-        if self.auto_load_map is True:
-            pub_chk_pos.send(sender=self)
-            if isinstance(thing, player):
-                self.load_map(self.player_pos[Locate_Entity.mapid])
-        else:
-            clr_console()
-
-    def move(self, thing, direction):
-        # Insert data collection from map
-        if self.chk_boundary(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], False) is not False:
-            thing.set_loc(self.chk_boundary(thing.location[Locate_Entity.mapid], direction.value, thing.location[Locate_Entity.coordinates], True if isinstance(thing, player) else False, True))
-            # Check to see if the map needs to be reloaded
-            self.load_if_player(thing)
-
-    def teleport(self, thing, mapid, x, y):
-        # Wrap around try just in case the map is mispelled or does not yet exist
-        try:
-            # Insert data collection from map, and writeout extra details if the entity is a player
-            if mapid.send_data((y, x), True if isinstance(thing, player) else False) is True:
-                thing.set_loc([y, x], mapid)
-                self.load_if_player(thing)
-
-        except NameError as e:
-            debug_info(e, 'That map does not exist', True)
-
-    def chk_boundary(self, mapid, direction, start_loc, is_player, print_errors=False):
-        # Update coordinates for direction
-        if direction is Directions.Up.value:
-            new_loc = [start_loc[Locate_Entity.y_cord] - 1, start_loc[Locate_Entity.x_cord]]
-        elif direction is Directions.Down.value:
-            new_loc = [start_loc[Locate_Entity.y_cord] + 1, start_loc[Locate_Entity.x_cord]]
-        elif direction is Directions.Left.value:
-            new_loc = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] - 1]
-        elif direction is Directions.Right.value:
-            new_loc = [start_loc[Locate_Entity.y_cord], start_loc[Locate_Entity.x_cord] + 1]
-
-        try:
-            # Test if new coordinate is out of bounds
-            mapid.layout[new_loc[Locate_Entity.y_cord], new_loc[Locate_Entity.x_cord]]
-
-            # Check if new coordinate is negative
-            for i in new_loc:
-                if i < 0:
-                    if print_errors is True:
-                        print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
-
-                    return start_loc
-
-            # Check against the mapid's send_data method to see what it wants the location manager to do
-            if mapid.send_data(tuple(new_loc), True if is_player is True else False) is True:
-                return new_loc
+    if os.name == 'nt':
+        # change windows terminal color
+        os.system(win)
+    else:
+        # change linux terminal color
+        os.system(fallback)
+
+
+def build_temp_effects(manager):
+    temp_effect_list = []
+    for effect in manager.effect_dict['reverse_effect_player']:
+        temp_effect_list.append(effect[2])
+    for effect in manager.effect_dict['reverse_effect_enemy']:
+        temp_effect_list.append(effect[2])
+
+    return temp_effect_list
+
+
+def bat_check():
+    if (bat_man.percent_health(black_suit) < 90) and (monologue[dialogue_index.black_suit] == 0):
+        G.clr_console()
+        G.write(["You call out to your opponent.", '"C\'mon man, do we really have to do this?"'])
+        G.write(['"When did you get the impression that I was doing this because I', f'{Fore.RED}HAD{Fore.RESET}', 'to?"', 'he chirps back.'])
+        G.write(['"You do get paid to do this, right?', 'This has to be a paid job."'])
+        G.write([f'{black_suit.name}\'s face suddenly displays an intense tranquility.', '\n\n"This...', f'this is {Fore.BLACK}{Back.WHITE}divine{Style.RESET_ALL} penance!', 'Punishment for the worst of criminals!', 'I would never ask for money.'])
+        advance_dialogue()
+    elif (bat_man.percent_health(black_suit) < 70) and (monologue[dialogue_index.black_suit]):
+        G.clr_console()
+        G.write(['Despite your progress in battle, you attempt to plead with the man.', '\n\n"How is this a solution?"'])
+        G.write(['"What is the alternative?', 'Getting away with tax avoidance?"'])
+        G.write("You didn't even give me a chance to pay for it!")
+        G.write('"Yeah, I\'ve heard that one before. \'I was just about to pay my taxes, IRS!\' It\'s a steaming load."')
+        advance_dialogue()
+    elif (bat_man.percent_health(black_suit) < 30) and (monologue[dialogue_index.black_suit] == 3):
+        G.clr_console()
+        G.write('"It\'s about the terrorists."')
+        G.write(["You're taken aback by that statement.", '\n\n"What?"'])
+        G.write('"We use that money to fend off the terrorists," he continues.')
+        G.write('"..and?"')
+        G.write(['"Choosing to avoid helping the fight against the terrorists is', '\b...', f'{Fore.RED}terrorism itself{Fore.RESET}!"'])
+        advance_dialogue()
+
+    if bat_man.percent_health(black_suit) <= 50:
+        if black_suit.entity_dict['used_buff'] is False:
+            G.clr_console()
+            suit_narrator.say('use-item')
+            narrator.say('use-item')
+            suit_narrator.say('the-plunge')
+            narrator.say('the-plunge')
+            suit_narrator.say('spare-the-cash')
+            let_read()
+            black_suit.use_item(black_suit_buff)
+            black_suit.equip(black_suit_buffed)
+            black_suit.entity_dict['used_buff'] = True
+        elif (black_suit.entity_dict['used_buff'] is True) and (monologue[dialogue_index.black_suit] == 2):
+            G.clr_console()
+            G.write(["Let's say that I DID forget to pay tax.", 'What would forgetting one time matter?'])
+            G.write(["It isn't just you, you see?", "It's everyone.", 'If everyone forgot to pay their taxes one time all together...', "it's unthinkable."])
+            G.write(['"The Government can handle about $0.05 less one time from everyone in their lives,', 'can\'t they?"'])
+            G.write(['"You\'re terminally shortsighted."'])
+            advance_dialogue()
+
+    if (tso_chicken.name in build_temp_effects(bat_man)) and (bat_man.battle_dict['turn'] == G.Turn.Attack):
+        G.write([f"The Ghost of {tso_chicken.name} rises from the deep.", f"\n\n{tso_chicken.name} helps you by doing 15 damage to the enemy."])
+        bat_man.hit_animate()
+        black_suit.stats.health -= 15
+
+    if (bat_man.percent_health(user) <= 50) and (user_tipped is True) and (bat_man.battle_dict['turn'] == G.Turn.Attack):
+        if monologue[dialogue_index.alton] is None:
+            bat_man.battle_dict['alton_help'] = True
+            G.write(['Alton brown leaps out from behind the counter', '"\n\nI will defend this tipping customer!"', 'he says as a chair grazes the top of his head.', f'"...from {Fore.RED}behind{Fore.RESET} the counter!"'])
+            monologue[dialogue_index.alton] = 0
+
+        G.write('Alton brown tosses mugs at the Man in the Black Suit, dealing 15 damage.')
+        let_read()
+        bat_man.hit_animate()
+        black_suit.stats.health -= 15
+
+
+def win(manager):
+    try:
+        if (manager.battle_dict['alton_help'] is True) and ("General Tso's Chicken" in build_temp_effects(manager)):
+            if black_suit_buff.name in build_temp_effects(manager):
+                G.write([f"You glance over at {alton.name}. He's sweating-- barely holding on.", "You know how he feels. It takes everything you have to not give up and accept your fate.", "\n\nBut--", "suddenly, a phantomish form bursts out from behind the monster."])
+                let_read()
+
+                G.write([f'{alton.name} gives you a strange look.', f"Apparently, he hadn't seen the Ghost of {tso_chicken.name} emerge from the abyss.", f'\n\n"What in the {Fore.RED}world{Fore.RESET} is that?" you hear {alton.name} spout in disbelief as the chicken kites the enormous beast.', '\n\n"Just wait," you mutter back.'])
+                let_read()
+
+                G.write([f'The two of you watch as the Ghost of {tso_chicken.name} leaps high into the air, and delivers a kick with the strength of 1000 ancient Chinese imperial commissioners.'])
+                let_read()
+
+                G.write(['"NOW!" you yell.', "Without a nanosecond of hesitation, Alton springs into action.", "Years of work as a chef paying off in the passing of an instant.", 'Alton reaches up his sleave. What does he have there?', '\n\nThe monster looks afraid.'])
+                let_read()
             else:
-                return False
+                G.write([f"You glance over at {alton.name}. He's sweating-- barely holding on.", "You know how he feels. It takes everything you have to not give up and accept your fate.", "\n\nBut--", "suddenly, a phantomish form bursts out from behind the monster."])
+                let_read()
 
-        except IndexError:
-            if print_errors is True:
-                # Tell the user that it cannot move that way
-                print(self.xy_dict['Errors'][Location_Errors.invalid_direction])
+                G.write([f'{alton.name} gives you a strange look.', f"Apparently, he hadn't seen the Ghost of {tso_chicken.name} emerge from the abyss.", f'\n\n"What in the {Fore.RED}world{Fore.RESET} is that?" you hear {alton.name} spout in disbelief as the chicken kites the enormous beast.', '\n\n"Just wait," you mutter back.'])
+                let_read()
 
-            return start_loc
+                G.write([f'The two of you watch as the Ghost of {tso_chicken.name} sucker punches the man in the black suit, leaving him wide open for a follow-up attack.'])
+                let_read()
 
-    def detect_tile(self, til, player_til=False):
-            from colorama import Fore, Back, Style
-            value = ''
+                G.write(['"NOW!" you yell.', "Without a nanosecond of hesitation, you both spring into action.", 'The two of you wind up a punch to put an end to this impedance.', '\n\nThe Man in the Black Suit looks afraid.'])
+                let_read()
 
-            # Set the background color to magenta to signify that the player is there
-            if player_til is True:
-                value += Back.MAGENTA
+        elif manager.battle_dict['alton_help'] is True:
+            if black_suit_buff.name in build_temp_effects(manager):
+                G.write([f"You glance over at {alton.name}. He's sweating-- barely holding on.", "You know how he feels. It takes everything you have to not give up and accept your fate.", "\n\nBut--", "you're in this together. You won't let him down, only because he won't let YOU down."])
+                let_read()
 
-            # Set unicode value of character based on Enum value
-            if til == Tiles.Grass.value:
-                value += Fore.GREEN + Style.BRIGHT + '\u26B6' + Style.RESET_ALL
-            elif til == Tiles.Wall.value:
-                value += Fore.WHITE + Style.DIM + '\u26DD' + Style.RESET_ALL
-            elif til == Tiles.Mountain.value:
-                value += Fore.YELLOW + '\u1A12' + Style.RESET_ALL
-            elif til == Tiles.Cave.value:
-                value += Fore.YELLOW + '\u1A0A' + Style.RESET_ALL
-            elif til == Tiles.Water.value:
-                value += Fore.CYAN + '\u2307' + Style.RESET_ALL
-            elif til == Tiles.Building.value:
-                value += Fore.WHITE + '\u16A5' + Style.RESET_ALL
-            elif til == Tiles.Lava.value:
-                value += Fore.RED + Style.BRIGHT + '\u26C6' + Style.RESET_ALL
-            elif til == Tiles.Dirt.value:
-                value += Fore.YELLOW + Style.BRIGHT + '\u26C6' + Style.RESET_ALL
-            elif til == Tiles.Ice.value:
-                value += Fore.CYAN + Style.BRIGHT + '\u26C6' + Style.RESET_ALL
-            elif til == Tiles.Pit.value:
-                value += Fore.BLACK + Style.DIM + '\u25CF' + Style.RESET_ALL
+                G.write(["You give Alton the signal. Together, you wait for an opening.", "You bait the hideous monster with a carefully aimed chopstick that lay nearby.", '"NOW!" you yell.'])
+                let_read()
 
-            return value
-
-    def load_map(self, mapid, rows=None, clmns=None):
-        clr_console()
-
-        # Get player position through event
-        pub_chk_pos.send(sender=self)
-
-        # Auto generate columns and rows if they are not provided
-        if clmns is None:
-            clmns = mapid.layout.shape[Locate_Entity.x_cord]
-        if rows is None:
-            rows = mapid.layout.shape[Locate_Entity.y_cord]
-
-        # Loop through rows and columns to send each one to the detect_tile method
-        for y in range(rows):
-            for x in range(clmns):
-                # Test for player position against tile
-                if ([y, x] == self.player_pos[Locate_Entity.coordinates]) and (mapid is self.player_pos[Locate_Entity.mapid]):
-                    print(self.detect_tile(mapid.layout[y, x], True), end=' ')
-                else:
-                    print(self.detect_tile(mapid.layout[y, x]), end=' ')
-
-            print()
-
-        # Update the current mapid
-        self.xy_dict['current_map'] = mapid
-
-
-class array_map(ABC):
-    def __init__(self, name):
-        self.map_dict = {'map_id': name}
-        self.map_dict['map_layout'] = None
-
-    @abstractmethod
-    def send_data(self, til, plyr=False):
-        raise NotImplementedError('Please define this method.')
-        # TEMPLATE #
-        #
-        # import os
-        # os.system('cls' if os.name == 'nt' else 'clear')
-        #
-        # if til == [0, 1]:
-        #     if plyr is True:
-        #         print('You walk forward, and see a massive tree. You step closer.')
-        #     return True
-        # elif til == [0, 2]:
-        #     if player is True:
-        #         print('A wide river halts your progress down this path.')
-        #     return False
-
-    def chk_tile_val(self, tile, to_match):
-            if self.layout[tile[Locate_Entity.y_cord], tile[Locate_Entity.x_cord]] == to_match:
-                return True
+                G.write(["Without a nanosecond of hesitation, Alton springs into action.", "Years of work as a chef paying off in the passing of an instant.", 'Alton reaches up his sleave. What does he have there?', '\n\nThe monster looks afraid.'])
+                let_read()
             else:
-                return False
+                G.write([f"You glance over at {alton.name}. He's sweating-- barely holding on.", "You know how he feels. It takes everything you have to not give up and accept your fate.", "\n\nBut--", "you're in this together. You won't let him down, only because he won't let YOU down."])
+                let_read()
 
-    @property
-    def id(self):
-        return self.map_dict['map_id']
+                G.write(["You give Alton the signal. Together, you wait for an opening.", "You bait the Man in the Black Suit with a carefully aimed chopstick that lay nearby.", '"NOW!" you yell.'])
+                let_read()
 
-    @property
-    def layout(self):
-        return self.map_dict['map_layout']
+                G.write(["Without a nanosecond of hesitation, you both spring into action.", 'The two of you wind up a punch to put an end to this impedance.', '\n\nThe Man in the Black Suit looks afraid.'])
+                let_read()
 
-    @layout.setter
-    def layout(self, value):
-        assert isinstance(value, np.ndarray)
-        self.map_dict['map_layout'] = value
-
-#
-# Battle Backend #
-#
-
-
-class attack:
-    def __init__(self, name, dscrpt, dmg, acc=100, debuff=None):
-        self.attack_dict = {'dmg': dmg}
-        self.attack_dict['name'] = name
-        self.attack_dict['description'] = dscrpt
-        self.attack_dict['accuracy'] = acc
-        self.attack_dict['debuff_effect'] = debuff
-
-    @property
-    def name(self):
-        return self.attack_dict['name']
-
-    @property
-    def hit_rate(self):
-        return self.attack_dict['accuracy']
-
-    @property
-    def debuff(self):
-        return self.attack_dict['debuff_effect']
-
-    @property
-    def dmg(self):
-        return self.attack_dict['dmg']
-
-    @property
-    def dscrpt(self):
-        return self.attack_dict['description']
-
-    @property
-    def count(self):
-        return self.attack_dict['hit_count']
-
-
-class ammo_attack(attack):
-    def __init__(self, name, dscrpt, dmg, ammo_type, ammo_cost, acc=100, debuff=None):
-        super().__init__(name, dscrpt, dmg, acc, debuff)
-        self.attack_dict['accuracy'] = acc
-        self.attack_dict['ammo_type'] = ammo_type
-        self.attack_dict['ammo_cost'] = ammo_cost
-
-    @property
-    def ammo_type(self):
-        return self.attack_dict['ammo_type']
-
-    @property
-    def ammo_cost(self):
-        return self.attack_dict['ammo_cost']
-
-#
-# Inventory #
-#
-
-
-class item_collection(ABC):
-    def __init__(self, coin, items=list()):
-        self.collect_dict = {'collection': items}
-        self.collect_dict['currency'] = coin
-        self.collect_dict['Error_No_Exist'] = "That item doesn't exist in this inventory."
-
-    def add_item(self, itm, amnt=Enumerators.items_to_modify):
-        for i in range(amnt):
-            self.items.append(itm)
-
-    def rem_item(self, itm, amnt=Enumerators.items_to_modify):
-        for i in range(amnt):
-            try:
-                self.items.remove(itm)
-            except ValueError:
-                print(f"There is/are no more {itm.name} to use, sell, or buy.")
-                return False
-
-        return True
-
-    @property
-    def items(self):
-        return self.collect_dict['collection']
-
-    @property
-    def coin(self):
-        return self.collect_dict['currency']
-
-    @coin.setter
-    def coin(self, value):
-        if self.coin != Enumerators.infinite_coin:
-            self.collect_dict['currency'] += value
-
-
-class vendor_collection(item_collection):
-    def __init__(self, coin, items=list()):
-        super().__init__(coin, items)
-
-    def swap_item(self, swapee, itm, count=Enumerators.items_to_modify):
-        if itm in self.items:
-            for i in range(count):
-                if (swapee.collection.coin >= (itm.value * count)) or swapee.collection.coin == Enumerators.infinite_coin:
-                    # Swap items
-                    swapee.collection.add_item(itm)
-                    self.rem_item(itm)
-                    # Swap coin
-                    swapee.collection.coin = (itm.value * -1)
-                    self.coin = itm.value
-                else:
-                    print(f"{swapee.name} ran out of money.")
         else:
-            self.collect_dict['Error_No_Exist']
+            raise KeyError
 
+        G.write(["Alton pulls a foreign object out of his sleeve.", "He does so with such prowess it seems as if this was a daily ritual to him, once upon a time.", '\n\n"TODAY\'S SECRET INGREDIENT IS', '...YOUR GRAVE!"'])
+        let_read()
 
-class battler_collection(item_collection):
-    def __init__(self, coin, items, equipped):
-        super().__init__(coin, items)
-        self.collect_dict['on_entity'] = equipped
-        self.collect_dict['Errors'] = "Couldn't equip item."
+        print(f"{Fore.BLACK}{Back.WHITE}Ending:{Style.RESET_ALL} alton [B]rown's secret ingredient\n\n{Fore.BLACK}{Back.WHITE}Player Status:{Style.RESET_ALL} Alive\n{Fore.BLACK}{Back.WHITE}Boss Status:{Style.RESET_ALL} Dead\n{Fore.BLACK}{Back.WHITE}Alton Brown Status:{Style.RESET_ALL} Alive\n\n")
+        let_read()
+        exit()
 
-        if len(self.equipped) > 0:
-            self.update_stats()
+    except KeyError:
+        if (tso_chicken.name in build_temp_effects(manager)):
+            G.write(['Sweat drips down your brow as you are knocked back by another attack.'])
 
-    @property
-    def equipped(self):
-        return self.collect_dict['on_entity']
+            if black_suit_buff.name in build_temp_effects(manager):
+                G.write(['The hideous beast seems no closer to being defeated, yet you have been fighting for what seems like an eternity.', 'Just as you feel ready to submit, a small, headless, umbrageous form runs out from behind you.', f'\n\nThe Ghost of {tso_chicken.name} rose from the abyss to aid you in your fight.'])
+                let_read()
 
-    @property
-    def item_stats(self):
-        temp = [0, 0, 0, 0, 0]
-        for i in range(len(self.equipped)):
-            temp = [temp[j] + self.equipped[i].stat_changes[j] for j in range(len(temp))]
-
-        return temp
-
-    def update_stats(self):
-        pub_stat_change.send(sender=self, changes=self.item_stats)
-
-    def equip(self, itm):
-        try:
-            if itm in self.items:
-                for i in range(len(self.equipped)):
-                    if itm.__class__ == self.equipped[i].__class__:
-                        del self.equipped[i]
-
-                self.equipped.append(itm)
-                self.update_stats()
+                G.write([f'The Ghost leaps high into the air, and delivers a swift kick to the face.', 'Your foe falls flat on his rear end.', '\n\nNo sooner does he fall, than the chicken begins to run circles around him.'])
+                let_read()
             else:
-                print(self.collect_dict['Error_No_Exist'])
+                G.write(['The Man in the Black Suit seems no closer to being defeated, yet you have been fighting for what seems like an eternity.', 'Just as you feel ready to submit, a small, headless, umbrageous form runs out from behind you.', f'\n\nThe Ghost of {tso_chicken.name} rose from the abyss to aid you in your fight.'])
+                let_read()
 
-        except AttributeError:
-            print(self.collect_dict['Errors'])
+                G.write([f'The Ghost strikes hard and fast--- delivering a swift kick to the face of your opponent.', 'The Man in the Black Suit stands temporarily paralyzed.', '\n\nNo sooner does the Ghost land, than the he begins to run circles around the black-suitted antagonist.'])
+                let_read()
 
-    def move_item(self, itm, movee):
-        if self.rem_item(itm) is True:
-            movee.collection.add_item(itm)
+            G.write(['A dark hole opens up.', "At first, it's something that you feel, rather than see. So small that only some semblance of a sixth sense could detect its vile presence.", "But,", "after a while,", f"it begins to open up wider and wider until it swallows your foe hole. The Ghost of {tso_chicken.name} jumps in after it.", '\n\nIn the moments before it closes, you catch a glimpse of a realm that exists outside of your own.', "It looks as if this black is sucking in the light, rather than just the absense of it."])
+            let_read()
+
+            G.write(['As the hole closes and the world returns to normal, you feel a change within you.', 'After all,', 'when you stare into the abyss,', 'the abyss stares back.'])
+            let_read()
+
+            if user_tipped is False:
+                G.write([f'Just as you have a moment to take a breath, {alton.name} leaps out from behind the counter.', '\n\n"Well, now that that is dealt with..." he begins.', f'"Who do you think you are to come into {Fore.RED}MY{Fore.RESET} restaurant and never leave a tip?"', '\n\nYou\'re stunned. "Since it\'s your business, don\'t you make all the profit? Why do I need to tip?"', '\n\n"You fool..."'])
+                let_read()
+
+                G.write(['Alton takes one step foreward.', "You aren't prepared to deal with another contender, after giving your all to defeat the Man in the Black Suit.", 'Nevertheless, you prepare to defend yourself yet again.', 'Just as he is about to reach you, he is yanked to the ground.', '\n\n"No..." he stammers.', '"...NO!"', f'\n\n{alton.name} tries to pull himself up, but fails repeatedly to do so.', 'He begins to sink into the floor, panicking as he goes.', f'Just as he disappears, you see the silhouette of {tso_chicken.name}.'])
+                let_read()
+
+                print(f"{Fore.BLACK}{Back.WHITE}Ending:{Style.RESET_ALL} the watchful eye of g[E]neral tso\n\n{Fore.BLACK}{Back.WHITE}Player Status:{Style.RESET_ALL} Alive\n{Fore.BLACK}{Back.WHITE}Boss Status:{Style.RESET_ALL} In Limbo\n{Fore.BLACK}{Back.WHITE}Alton Brown Status:{Style.RESET_ALL} Alive\n\n")
+
+            else:
+                print(f"{Fore.BLACK}{Back.WHITE}Ending:{Style.RESET_ALL} general tso's [C]hicken\n\n{Fore.BLACK}{Back.WHITE}Player Status:{Style.RESET_ALL} Alive\n{Fore.BLACK}{Back.WHITE}Boss Status:{Style.RESET_ALL} In Limbo\n{Fore.BLACK}{Back.WHITE}Alton Brown Status:{Style.RESET_ALL} Alive\n\n")
+
+        elif user_tipped is True:
+            if black_suit_buff.name in build_temp_effects(manager):
+                G.write(["You've been jumping on and around my mysterious foe for what feels like an eternity.", "Your eyes keep darting around for some kind of way out of this.", "Suddenly, you spot it."])
+                G.write(["\nA packet of Ramen flavoring sits not 20 feet away from you.", "If you could manage to reach it, there would be enough sodium in it to form a circle around the demon.", "\n\nIt'd be trapped with no way out.", 'You have to move now.'])
+                let_read()
+
+                G.write(["You think back to dodgeball in grade school.", "Just as you did then, you fake out the throbbing mass of hideousness that spans the area before you.", "Without pause, you lunge for the packet of Ramen. Making quick work of the package, you are able to get at the contents", "\n\nQuickly, you make the salt circle as intended."])
+                let_read()
+
+                G.write(["The monster roars.", "Its scream pierces the heavens, yet you perservere.", "Confident in your work, you leave your tip on the table, and head out the door-- sure to take one final look at your mortal enemy."])
+                let_read()
+
+                G.write("Time has passed.", .029, 1)
+                G.write(["Some say that the beast is still there.", "Others say it's just an urban legend-- nothing more.", "It's difficult to convince yourself of anything anymore.", "\n\nYou don't know when he will erupt out of the darkest pits of your psyche and raze the Earth again."])
+                G.write(["You only know one thing for sure:", "he'll be someone else's problem then."])
+                let_read()
+
+                print(f"{Fore.BLACK}{Back.WHITE}Ending:{Style.RESET_ALL} the [D]iscount hero\n\n{Fore.BLACK}{Back.WHITE}Player Status:{Style.RESET_ALL} Alive\n{Fore.BLACK}{Back.WHITE}Boss Status:{Style.RESET_ALL} Unknown\n{Fore.BLACK}{Back.WHITE}Alton Brown Status:{Style.RESET_ALL} Unknown\n\n")
+
+        elif user_tipped is False:
+            if black_suit_buff.name in build_temp_effects(manager):
+                G.write(["You ready my final stand against the beast.", "With a fatal blow, you knock the monster to the ground-- an explosive cloud of smoke rising in its wake.", "\n\nAs it clears, the remains of the foul beast disintegrate before me. You have done well."])
+            else:
+                G.write(['The Man in the Black Suit\'s energy wears thin.', 'During a brief opening, you sieze the oppurtunity and deliver a knockout blow.', '\n\nSlowly, you relax from the form taken during my final strike, and watch as your opponent falls down.'])
+
+            G.write(["\nYou motion toward the door.", "No sooner do you pass the counter than do you feel something at your back.", "You look down to see a chopstick sticking out of your chest."])
+
+            if manager.percent_health(user) >= 50:
+                G.write(["If you'd had less strength, this would be it.", "Instead, you roll away behind a table."])
+                let_read()
+
+                G.write(["Your assailant reveals himself, foolishly thinking that he would have time to attack once again in your stupor.", "It appears Alton was unimpressed with your tip.", "\n\nYou're unimpressed with his hospitality."])
+                let_read()
+
+                G.write(["You lunge towards the counter and pull the chopstick out of me in one easy motion.", "Taking some food from the counter, you use the lone chopstick to feed him some of his own medicine.", "His body violently resists the cooking.", '\n\nAfter a moment that expands into a painful eternity, he falls limp.'])
+                let_read()
+                G.write(['"I\'m no lawyer," you begin.', '"...but if that\'s how a cook reacted to his own work..."', '"I\'d sous the chef.'])
+                let_read()
+
+                print(f"{Fore.BLACK}{Back.WHITE}Ending:{Style.RESET_ALL} some of his own m[E]dicine\n\n{Fore.BLACK}{Back.WHITE}Player Status:{Style.RESET_ALL} Alive\n{Fore.BLACK}{Back.WHITE}Boss Status:{Style.RESET_ALL} Dead\n{Fore.BLACK}{Back.WHITE}Alton Brown Status:{Style.RESET_ALL} Dead\n\n")
+            else:
+                G.write(["If you'd had more strength, maybe you'd be able to fight back."])
+                let_read()
+
+                G.write(['Barely enough time passes to fall to your hands before a dozen carefully-aimed chopsticks lampoon you.', f'\n\n"Thanks for getting the Government off of my back," says {alton.name} in a chipper tone. "They were really beginning to get on my nerves."'])
+                let_read()
+
+                G.write(['You barely manage to summon the might to speak.', '\n\n"H...he...lp..."', 'Speaking is more difficult than you thought.', '\n\n"Damned chopsticks!" you think to yourself. "If they weren\'t so cheap, they\'d\'ve put me out of my misery already."'])
+                G.write(['\n"Well, if you don\'t mind...', 'I have a flight to Panama to catch."'])
+                let_read()
+
+                cli_color('setterm --inversescreen on', 'color F0')
+                G.write(['Alton walks out of the room, and I am left to face my final moments in peace.'])
+                let_read()
+                cli_color('setterm --inversescreen off')
+
+                print(f"{Fore.BLACK}{Back.WHITE}Ending:{Style.RESET_ALL} alton's a[F]fluent adventures in panama\n\n{Fore.BLACK}{Back.WHITE}Player Status:{Style.RESET_ALL} Alive\n{Fore.BLACK}{Back.WHITE}Boss Status:{Style.RESET_ALL} Dead\n{Fore.BLACK}{Back.WHITE}Alton Brown Status:{Style.RESET_ALL} Dead\n\n")
+
+        else:
+            G.write(["You're tired, but you can tell that your opponent is too.", "You both look each other in the eyes."])
+
+            if black_suit_buff.name in build_temp_effects(manager):
+                G.write("\nAt least, you think that's his eye.")
+
+            G.write(["\nYou think you're beginning to understand each other a little more."])
+            let_read()
+
+            G.write(["I go to put down my fists, and it looks as if he is about to do the same.", "Suddenly,", "something crashes through the roof.", "It appears to be some kind of robotic creature.", "It would seem neither of you have seen anything like it.\n\n"])
+            let_read()
+
+            G.write(["It speaks with a voice unlike anything I've ever heard.", '"Sorry to barge in," it begins.', '"Something else is supposed to happen here. The code monkeys screwed everything up, and I do mean *everything*.', '\n\nEmpty the bitbucket.', "Check the logs.", '"Something broke."', "\n\nAnd just like that, everything stopped."])
+            let_read()
+
+            print(f"{Fore.BLACK}{Back.WHITE}Ending:{Style.RESET_ALL} good code [G]one wild\n\n{Fore.BLACK}{Back.WHITE}P#%PLAJC@@:{Style.RESET_ALL} ???\n{Fore.BLACK}{Back.WHITE}B%%OISMCC:{Style.RESET_ALL} ???\n{Fore.BLACK}{Back.WHITE}B%%OISMCC:{Style.RESET_ALL} ???\n\n")
+
+        let_read()
+        exit()
 
 
-class player_collection(battler_collection, vendor_collection):
-    def __init__(self, coin, items, equipped):
-        super().__init__(coin, items, equipped)
+def lose(manager):
+    # Player dies
+    G.clr_console()
 
-    def add_item(self, itm, amnt=Enumerators.items_to_modify):
-        for i in range(amnt):
-            self.items.append(itm)
+    if 'Mysterious Orange Liquid' in build_temp_effects(manager):
+        G.write(['The Giant Governmental Beast rears back to deliver an enormous blow.', 'You try to jump out of the way, but your legs give out.', '\n\nYou fall to the ground in pain.', f'\n\n{black_suit.name} looks as if he pities you, even for but a moment.'])
+        G.write(['He takes a step closer.', 'Unable to face your fate, you close my eyes.'])
+        let_read()
 
-        pub_item_obtained.send(sender=self, itms=self.items)
+        cli_color('setterm --inversescreen on', 'color F0')
+        G.write(['\nTime slows down as you become keenly aware of your own heartbeat.', "You notice that you hadn't ever thought about your heart -- the force that had kept your life in motion -- until it was about to stop beating."])
+        let_read()
+
+        G.write(['You begin to hear the wind around his fist as it draws nearer.', 'Your will to live screams out like a cry during a moment of silence.', '\n\nYou think to yourself how few pennies it would have taken to save your life.', 'Was this worth it?'])
+        let_read()
+
+    else:
+        G.write(["Even though you had survived in the face of the Man in the Black Suit's increased size, still he has bested you.", 'He lines up to deliver one final blow, and time barely passes enough to flinch before it lands.', '\n\nNow you lay on your ground.'])
+
+    G.write(["You realize that there's no use in questioning your choices now.", "Everything you've done has been set in stone.", "\n\nIn the end, everyone pays the same price.", 'The only difference is how you count the cost.'])
+    let_read()
+
+    cli_color('setterm --inversescreen off')
+    print(f"{Fore.BLACK}{Back.WHITE}Ending:{Style.RESET_ALL} there [A]in't no such thing as a free lunch\n\n{Fore.BLACK}{Back.WHITE}Player Status:{Style.RESET_ALL} Deceased\n{Fore.BLACK}{Back.WHITE}Boss Status:{Style.RESET_ALL} Alive\n{Fore.BLACK}{Back.WHITE}Alton Brown Status:{Style.RESET_ALL} Alive")
+    let_read()
+
+    exit()
+
 
 #
-# Quests #
+# Battle Managers
 #
-
-
-# In progress
-class quest(ABC):
-    def __init__(self, name):
-        self.quest_dict['name'] = name
-        self.quest_dict['current_stage'] = None
-        # Not sure if this part of the dictionary is necessary
-        # self.quest_dict['stages'] = []
-
-    @property
-    def stage(self, stage):
-        return self.quest_dict['current_stage']
-
-    @stage.setter
-    @abstractmethod
-    def stage(self, stage):
-        raise NotImplementedError('Please define this method.')
-        """
-        Here the user will implement anything they require in order to get their quest to function as desired.
-
-        Some possibilities include checking for items in the iventory: subscribe to the pub_item_obtained event and check the player's inventory for items. Check if a player has stepped
-        onto a tile by writing a quest.stage method into the array_map class's send_data method. Or, make NPCs say certain things by creating an if statement to check if a quest has a certain stage.
-        """
-
-
-#
-# Battle System #
-#
-
-class Turn(IntEnum):
-    Attack = 0
-    Defend = 1
-
-
-class Enemy_Choices(IntEnum):
-    Attack = 0
-    Item = 1
-
-
-class TurnComplete(Exception):
-    pass
-
-
-class ChooseAgain(Exception):
-    pass
-
-
-class battle_manager(ABC):
-    def __init__(self):
-        self.e = 2.7182
-        self.battle_dict = {'turn': 0, 'turn_counter': 1, 'power_counter': 1, 'first_turn': None}
-
-        self.battle_dict['effect_dict'] = {'reverse_effect_player': [], 'reverse_effect_enemy': []}
-
-        self.battle_dict['ai'] = {'used_item': 0}
-
-    @property
-    def effect_dict(self):
-        return self.battle_dict['effect_dict']
-
-    def randnum(self, hi, lo=1):
-        from random import randint
-        return randint(lo, hi)
-
-    def calc_agility(self, agi):
-        try:
-            return round((150) / (1 + (self.e ** ((-1 / 30) * agi))) - 75)
-        except TypeError:
-            return round((150) / (1 + (self.e ** ((-1 / 30) * 0))) - 75)
-
-    def determine_first_turn(self, plyr, enemy):
-        if plyr.stats.power > enemy.stats.power:
-            self.battle_dict['turn'] = Turn.Attack
-            self.battle_dict['first_turn'] = Turn.Attack
-        elif plyr.stats.power < enemy.stats.power:
-            self.battle_dict['turn'] = Turn.Defend
-            self.battle_dict['first_turn'] = Turn.Defend
-        elif plyr.stats.power == enemy.stats.power:
-            if plyr.stats.agility < enemy.stats.agility:
-                self.battle_dict['turn'] = Turn.Defend
-                self.battle_dict['first_turn'] = Turn.Defend
-            else:
-                self.battle_dict['turn'] = Turn.Attack
-                self.battle_dict['first_turn'] = Turn.Attack
-
-    def clean_active_effect(self):
-        i = 0
-        while i < len(self.effect_dict['reverse_effect_player']):
-            if (self.effect_dict['reverse_effect_player'] != []) and (self.effect_dict['reverse_effect_player'][i][0] < self.battle_dict['turn_counter']):
-                del self.effect_dict['reverse_effect_player'][i]
-            else:
-                i += 1
-
-        i = 0
-        while i < len(self.effect_dict['reverse_effect_enemy']):
-            if (self.effect_dict['reverse_effect_enemy'] != []) and (self.effect_dict['reverse_effect_enemy'][i][0] < self.battle_dict['turn_counter']):
-                del self.effect_dict['reverse_effect_enemy'][i]
-            else:
-                i += 1
-
-        del i
-
-    def refresh_active_effect(self, plyr, enemy):
-        if (self.effect_dict['reverse_effect_player'] != []) or (self.effect_dict['reverse_effect_enemy'] != []):
-            if self.effect_dict['reverse_effect_player'] != []:
-                for i in self.effect_dict['reverse_effect_player']:
-                    if self.battle_dict['turn'] == i[0]:
-                        self.use_item_stat(plyr, i[1])
-
-            if self.effect_dict['reverse_effect_enemy'] != []:
-                for i in self.effect_dict['reverse_effect_enemy']:
-                    if self.battle_dict['turn'] == i[0]:
-                        self.use_item_stat(plyr, i[1])
-
-            self.clean_active_effect()
-
-    def reverse_item_stat(self, stat_list):
-        def invert(val):
-            return val * -1
-
-        return [invert(i) for i in stat_list]
-
-    def calc_effect_queue(self, thing, itm):
-        try:
-            if itm.duration > 0:
-                if isinstance(thing, player):
-                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm)
-                    self.effect_dict['reverse_effect_player'].append(to_append)
-                    self.effect_dict['reverse_effect_player'].sort()
-                    del to_append
-                else:
-                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm)
-                    self.effect_dict['reverse_effect_enemy'].append(to_append)
-                    self.effect_dict['reverse_effect_enemy'].sort()
-                    del to_append
-
-        except AttributeError as e:
-            debug_info(e, 'An incorrect object type was used as type stat_item in battle_manager.use_item().')
-
-    def use_item_stat(self, thing, stat_changes):
-        thing.stats.stat_list = stat_changes
-
-    def use_attack(self, user, target, attk):
-        # Check if attack hits
-        if user.stats.agility > target.stats.agility:
-            temp_hit_check = self.randnum(100) / 2
-        else:
-            temp_hit_check = self.randnum(100)
-
-        if (self.randnum(100) <= attk.hit_rate) and (temp_hit_check >= self.calc_agility(target.stats.agility)):
-                # Attack landed; calculate damage
-                try:
-                    temp_damage = round(((user.stats.stren * attk.dmg ** (user.stats.stren ** .05)) ** .5) + self.randnum(round((user.stats.stren / 2) ** (1/2))))
-                except TypeError:
-                    temp_damage = round(((1 * attk.dmg ** (1 ** .05)) ** .5) + self.randnum(round((1 / 2) ** (1/2))))
-                try:
-                    temp_damage_recieved = round(temp_damage - target.stats.armor ** (4 / 5))
-                except TypeError:
-                    temp_damage_recieved = round(temp_damage - 0 ** (4 / 5))
-
-                if temp_damage_recieved < 1:
-                    temp_damage_recieved = 1
-                # Check for crit and write out result
-                if self.randnum(100) <= self.calc_agility(user.stats.agility):
-                    # Indicate critical hit
-                    temp_damage_recieved *= 3/2
-                    temp_damage_recieved = round(temp_damage_recieved)
-                    write((f"{user.name} used {attk.name}.", "It was a critical hit!", f"{user.name} dealt {temp_damage_recieved} to {target.name}."))
-                else:
-                    # No crit
-                    write(f"{user.name} used {attk.name}, and dealt {temp_damage_recieved} damage to {target.name}.")
-
-                target.stats.health -= temp_damage_recieved
-
-                del temp_damage
-                del temp_damage_recieved
-                self.hit_animate()
-                try:
-
-                    # Check for debuffs and apply them
-                    self.attack_use_debuff(target, attk.debuff)
-                except (AttributeError, TypeError):
-                    pass
-
-                try:
-                    user.collection.rem_item(attk.ammo_type, attk.ammo_cost)
-                except AttributeError:
-                    pass
-
-                return False
-
-        else:
-            # Attack missed, end turn
-            write(f"{user.name} tried to use {attk.name}, but they missed.")
-            return False
-
-    def stat_change_writeout(self):
-        if self.effect_dict['reverse_effect_player'] != []:
-            print('\nPlayer Status Effects:\n------------------------')
-            temp_stat_changes = self.effect_dict['reverse_effect_player']
-            for i in range(len(temp_stat_changes)):
-                print(f"Effect {i + 1}: {temp_stat_changes[i][2].name}")
-                print(f"Description: '{temp_stat_changes[i][2].dscrpt}'\n")
-                print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn_counter']}")
-                print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
-                print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
-                print(f"Armor Modifier: {temp_stat_changes[i][1][Stat_Sheet.armor] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.armor] != 0 else '', end='')
-                print(f"Agility Modifier: {temp_stat_changes[i][1][Stat_Sheet.agility] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.agility] != 0 else '', end='')
-                print(f"Power Modifier: {temp_stat_changes[i][1][Stat_Sheet.power] * -1}" if temp_stat_changes[i][1][Stat_Sheet.power] != 0 else '', end='')
-                print()
-            del temp_stat_changes
-
-        if self.effect_dict['reverse_effect_enemy'] != []:
-            print('\nEnemy Status Effects:\n------------------------')
-            temp_stat_changes = self.effect_dict['reverse_effect_enemy']
-            for i in range(len(temp_stat_changes)):
-                print(f"Effect {i + 1}: {temp_stat_changes[i][2].name}")
-                print(f"Description: '{temp_stat_changes[i][2].dscrpt}'\n")
-                print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn_counter']}")
-                print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
-                print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
-                print(f"Armor Modifier: {temp_stat_changes[i][1][Stat_Sheet.armor] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.armor] != 0 else '', end='')
-                print(f"Agility Modifier: {temp_stat_changes[i][1][Stat_Sheet.agility] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.agility] != 0 else '', end='')
-                print(f"Power Modifier: {temp_stat_changes[i][1][Stat_Sheet.power] * -1}" if temp_stat_changes[i][1][Stat_Sheet.power] != 0 else '', end='')
-                print()
-            del temp_stat_changes
-
-        input('Press enter to return to the previous menu.')
-
-    def attack_use_debuff(self, target, debuff):
-        if isinstance(debuff, stat_item):
-            self.calc_effect_queue(target, debuff)
-            self.use_item_stat(target, debuff.stat_changes)
-
-    def use_item(self, thing, itm):
-        # if itm.stat_changes != [0, 0, 0, 0, 0]:
-        # Add above check to the item list generator
-        if itm in thing.collection.items:
-            try:
-                # Add specific instructions for healing items
-                if isinstance(itm, heal_item):
-                    if thing.stats.health + itm.heal_amnt > thing.stats.max_health:
-                        thing.stats.health = thing.stats.max_health
-                    else:
-                        thing.stats.health += itm.heal_amnt
-
-                    write(f"{thing.name} used a {itm.name}, and regained {itm.heal_amnt} health.")
-                elif isinstance(itm, stat_item):
-                    self.calc_effect_queue(thing, itm)
-                    self.use_item_stat(thing, itm.stat_changes)
-                    write(f"{thing.name} used a {itm.name}.")
-
-                thing.collection.rem_item(itm)
-
-            except ValueError:
-                print(f"This item does not exist in {thing.name}'s inventory.")
-
-    def chance_item(self, enemy):
-        enemy_has_stat_items = [isinstance(i, stat_item) for i in enemy.collection.items]
-        enemy_has_heal_items = [isinstance(i, heal_item) for i in enemy.collection.items]
-
-        if (True in enemy_has_stat_items) and (self.battle_dict['ai']['used_item'] > 0):
-            return round((100) / (1 + (self.e ** ((-1 / 2) * self.battle_dict['ai']['used_item']))) - 50)
-        elif (True in enemy_has_heal_items) and (self.battle_dict['ai']['used_item'] > 0):
-            return self.chance_heal(enemy)
-        else:
-            return 0
-
-    def percent_health(self, thing):
-        return ((thing.stats.health / thing.stats.max_health) * 100)
-
-    def chance_heal(self, enemy):
-        enemy_has_heal_items = [isinstance(i, heal_item) for i in enemy.collection.items]
-
-        if (True in enemy_has_heal_items) and (self.percent_health(enemy) <= 80):
-            return round(-25719423 + (89.67716 - -25719430)/(1 + ((self.percent_health(enemy) / 1720762) ** 1.286616)))
-        else:
-            return 0
-
-    def switch_turn(self, power_data, enemy_used_item=False):
-        if self.battle_dict['power_counter'] < power_data:
-            self.battle_dict['power_counter'] += 1
-        else:
-            # Reset temporary power counter
-            self.battle_dict['power_counter'] = 1
-            if self.battle_dict['turn'] == Turn.Attack:
-                if self.battle_dict['first_turn'] == Turn.Defend:
-                    self.battle_dict['turn_counter'] += 1
-                # Switch turn
-                self.battle_dict['turn'] = Turn.Defend
-                # Exit turn
-                raise TurnComplete
-            elif self.battle_dict['turn'] == Turn.Defend:
-                if self.battle_dict['first_turn'] == Turn.Attack:
-                    self.battle_dict['turn_counter'] += 1
-                # Switch turn
-                self.battle_dict['turn'] = Turn.Attack
-                # Do extras based on item use
-                if enemy_used_item is True:
-                    self.battle_dict['ai']['used_item'] = 0
-                else:
-                    self.battle_dict['ai']['used_item'] += 1
-                # Exit turn
-                raise TurnComplete
-            else:
-                debug_info(ValueError('The turn counter was not set correctly.'), 'Somehow, the value of turn was switched away from 0 or 1, which are the accepted values.')
-
-    def hit_animate(self):
-        pass
-
-    def draw_hp(self, plyr, enemy):
-        clr_console()
-        prcnt_plyr_health = round(self.percent_health(plyr) / 2)
-
-        print(f'{plyr.name}: [', end='')
-        for i in range(50):
-            print('=' if i <= prcnt_plyr_health else '-', end='')
-        print(f"] ({plyr.stats.health}/{plyr.stats.max_health})")
-
-        del prcnt_plyr_health
-
-        prcnt_enemy_health = round(self.percent_health(enemy) / 2)
-
-        print(f'{enemy.name}: [', end='')
-        for i in range(50):
-            print('=' if i <= prcnt_enemy_health else '-', end='')
-        print(']')
-
-        del prcnt_enemy_health
-
-    def item_info(self, itm):
-        print(f"\n{itm.name}")
-        # Create barrier from name length
-        for i in itm.name:
-            print('-', end='')
-
-        print(f'\nDescription: "{itm.dscrpt}"')
-
-        if isinstance(itm, heal_item):
-            print('Type: Healing Item')
-            print(f"Heal Amount: {itm.heal_amnt}")
-        else:
-            print('\nType: Buff Item')
-            print(f"Turns Effective: {itm.duration}\n")
-            print(f"HP Modifier: {itm.stat_changes[Stat_Sheet.health]}\n" if itm.stat_changes[Stat_Sheet.health] != 0 else '', end='')
-            print(f"Strength Modifier: {itm.stat_changes[Stat_Sheet.strength]}\n" if itm.stat_changes[Stat_Sheet.strength] != 0 else '', end='')
-            print(f"Armor Modifier: {itm.stat_changes[Stat_Sheet.armor]}\n" if itm.stat_changes[Stat_Sheet.armor] != 0 else '', end='')
-            print(f"Agility Modifier: {itm.stat_changes[Stat_Sheet.agility]}\n" if itm.stat_changes[Stat_Sheet.agility] != 0 else '', end='')
-            print(f"Power Modifier: {itm.stat_changes[Stat_Sheet.power]}" if itm.stat_changes[Stat_Sheet.power] != 0 else '', end='')
-
-    def plyr_choose_item(self, plyr):
-        # Writeout valid items
-        valid_items = []
-        temp_index = 1
-        for i in range(len(plyr.collection.items)):
-            if isinstance(plyr.collection.items[i], heal_item) or isinstance(plyr.collection.items[i], stat_item):
-                print(f"{temp_index}. {plyr.collection.items[i].name}")
-                valid_items.append((temp_index, plyr.collection.items[i]))
-
-                temp_index += 1
-
-        if valid_items == []:
-            print('\nYou have no items to use.')
-            input('(Press enter to continue.)')
-            raise ChooseAgain
-
-        print('\nEnter a number to use an item. \nType "info [number]" for more info about the item.\nType "q" to return to the previous menu.')
-        while True:
-            user_choice = str(input('\nChoice: '))
-            try:
-                # Determine action based on input
-                if "info" in user_choice:
-                    for i in valid_items:
-                        if i[0] == int(user_choice.split(' ')[1]):
-                            self.item_info(i[1])
-                elif user_choice.lower() == 'q':
-                    raise ChooseAgain
-                else:
-                    # Convert user_choice to indexable integer
-                    user_choice = int(user_choice)
-                    # Try to access the selected attack and return it
-                    for i in valid_items:
-                        if i[0] == user_choice:
-                            return i[1]
-
-            except (ValueError, IndexError, AttributeError):
-                print('Invalid input.')
-
-    def attack_info(self, collection, attack):
-        print(f"\n{attack.name}")
-        # Create barrier from name length
-        for i in attack.name:
-            print('-', end='')
-
-        print(f'\nDescription: "{attack.dscrpt}"')
-        print(f"Damage: {attack.dmg}")
-        print(f"Accuracy {attack.hit_rate}%")
-
-        try:
-            print(f"Ammo: {attack.ammo_type.name}")
-            print(f"Ammo Cost: {attack.ammo_cost} ({collection.count(attack.ammo_type)} in inventory)")
-        except AttributeError:
-            pass
-
-        try:
-            print(f"Debuff Effect: {attack.debuff.name}")
-        except AttributeError:
-            pass
-
-    def plyr_choose_attack(self, plyr):
-        print()
-        for i in range(len(plyr.attacks)):
-            print(f"{i + 1}. {plyr.attacks[i].name}")
-
-        # Prompt user
-        print('\nEnter a number to attack. \nType "info [number]" for more info about the attack.\nType "q" to return to the previous menu.')
-        while True:
-            user_choice = str(input('\nChoice: '))
-            try:
-                # Determine action based on input
-                if "info" in user_choice:
-                    self.attack_info(plyr.collection.items, plyr.attacks[int(user_choice.split(' ')[1]) - 1])
-                elif user_choice.lower() == 'q':
-                    raise ChooseAgain
-                else:
-                    # Convert user_choice to indexable integer
-                    user_choice = int(user_choice) - 1
-
-                    try:
-                        req_ammo = plyr.collection.items.count(plyr.attacks[user_choice].ammo_type)
-                        if (plyr.attacks[user_choice].ammo_type in plyr.collection.items) and (req_ammo >= plyr.attacks[user_choice].ammo_cost):
-                            return plyr.attacks[user_choice]
-                        else:
-                            print(f"You don't have enough {plyr.attacks[user_choice].ammo_type.name}s to use this attack.")
-                    except AttributeError:
-                        return plyr.attacks[user_choice]
-
-            except (ValueError, IndexError, AttributeError):
-                    print('Invalid input.')
-
-    def enemy_use_heal_item(self, enemy):
-        # Use healing item
-        heals_ordered_best = []
-
-        # Generate list of healing items that don't overheal the enemy
-        for heal in enemy.collection.items:
-            if isinstance(heal, heal_item) and (enemy.stats.health + heal.heal_amnt <= enemy.stats.max_health):
-                heals_ordered_best.append((heal.heal_amnt, heal))
-
-        if heals_ordered_best != []:
-            # Order them by what item will heal them the most
-            heals_ordered_best.sort(reverse=True)
-
-            # Use the item
-            self.use_item(enemy, heals_ordered_best[0][1])
-
-            # Delete unneeded var
-            del heals_ordered_best
-            return True
-
-        # Create list of healing items and sort them based on how effective they are
-        temp_heal_list = []
-        for heal in enemy.collection.items:
-            if isinstance(heal, heal_item):
-                temp_heal_list.append((heal.heal_amnt, heal))
-        temp_heal_list.sort()
-
-        # Use item and display its use
-        write(f"{enemy.name} used a {temp_heal_list[0][1].name} and regained {enemy.stats.max_health - enemy.stats.health} health.")
-        self.use_item(enemy, temp_heal_list[0][1])
-
-        # Finish up
-        del temp_heal_list
-        del heals_ordered_best
-        return True
-
-    def enemy_use_item(self, enemy):
-        # Use item #
-        # Generate random number
-        enemy_choice = self.randnum(100)
-        # Check if there are valid items or not
-        valid_stat_items = (isinstance(itm, stat_item) for itm in enemy.collection.items)
-        if (enemy_choice <= self.chance_heal(enemy)) or all(check is False for check in valid_stat_items):
-            self.enemy_use_heal_item(enemy)
-        else:
-            # Use buff item
-
-            # Generate list of places in inventory where buff items exist
-            temp_stat_items = []
-            for i in range(len(enemy.collection.items)):
-                if isinstance(enemy.collection.items[i], stat_item):
-                    temp_stat_items.append(i)
-
-            # Randomly select buff from list of places in inventory
-            enemy_choice = self.randnum(len(temp_stat_items) - 1, 0)
-            buff_choice = enemy.collection.items[temp_stat_items[enemy_choice]]
-
-            # Tell player and use buff
-            write(f"{enemy.name} used a {buff_choice.name}.")
-            self.use_item(enemy, buff_choice)
-
-            del temp_stat_items
-            return True
-
-    def enemy_determine_attack(self, enemy):
-        while True:
-            random_attack = enemy.attacks[self.randnum(len(enemy.attacks)) - 1]
-
-            if isinstance(random_attack, ammo_attack):
-                req_items = 0
-                for itm in enemy.collection.items:
-                    if itm is random_attack.ammo_type:
-                        req_items += 1
-
-                if req_items >= random_attack.ammo_cost:
-                    return random_attack
-
-            elif isinstance(random_attack, ammo_attack) is False:
-                return random_attack
-
-    @abstractmethod
+# Black belt
+class base_bat_man(G.battle_manager):
     def player_win(self, plyr, enemy):
         # The player wins
-        """
-        This method is defined by users of Gilbo. If the player wins battle(), this method is called. Whether they loot the enemy, or gain experience, it must be defined here.
-        """
-    @abstractmethod
+        win(self)
+
     def player_lose(self, plyr, enemy):
         # The player loses
-        """
-        This method is defined by users of Gilbo. If the player loses battle(), this method is called. Whether they lose money and respawn, or get booted out to the last time they saved, it must be defined here.
-        """
+        lose(self)
 
+
+class katana_bat_man(base_bat_man):
     def battle(self, plyr, enemy, spec_effect=None, music=None):
         self.determine_first_turn(plyr, enemy)
 
-        try:
+        if isinstance(music, str):
             from Gilbo_Media import music_manager
-            mus_man = music_manager(5)
+            mus_man = music_manager()
             mus_man.init_track(music)
             mus_man.play_loop()
-        except AttributeError:
-            pass
 
         while (plyr.stats.health > 0) and (enemy.stats.health > 0):
             # Allow player to read before clearing screen
@@ -1314,12 +439,14 @@ class battle_manager(ABC):
             # Check to make sure no effects are active that shouldn't be
             self.refresh_active_effect(plyr, enemy)
 
-            spec_effect()
+            # Run the spec_effect if there is one specified
+            if spec_effect is not None:
+                spec_effect()
 
             # Check if player is attacking or defending
             try:
                 # Determine whose turn it is
-                if self.battle_dict['turn'] == Turn.Attack:
+                if self.battle_dict['turn'] == G.Turn.Attack:
                     def active_debuff_check():
                         if (self.effect_dict['reverse_effect_player'] != []) or (self.effect_dict['reverse_effect_enemy'] != []):
                             return True
@@ -1355,10 +482,10 @@ class battle_manager(ABC):
                                 self.stat_change_writeout()
                             else:
                                 input('Invalid input.')
-                        except ChooseAgain:
+                        except G.ChooseAgain:
                             pass
 
-                if self.battle_dict['turn'] == Turn.Defend:
+                if self.battle_dict['turn'] == G.Turn.Defend:
                     while True:
                         enemy_choice = self.randnum(100)
                         # Test if enemy uses item
@@ -1368,11 +495,12 @@ class battle_manager(ABC):
                             # Attack
                             self.switch_turn(enemy.stats.power, self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
 
-            except TurnComplete:
-                input('\n(Press enter to continue.)')
-                pass
+            except G.TurnComplete:
+                if self.battle_dict['turn'] == G.Turn.Attack:
+                    plyr.collection.add_item(stamina)
 
-        mus_man.stop()
+                input('\nPress enter to continue.')
+                pass
 
         if plyr.stats.health > 0:
             self.player_win(plyr, enemy)
@@ -1380,118 +508,148 @@ class battle_manager(ABC):
             self.player_lose(plyr, enemy)
 
 
-#
-# Tracker #
-#
-
-class object_tracker:
-    def __init__(self):
-        self.one_time_init = 0
-
-    def empty_tracker(self):
-        if self.one_time_init != 0:
-            self.track_dict.update((key, []) for key in self.track_dict)
-        else:
-            self.track_dict = {}
-            self.one_time_init = 1
-
-    def categ_list(self, globl):
-        # check for Gilbo-defined class parents
-        try:
-            import inspect
-            if 'Gilbo' in str(inspect.getfile(globl.__class__)).split('\\')[-1]:
-                temp = []
-                parents = inspect.getmro(globl.__class__)
-
-                # Append list of matched objects to temporary list
-                for i in range(len(parents)):
-                    temp_append = str(parents[i]).split("'")[1]
-                    try:
-                        temp_append = temp_append.split('.')[1]
-                    except IndexError:
-                        pass
-                    temp.append(temp_append)
-
-                # Append globals that match the object to list
-                for i in range(len(temp)):
-                    try:
-                        self.track_dict[temp[i]].append(globl)
-                    except KeyError:
-                        self.track_dict.update({temp[i]: [globl]})
-
-                del temp
-
-        except TypeError:
-            pass
-
-    def update_tracker(self, class_list, spec_search=None):
-        self.empty_tracker()
-
-        # Check if user wants to search for a specific item
-        if spec_search is None:
-            for key in class_list:
-                if isinstance(class_list[key], list):
-                    for i in range(len(class_list[key])):
-                        self.categ_list(class_list[key][i])
-                else:
-                    self.categ_list(class_list[key])
-
-        else:
-            # If the user wants to search for something specifically, begin another process
-            store_names = []
-            import inspect
-
-            for key in class_list:
+class chop_bat_man(katana_bat_man):
+    def plyr_choose_attack(self, plyr):
+        choices = []
+        while True:
+            choices = [self.randnum(len(plyr.attacks)), self.randnum(len(plyr.attacks))]
+            if choices[0] != choices[1]:
                 try:
-                    if 'Gilbo' in str(inspect.getfile(class_list[key].__class__)).split('\\')[-1]:
-                        # Find instances of the searched term
-                        if isinstance(class_list[key], spec_search):
-                            store_names.append(class_list[key])
-
-                except TypeError:
+                    plyr.attacks[choices[0]]
+                    plyr.attacks[choices[1]]
+                    break
+                except IndexError:
                     pass
 
-            return store_names
+        print(f'\n1. {plyr.attacks[choices[0]].name}\n2. {plyr.attacks[choices[1]].name}')
 
-    def read_write_data(self, data_set=[]):
-        for i in range(len(data_set)):
-            print(data_set[i])
+        # Prompt user
+        print('\nEnter a number to attack. \nType "info [number]" for more info about the attack.\nType "q" to return to the previous menu.')
 
-        print('\n')
+        def replace_value(word):
+            if (word == '0') or (word == 0):
+                return choices[0]
+            elif (word == '1') or (word == 1):
+                return choices[1]
 
-    def writeout(self, spec_search=None):
-        print()
-        for i, j in self.tracker.items():
-            if spec_search is None:
-                self.read_write_data([i, j])
-            elif spec_search is not None and str(i) == spec_search:
-                self.read_write_data([i, j])
+        while True:
+            user_choice = input('\nChoice: ')
 
-    def save_data(self, obj_list):
-        keys = list(obj_list.keys())
-        values = list(obj_list.values())
+            try:
+                # Determine action based on input
+                if "info" in user_choice:
+                    self.attack_info(plyr.collection.items, plyr.attacks[replace_value(int(user_choice.split(' ')[1]) - 1)])
+                elif user_choice.lower() == 'q':
+                    raise G.ChooseAgain
+                else:
+                    # Convert user_choice to indexable integer
+                    user_choice = int(user_choice) - 1
 
-        with open('sav.pickle', 'wb') as handle:
-            handle.truncate(0)
-            import dill as pickle
-            pickle.dump((keys, values), handle)
+                    try:
+                        req_ammo = plyr.collection.items.count(plyr.attacks[replace_value(user_choice)].ammo_type)
+                        if (plyr.attacks[replace_value(user_choice)].ammo_type in plyr.collection.items) and (req_ammo >= plyr.attacks[replace_value(user_choice)].ammo_cost):
+                            return plyr.attacks[replace_value(user_choice)]
+                        else:
+                            print("You don't have the correct item to use this attack.")
+                    except AttributeError:
+                        return plyr.attacks[replace_value(user_choice)]
 
-        del keys, values
-
-    def load_data(self, obj_list):
-        with open('sav.pickle', 'rb') as handle:
-            import dill as pickle
-            keys, values = pickle.load(handle)
-            for i in range(len(keys)):
-                try:
-                    obj_list.update({keys[i]: values[i]})
-                except IndexError as e:
-                    debug_info(e, 'There was more data to load than exists now', True)
-
-    @property
-    def tracker(self):
-        return self.track_dict
+            except (ValueError, IndexError, AttributeError):
+                    print('Invalid input.')
 
 
-tracker = object_tracker()
-loc_man = location_manager()
+#
+# Main #
+#
+def main():
+    print('Tax Calculator 2: The Audit\nWritten using Gilbo-API (© 2018 Adam Zett)\n')
+    print('Skip dialogue?')
+
+    dialogue = None
+    while dialogue is None:
+        user_choice = input('Yes or No: ')
+        if user_choice.lower() == 'yes':
+            dialogue = False
+        elif user_choice.lower() == 'no':
+            dialogue = True
+        else:
+            print('Invalid selection.')
+
+    del user_choice
+
+    G.clr_console()
+    global user_tipped
+    if dialogue is True:
+        narrator.say('describe-setting')
+        user_tipped = None
+        while user_tipped is None:
+            user_choice = input('Yes or No: ')
+            if user_choice.lower() == 'yes':
+                user_tipped = True
+                narrator.say('user-tipped')
+                alton.say('thanks-for-tipping')
+            elif user_choice.lower() == 'no':
+                user_tipped = False
+                narrator.say('user-no-tip')
+            else:
+                print('Invalid selection.')
+
+        del user_choice
+
+        let_read()
+        narrator.say('try-to-leave')
+        suit_narrator.say('initial-encounter')
+        narrator.say('enemy-spotted')
+        alton.say('law-run-in')
+
+        let_read()
+        suit_narrator.say('tax-confront')
+        narrator.say('back-to-reality')
+        suit_narrator.say('avoid-this')
+        narrator.say('enemy-attacks')
+    else:
+        user_tipped = False
+
+    weapon_chosen = None
+
+    if dialogue is False:
+        print('Choose your weapon.')
+
+    print(f"\n1. Katana\n-------------------\n'{katana.dscrpt}'")
+    print(f"\n2. Black Belt\n-------------------\n'{black_belt.dscrpt}'")
+    print(f"\n3. Chop Sticks\n-------------------\n'{chop_sticks.dscrpt}'")
+    print('\nEnter a number to make your choice.')
+    black_suit.entity_dict['used_buff'] = False
+
+    while weapon_chosen is None:
+        user_choice = input('\nChoice: ')
+        global bat_man
+        if user_choice == '1':
+            weapon_chosen = True
+            print('\nSpecial effects: Stamina will regenerate once per turn to allow for the use of special attacks.')
+            let_read()
+            user.collection.equip(katana)
+            user.collection.add_item(stamina)
+            bat_man = katana_bat_man()
+        elif user_choice == '2':
+            weapon_chosen = True
+            user.collection.equip(black_belt)
+            bat_man = base_bat_man()
+        elif user_choice == '3':
+            weapon_chosen = True
+            print('\nSpecial effects: Stamina will regenerate and two random attacks will be generated twice every turn, and the player can choose from one each time.\n')
+            let_read()
+            user.collection.equip(chop_sticks)
+            user.collection.add_item(spray_can, 5)
+            bat_man = chop_bat_man()
+        else:
+            print('Invalid input')
+
+    global monologue
+    monologue = [0, None]
+
+    bat_man.battle(user, black_suit, bat_check, "./Media/boss.wav")
+
+
+if __name__ == '__main__':
+    main()
