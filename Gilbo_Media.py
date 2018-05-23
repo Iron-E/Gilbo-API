@@ -69,11 +69,3 @@ class music_manager():
             self.music_dict['looping'] = False
 
         self.track.stop()
-
-
-a = music_manager()
-a.init_track('../Morrisland/Media/boss.wav')
-a.play_loop()
-import time
-time.sleep(2)
-a.stop()
