@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.2.3 #
+# Gilbo RPG API -- Version 1.2.4 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -814,7 +814,7 @@ class ChooseAgain(Exception):
 class battle_manager(ABC):
     def __init__(self):
         self.e = 2.7182
-        self.battle_dict = {'turn': 0, 'turn_counter': 1, 'power_counter': 1, 'first_turn': None}
+        self.battle_dict = {'turn': 0, 'turn_counter': 1, 'power_counter': 1, 'first_turn': None, 'continue_prompt': '\n(Press enter to continue.)'}
 
         self.battle_dict['effect_dict'] = {'reverse_effect_player': [], 'reverse_effect_enemy': []}
 
@@ -991,7 +991,7 @@ class battle_manager(ABC):
                 print()
             del temp_stat_changes
 
-        input('Press enter to return to the previous menu.')
+        input(self.battle_dict['continue_prompt'])
 
     def attack_use_debuff(self, target, debuff):
         if isinstance(debuff, stat_item):
@@ -1127,7 +1127,7 @@ class battle_manager(ABC):
 
         if valid_items == []:
             print('\nYou have no items to use.')
-            input('(Press enter to continue.)')
+            input(self.battle_dict['continue_prompt'])
             raise ChooseAgain
 
         print('\nEnter a number to use an item. \nType "info [number]" for more info about the item.\nType "q" to return to the previous menu.')
@@ -1367,7 +1367,7 @@ class battle_manager(ABC):
                             self.switch_turn(enemy.stats.power, self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
 
             except TurnComplete:
-                input('\n(Press enter to continue.)')
+                input(self.battle_dict['continue_prompt'])
                 pass
 
         try:
