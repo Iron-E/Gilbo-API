@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.2.2 #
+# Gilbo RPG API -- Version 1.2.3 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -1370,7 +1370,10 @@ class battle_manager(ABC):
                 input('\n(Press enter to continue.)')
                 pass
 
-        mus_man.stop()
+        try:
+            mus_man.stop()
+        except NameError:
+            pass
 
         if plyr.stats.health > 0:
             self.player_win(plyr, enemy)
