@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.2.4 #
+# Gilbo RPG API -- Version 1.2.5 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -909,7 +909,8 @@ class battle_manager(ABC):
     def use_attack(self, user, target, attk):
         # Check if attack hits
         if user.stats.agility > target.stats.agility:
-            temp_hit_check = self.randnum(100) / 2
+            from math import round
+            temp_hit_check = round(self.randnum(100) * 1.5)
         else:
             temp_hit_check = self.randnum(100)
 
