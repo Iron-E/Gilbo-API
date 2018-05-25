@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.2.6 #
+# Gilbo RPG API -- Version 1.2.7 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -72,6 +72,16 @@ def write(phrase, type_speed=.029, line_delay=.5):
 def clr_console():
     import os
     os.system('cls' if os.name == 'nt' else 'clear')
+
+
+def cli_color(unix, win='color 0F'):
+    import os
+    if os.name == 'nt':
+        # change windows terminal color
+        os.system(win)
+    else:
+        # change linux terminal color
+        os.system(unix)
 
 
 def debug_info(err, more_info, display=False):
