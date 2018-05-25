@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.2.7 #
+# Gilbo RPG API -- Version 1.2.8 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -963,8 +963,6 @@ class battle_manager(ABC):
                 except AttributeError:
                     pass
 
-                return False
-
         else:
             # Attack missed, end turn
             write(f"{user.name} tried to use {attk.name}, but they missed.")
@@ -1082,7 +1080,19 @@ class battle_manager(ABC):
                 debug_info(ValueError('The turn counter was not set correctly.'), 'Somehow, the value of turn was switched away from 0 or 1, which are the accepted values.')
 
     def hit_animate(self):
-        pass
+        from time import sleep
+        cli_color('setterm --inversescreen on', 'color F0')
+        sleep(.2)
+        cli_color('setterm --inversescreen off')
+        sleep(.1)
+        cli_color('setterm --inversescreen on', 'color F0')
+        sleep(.03)
+        cli_color('setterm --inversescreen off')
+        sleep(.03)
+        cli_color('setterm --inversescreen on', 'color F0')
+        sleep(.03)
+        cli_color('setterm --inversescreen off')
+
 
     def draw_hp(self, plyr, enemy):
         clr_console()
