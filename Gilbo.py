@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.2.8 #
+# Gilbo RPG API -- Version 1.2.9 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -179,7 +179,7 @@ class battler(vendor):
 
     def sub_stat_change(self, sender, **kwargs):
         if sender is self.collection:
-            self.stats.stat_list = kwargs['changes']
+            self.stats.set_stats(kwargs['changes'])
 
 
 class player(battler):
@@ -356,11 +356,11 @@ class battler_stats:
     def stat_list(self):
         return [self.health, self.max_health, self.stren, self.armor, self.agility, self.power]
 
-    @stat_list.setter
-    def stat_list(self, val):
+    def set_stats(self, val, permanent=True):
         try:
             self.health += val[Stat_Sheet.health]
-            self.max_health += val[Stat_Sheet.health]
+            if permanent is True:
+                self.max_health += val[Stat_Sheet.health]
             self.stren += val[Stat_Sheet.strength]
             self.armor += val[Stat_Sheet.armor]
             self.agility += val[Stat_Sheet.agility]
@@ -914,7 +914,7 @@ class battle_manager(ABC):
             debug_info(e, 'An incorrect object type was used as type stat_item in battle_manager.use_item().')
 
     def use_item_stat(self, thing, stat_changes):
-        thing.stats.stat_list = stat_changes
+        thing.stats.set_stats(stat_changes, False)
 
     def use_attack(self, user, target, attk):
         # Check if attack hits
