@@ -206,10 +206,11 @@ class player(battler):
 
 class Stat_Sheet(IntEnum):
     health = 0
-    strength = 1
-    armor = 2
-    agility = 3
-    power = 4
+    stamina = 1
+    strength = 2
+    armor = 3
+    agility = 4
+    power = 5
 
 
 class Item_Types(IntEnum):
@@ -298,9 +299,11 @@ class stat_item(equippable):
 
 
 class battler_stats:
-    def __init__(self, hp, stren, armr, agil, pwr=1):
+    def __init__(self, hp, stam, stren, armr, agil, pwr=1):
         self.stat_dict = {'hp': hp}
         self.stat_dict['max_hp'] = hp
+        self.stat_dict['stam'] = stam
+        self.stat_dict['max_stam'] = stam
         self.stat_dict['strength'] = stren
         self.stat_dict['armor'] = armr
         self.stat_dict['agility'] = agil
@@ -321,6 +324,22 @@ class battler_stats:
     @max_health.setter
     def max_health(self, value):
         self.stat_dict['max_hp'] = value
+
+    @property
+    def stam(self):
+        return self.stat_dict['stam']
+
+    @stam.setter
+    def stam(self, value):
+        self.stat_dict['stam'] = value
+
+    @property
+    def max_stamina(self):
+        return self.stat_dict['max_stam']
+
+    @max_stamina.setter
+    def max_stamina(self, value):
+        self.stat_dict['max_stam'] = value
 
     @property
     def stren(self):
@@ -361,8 +380,10 @@ class battler_stats:
     def set_stats(self, val, permanent=True):
         try:
             self.health += val[Stat_Sheet.health]
+            self.stam += val[Stat_Sheet.stam]
             if permanent is True:
                 self.max_health += val[Stat_Sheet.health]
+                self.max_stamina += val[Stat_Sheet.stamina]
             self.stren += val[Stat_Sheet.strength]
             self.armor += val[Stat_Sheet.armor]
             self.agility += val[Stat_Sheet.agility]
@@ -374,6 +395,7 @@ class battler_stats:
 
     def writeout(self):
         print(f"Health: {self.health}/{self.max_health}")
+        print(f"Stamina: {self.stam}/self.{self.max_stamina}", end="\n\n")
         print(f"Strength: {self.stren}")
         print(f"Armor: {self.armor}")
         print(f"Agility: {self.agility}")
@@ -386,14 +408,24 @@ class battler_stats:
 
 
 class Directions(IntEnum):
-    Up_Left = 11
-    Up = 12
-    Up_Right = 13
-    Left = 21
-    Right = 23
-    Down_Left = 31
-    Down = 32
-    Down_Right = 33
+    Up_Left = 0
+    Up = 1
+    Up_Right = 2
+    Left = 10
+    Right = 12
+    Down_Left = 20
+    Down = 21
+    Down_Right = 22
+
+
+"""
+Table of directions numbered as follows
+  0 1 2
+0 _ _ _
+1 _ _ _
+2 _ _ _
+
+"""
 
 
 class Location_Errors(IntEnum):
@@ -611,7 +643,7 @@ class array_map(ABC):
 #
 
 
-class attack:
+class attack(ABC):
     def __init__(self, name, dscrpt, dmg, acc=100, debuff=None):
         self.attack_dict = {'dmg': dmg}
         self.attack_dict['name'] = name
@@ -642,6 +674,16 @@ class attack:
     @property
     def count(self):
         return self.attack_dict['hit_count']
+
+
+class stam_attack(attack):
+    def __init__(self, name, dscrpt, dmg, stam_cost, acc=100, debuff=None):
+        super().__init__(name, dscrpt, dmg, acc, debuff)
+        self.attack_dict['stamina_cost'] = stam_cost
+
+    @property
+    def stam_cost(self):
+        return self.attack_dict['stamina_cost']
 
 
 class ammo_attack(attack):
@@ -963,7 +1005,8 @@ class battle_manager(ABC):
                 try:
                     user.collection.rem_item(attk.ammo_type, attk.ammo_cost)
                 except AttributeError:
-                    pass
+                    # Remove stamina cost of attack from stamina pool
+                    user.stats.stam -= attk.stam_cost
 
         else:
             # Attack missed, end turn
@@ -1095,7 +1138,6 @@ class battle_manager(ABC):
         sleep(.03)
         cli_color('setterm --inversescreen off')
 
-
     def draw_hp(self, plyr, enemy):
         clr_console()
         prcnt_plyr_health = round(self.percent_health(plyr) / 2)
@@ -1185,15 +1227,18 @@ class battle_manager(ABC):
         print(f"Accuracy {attack.hit_rate}%")
 
         try:
-            print(f"Ammo: {attack.ammo_type.name}")
-            print(f"Ammo Cost: {attack.ammo_cost} ({collection.count(attack.ammo_type)} in inventory)")
+            print(f"Stamina Cost: {attack.stam_cost}")
         except AttributeError:
-            pass
-
-        try:
-            print(f"Debuff Effect: {attack.debuff.name}")
-        except AttributeError:
-            pass
+            try:
+                print(f"Ammo: {attack.ammo_type.name}")
+                print(f"Ammo Cost: {attack.ammo_cost} ({collection.count(attack.ammo_type)} in inventory)")
+            except AttributeError:
+                pass
+        finally:
+            try:
+                print(f"Debuff Effect: {attack.debuff.name}")
+            except AttributeError:
+                pass
 
     def plyr_choose_attack(self, plyr):
         print()
@@ -1221,7 +1266,10 @@ class battle_manager(ABC):
                         else:
                             print(f"You don't have enough {plyr.attacks[user_choice].ammo_type.name}s to use this attack.")
                     except AttributeError:
-                        return plyr.attacks[user_choice]
+                        if (plyr.stats.stam >= plyr.attacks[user_choice]):
+                            return plyr.attacks[user_choice]
+                        else:
+                            print("You don't have enough stamina to use that attack. Wait and regain more.")
 
             except (ValueError, IndexError, AttributeError):
                     print('Invalid input.')
@@ -1295,16 +1343,13 @@ class battle_manager(ABC):
             random_attack = enemy.attacks[self.randnum(len(enemy.attacks)) - 1]
 
             if isinstance(random_attack, ammo_attack):
-                req_items = 0
-                for itm in enemy.collection.items:
-                    if itm is random_attack.ammo_type:
-                        req_items += 1
-
+                req_items = enemy.collection.items.count(enemy.random_attack.ammo_type)
                 if req_items >= random_attack.ammo_cost:
                     return random_attack
 
-            elif isinstance(random_attack, ammo_attack) is False:
-                return random_attack
+            elif isinstance(random_attack, stam_attack):
+                if enemy.stats.stamina >= random_attack.stam_cost:
+                    return random_attack
 
     @abstractmethod
     def player_win(self, plyr, enemy):
@@ -1389,6 +1434,15 @@ class battle_manager(ABC):
                             self.switch_turn(enemy.stats.power, self.use_attack(enemy, plyr, self.enemy_determine_attack(enemy)))
 
             except TurnComplete:
+                plyr.stats.stam += 3
+                enemy.stats.stam += 3
+
+                if (plyr.stats.stam > plyr.stats.max_stam):
+                    plyr.stats.stam = plyr.stats.max_stam
+
+                if (enemy.stats.stam > enemy.stats.max_stam):
+                    enemy.stats.stam = enemy.stats.max_stam
+
                 input(self.battle_dict['continue_prompt'])
                 pass
 
