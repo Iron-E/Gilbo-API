@@ -273,9 +273,10 @@ class armor(equippable):
 
 
 class heal_item(item):
-    def __init__(self, name, dscrpt, val, hp=0):
+    def __init__(self, name, dscrpt, val, hp=0, stam=0):
         super().__init__(name, dscrpt, val)
-        self.item_dict['heal_amount'] = hp
+        self.item_dict['hp_heal_amount'] = hp
+        self.item_dict['stam_heal_amount'] = stam
 
     @property
     def heal_amnt(self):
@@ -377,17 +378,41 @@ class battler_stats:
     def stat_list(self):
         return [self.health, self.max_health, self.stren, self.armor, self.agility, self.power]
 
-    def set_stats(self, val, permanent=True):
+    def set_stats(self, val, percent=False, multiply=False, permanent=False):
         try:
-            self.health += val[Stat_Sheet.health]
-            self.stam += val[Stat_Sheet.stam]
-            if permanent is True:
-                self.max_health += val[Stat_Sheet.health]
-                self.max_stamina += val[Stat_Sheet.stamina]
-            self.stren += val[Stat_Sheet.strength]
-            self.armor += val[Stat_Sheet.armor]
-            self.agility += val[Stat_Sheet.agility]
-            self.power += val[Stat_Sheet.power]
+            if (percent is True):
+                if (multiply is True):
+                    self.health *= val[Stat_Sheet.health]
+                    self.stam *= val[Stat_Sheet.stam]
+                    self.stren += val[Stat_Sheet.strength]
+                    self.armor += val[Stat_Sheet.armor]
+                    self.agility += val[Stat_Sheet.agility]
+                    self.power += val[Stat_Sheet.power]
+                else:
+                    self.health /= val[Stat_Sheet.health]
+                    self.stam /= val[Stat_Sheet.stam]
+                    self.stren /= val[Stat_Sheet.strength]
+                    self.armor /= val[Stat_Sheet.armor]
+                    self.agility /= val[Stat_Sheet.agility]
+                    self.power /= val[Stat_Sheet.power]
+            else:
+                if (permanent is True):
+                    self.max_health += val[Stat_Sheet.health]
+                    self.max_stamina += val[Stat_Sheet.stamina]
+                else:
+                    self.health += val[Stat_Sheet.health]
+                    self.stam += val[Stat_Sheet.stam]
+
+                    if self.health > self.max_health:
+                        self.health = self.max_health
+                    if self.stam > self.max_stamina:
+                        self.stam = self.max_stamina
+
+                self.stren += val[Stat_Sheet.strength]
+                self.armor += val[Stat_Sheet.armor]
+                self.agility += val[Stat_Sheet.agility]
+                self.power += val[Stat_Sheet.power]
+
         except IndexError as e:
             debug_info(e, 'battler_stats.stat_list only accepts lists as setters.', True)
         except TypeError as e:
@@ -925,31 +950,25 @@ class battle_manager(ABC):
             if self.effect_dict['reverse_effect_player'] != []:
                 for i in self.effect_dict['reverse_effect_player']:
                     if self.battle_dict['turn'] == i[0]:
-                        self.use_item_stat(plyr, i[1])
+                        self.use_temp_stat(plyr, i[1], False)
 
             if self.effect_dict['reverse_effect_enemy'] != []:
                 for i in self.effect_dict['reverse_effect_enemy']:
                     if self.battle_dict['turn'] == i[0]:
-                        self.use_item_stat(plyr, i[1])
+                        self.use_temp_stat(plyr, i[1], False)
 
             self.clean_active_effect()
-
-    def reverse_item_stat(self, stat_list):
-        def invert(val):
-            return val * -1
-
-        return [invert(i) for i in stat_list]
 
     def calc_effect_queue(self, thing, itm):
         try:
             if itm.duration > 0:
                 if isinstance(thing, player):
-                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm)
+                    to_append = (self.battle_dict['turn_counter'] + itm.duration, itm.stat_changes, itm)
                     self.effect_dict['reverse_effect_player'].append(to_append)
                     self.effect_dict['reverse_effect_player'].sort()
                     del to_append
                 else:
-                    to_append = (self.battle_dict['turn_counter'] + itm.duration, self.reverse_item_stat(itm.stat_changes), itm)
+                    to_append = (self.battle_dict['turn_counter'] + itm.duration, itm.stat_changes, itm)
                     self.effect_dict['reverse_effect_enemy'].append(to_append)
                     self.effect_dict['reverse_effect_enemy'].sort()
                     del to_append
@@ -957,8 +976,8 @@ class battle_manager(ABC):
         except AttributeError as e:
             debug_info(e, 'An incorrect object type was used as type stat_item in battle_manager.use_item().')
 
-    def use_item_stat(self, thing, stat_changes):
-        thing.stats.set_stats(stat_changes, False)
+    def use_temp_stat(self, thing, stat_changes, multiply):
+        thing.stats.set_stats(stat_changes, True, multiply)
 
     def use_attack(self, user, target, attk):
         # Check if attack hits
@@ -1021,11 +1040,11 @@ class battle_manager(ABC):
                 print(f"Effect {i + 1}: {temp_stat_changes[i][2].name}")
                 print(f"Description: '{temp_stat_changes[i][2].dscrpt}'\n")
                 print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn_counter']}")
-                print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
-                print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
-                print(f"Armor Modifier: {temp_stat_changes[i][1][Stat_Sheet.armor] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.armor] != 0 else '', end='')
-                print(f"Agility Modifier: {temp_stat_changes[i][1][Stat_Sheet.agility] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.agility] != 0 else '', end='')
-                print(f"Power Modifier: {temp_stat_changes[i][1][Stat_Sheet.power] * -1}" if temp_stat_changes[i][1][Stat_Sheet.power] != 0 else '', end='')
+                print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * 100}%\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
+                print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * 100}%\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
+                print(f"Armor Modifier: {temp_stat_changes[i][1][Stat_Sheet.armor] * 100}%\n" if temp_stat_changes[i][1][Stat_Sheet.armor] != 0 else '', end='')
+                print(f"Agility Modifier: {temp_stat_changes[i][1][Stat_Sheet.agility] * 100}%\n" if temp_stat_changes[i][1][Stat_Sheet.agility] != 0 else '', end='')
+                print(f"Power Modifier: {temp_stat_changes[i][1][Stat_Sheet.power] * 100}%" if temp_stat_changes[i][1][Stat_Sheet.power] != 0 else '', end='')
                 print()
             del temp_stat_changes
 
@@ -1036,11 +1055,11 @@ class battle_manager(ABC):
                 print(f"Effect {i + 1}: {temp_stat_changes[i][2].name}")
                 print(f"Description: '{temp_stat_changes[i][2].dscrpt}'\n")
                 print(f"Turns left: {temp_stat_changes[i][0] - self.battle_dict['turn_counter']}")
-                print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
-                print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
-                print(f"Armor Modifier: {temp_stat_changes[i][1][Stat_Sheet.armor] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.armor] != 0 else '', end='')
-                print(f"Agility Modifier: {temp_stat_changes[i][1][Stat_Sheet.agility] * -1}\n" if temp_stat_changes[i][1][Stat_Sheet.agility] != 0 else '', end='')
-                print(f"Power Modifier: {temp_stat_changes[i][1][Stat_Sheet.power] * -1}" if temp_stat_changes[i][1][Stat_Sheet.power] != 0 else '', end='')
+                print(f"Health Modifier: {temp_stat_changes[i][1][Stat_Sheet.health] * 100}%\n" if temp_stat_changes[i][1][Stat_Sheet.health] != 0 else '', end='')
+                print(f"Strength Modifier: {temp_stat_changes[i][1][Stat_Sheet.strength] * 100}%\n" if temp_stat_changes[i][1][Stat_Sheet.strength] != 0 else '', end='')
+                print(f"Armor Modifier: {temp_stat_changes[i][1][Stat_Sheet.armor] * 100}%\n" if temp_stat_changes[i][1][Stat_Sheet.armor] != 0 else '', end='')
+                print(f"Agility Modifier: {temp_stat_changes[i][1][Stat_Sheet.agility] * 100}%\n" if temp_stat_changes[i][1][Stat_Sheet.agility] != 0 else '', end='')
+                print(f"Power Modifier: {temp_stat_changes[i][1][Stat_Sheet.power] * 100}%" if temp_stat_changes[i][1][Stat_Sheet.power] != 0 else '', end='')
                 print()
             del temp_stat_changes
 
@@ -1049,7 +1068,7 @@ class battle_manager(ABC):
     def attack_use_debuff(self, target, debuff):
         if isinstance(debuff, stat_item):
             self.calc_effect_queue(target, debuff)
-            self.use_item_stat(target, debuff.stat_changes)
+            self.use_temp_stat(target, debuff.stat_changes, True)
 
     def use_item(self, thing, itm):
         # if itm.stat_changes != [0, 0, 0, 0, 0]:
@@ -1058,15 +1077,11 @@ class battle_manager(ABC):
             try:
                 # Add specific instructions for healing items
                 if isinstance(itm, heal_item):
-                    if thing.stats.health + itm.heal_amnt > thing.stats.max_health:
-                        thing.stats.health = thing.stats.max_health
-                    else:
-                        thing.stats.health += itm.heal_amnt
-
+                    thing.stats.set_stats([itm.hp_heal_amnt, itm.stam_heal_amnt, 0, 0, 0, 0])
                     write(f"{thing.name} used a {itm.name}, and regained {itm.heal_amnt} health.")
                 elif isinstance(itm, stat_item):
                     self.calc_effect_queue(thing, itm)
-                    self.use_item_stat(thing, itm.stat_changes)
+                    self.use_temp_stat(thing, itm.stat_changes, True)
                     write(f"{thing.name} used a {itm.name}.")
 
                 thing.collection.rem_item(itm)
@@ -1168,7 +1183,8 @@ class battle_manager(ABC):
 
         if isinstance(itm, heal_item):
             print('Type: Healing Item')
-            print(f"Heal Amount: {itm.heal_amnt}")
+            print(f"HP Heal Amount: {itm.hp_heal_amnt}")
+            print(f"Stamina Heal Amount: {itm.stam_heal_amnt}")
         else:
             print('\nType: Buff Item')
             print(f"Turns Effective: {itm.duration}\n")
