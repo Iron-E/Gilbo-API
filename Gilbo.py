@@ -1,4 +1,4 @@
-# Gilbo RPG API -- Version 1.2.6 #
+# Gilbo RPG API -- Version 1.2.10 #
 
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
@@ -41,6 +41,7 @@ class Enumerators(IntEnum):
 
 
 def write(phrase, type_speed=.029, line_delay=.5):
+    print('\x1b7', end='')
     try:
         from time import sleep
         if isinstance(phrase, list) or isinstance(phrase, tuple):
@@ -59,7 +60,8 @@ def write(phrase, type_speed=.029, line_delay=.5):
             sleep(line_delay)
             print('', end=' ')
     except KeyboardInterrupt:
-        print('\r')
+        print('\x1b8', end='')
+
         if isinstance(phrase, list) or isinstance(phrase, tuple):
             for i in range(len(phrase)):
                 print(phrase[i], end=' ')
@@ -72,6 +74,16 @@ def write(phrase, type_speed=.029, line_delay=.5):
 def clr_console():
     import os
     os.system('cls' if os.name == 'nt' else 'clear')
+
+
+def cli_color(unix, win='color 0F'):
+    import os
+    if os.name == 'nt':
+        # change windows terminal color
+        os.system(win)
+    else:
+        # change linux terminal color
+        os.system(unix)
 
 
 def debug_info(err, more_info, display=False):
@@ -169,7 +181,7 @@ class battler(vendor):
 
     def sub_stat_change(self, sender, **kwargs):
         if sender is self.collection:
-            self.stats.stat_list = kwargs['changes']
+            self.stats.set_stats(kwargs['changes'])
 
 
 class player(battler):
@@ -346,11 +358,11 @@ class battler_stats:
     def stat_list(self):
         return [self.health, self.max_health, self.stren, self.armor, self.agility, self.power]
 
-    @stat_list.setter
-    def stat_list(self, val):
+    def set_stats(self, val, permanent=True):
         try:
             self.health += val[Stat_Sheet.health]
-            self.max_health += val[Stat_Sheet.health]
+            if permanent is True:
+                self.max_health += val[Stat_Sheet.health]
             self.stren += val[Stat_Sheet.strength]
             self.armor += val[Stat_Sheet.armor]
             self.agility += val[Stat_Sheet.agility]
@@ -904,7 +916,7 @@ class battle_manager(ABC):
             debug_info(e, 'An incorrect object type was used as type stat_item in battle_manager.use_item().')
 
     def use_item_stat(self, thing, stat_changes):
-        thing.stats.stat_list = stat_changes
+        thing.stats.set_stats(stat_changes, False)
 
     def use_attack(self, user, target, attk):
         # Check if attack hits
@@ -952,8 +964,6 @@ class battle_manager(ABC):
                     user.collection.rem_item(attk.ammo_type, attk.ammo_cost)
                 except AttributeError:
                     pass
-
-                return False
 
         else:
             # Attack missed, end turn
@@ -1072,7 +1082,19 @@ class battle_manager(ABC):
                 debug_info(ValueError('The turn counter was not set correctly.'), 'Somehow, the value of turn was switched away from 0 or 1, which are the accepted values.')
 
     def hit_animate(self):
-        pass
+        from time import sleep
+        cli_color('setterm --inversescreen on', 'color F0')
+        sleep(.2)
+        cli_color('setterm --inversescreen off')
+        sleep(.1)
+        cli_color('setterm --inversescreen on', 'color F0')
+        sleep(.03)
+        cli_color('setterm --inversescreen off')
+        sleep(.03)
+        cli_color('setterm --inversescreen on', 'color F0')
+        sleep(.03)
+        cli_color('setterm --inversescreen off')
+
 
     def draw_hp(self, plyr, enemy):
         clr_console()
