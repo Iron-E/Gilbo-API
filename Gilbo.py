@@ -677,7 +677,7 @@ class attack(ABC):
 
 
 class stam_attack(attack):
-    def __init__(self, name, dscrpt, dmg, stam_cost, acc=100, debuff=None):
+    def __init__(self, name, dscrpt, dmg, stam_cost=0, acc=100, debuff=None):
         super().__init__(name, dscrpt, dmg, acc, debuff)
         self.attack_dict['stamina_cost'] = stam_cost
 
