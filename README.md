@@ -1,3 +1,7 @@
+# Notice
+
+__This project has moved__ to [Gitlab](https://gitlab.com/Iron_E/Gilbo-API).
+
 # Gilbo-API
 An API to design and create RPG text adventure games. Written in Python.
 
